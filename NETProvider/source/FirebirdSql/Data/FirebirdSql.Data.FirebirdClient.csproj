@@ -171,9 +171,12 @@
     <Compile Include="Entity\DmlSqlGenerator.cs" />
     <Compile Include="Entity\ExpressionTranslator.cs" />
     <Compile Include="Entity\FirstClause.cs" />
+    <Compile Include="Entity\INamingStrategy.cs" />
     <Compile Include="Entity\ISqlFragment.cs" />
     <Compile Include="Entity\JoinSymbol.cs" />
     <Compile Include="Entity\MetadataHelpers.cs" />
+    <Compile Include="Entity\NamingStrategyBase.cs" />
+    <Compile Include="Entity\NamingStrategyUpperNoQuotes.cs" />
     <Compile Include="Entity\SkipClause.cs" />
     <Compile Include="Entity\SqlBuilder.cs" />
     <Compile Include="Entity\SqlGenerator.cs" />
