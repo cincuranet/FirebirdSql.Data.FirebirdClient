@@ -25,6 +25,7 @@ using System.Linq;
 using System.Collections.Generic;
 
 using FirebirdSql.Data.FirebirdClient;
+using FirebirdSql.Data.Entity;
 using NUnit.Framework;
 
 namespace FirebirdSql.Data.UnitTests
@@ -82,7 +83,7 @@ namespace FirebirdSql.Data.UnitTests
 			}
 		}
 
-		class QueryTest1Context : FbTestDbContext
+		protected class QueryTest1Context : FbTestDbContext
 		{
 			public QueryTest1Context(FbConnection conn)
 				: base(conn)
@@ -127,7 +128,7 @@ namespace FirebirdSql.Data.UnitTests
 			}
 		}
 
-		class QueryTest2Context : FbTestDbContext
+		protected class QueryTest2Context : FbTestDbContext
 		{
 			public QueryTest2Context(FbConnection conn)
 				: base(conn)
@@ -163,7 +164,7 @@ namespace FirebirdSql.Data.UnitTests
 			}
 		}
 
-		class QueryTest3Context : FbTestDbContext
+		protected class QueryTest3Context : FbTestDbContext
 		{
 			public QueryTest3Context(FbConnection conn)
 				: base(conn)
@@ -216,7 +217,7 @@ namespace FirebirdSql.Data.UnitTests
 			return (DbProviderServices)(FirebirdClientFactory.Instance as IServiceProvider).GetService(typeof(DbProviderServices));
 		}
 
-		class FbTestDbContext : DbContext
+		protected class FbTestDbContext : DbContext
 		{
 			public FbTestDbContext(FbConnection conn)
 				: base(conn, false)
@@ -224,7 +225,7 @@ namespace FirebirdSql.Data.UnitTests
 		}
 	}
 
-	class QueryTest1Entity
+	public class QueryTest1Entity
 	{
 		public int ID { get; set; }
 	}

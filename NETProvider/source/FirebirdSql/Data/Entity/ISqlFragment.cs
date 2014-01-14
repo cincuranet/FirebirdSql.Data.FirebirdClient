@@ -48,7 +48,7 @@ namespace FirebirdSql.Data.Entity
 	/// 
 	/// At the end of translation, the sql fragments are converted into real strings.
 	/// </remarks>
-	internal interface ISqlFragment
+	public interface ISqlFragment
 	{
 		/// <summary>
 		/// Write the string represented by this fragment into the stream.

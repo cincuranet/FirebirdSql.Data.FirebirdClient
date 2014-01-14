@@ -14,7 +14,10 @@
  * 
  *  Copyright (c) 2008-2013 Jiri Cincura (jiri@cincura.net)
  *  All Rights Reserved.
- */
+  *   
+ *  Contributors:
+ *    Luis Madaleno (madaleno@magnisoft.com)
+*/
 
 #if (!(NET_35 && !ENTITY_FRAMEWORK))
 
@@ -218,7 +221,7 @@ namespace FirebirdSql.Data.Entity
 	/// </example>
 	/// </para>
 	/// </remarks>
-	internal sealed class SqlGenerator : DbExpressionVisitor<ISqlFragment>
+	public sealed class SqlGenerator : DbExpressionVisitor<ISqlFragment>
 	{
 		#region Visitor parameter stacks
 		/// <summary>
@@ -293,6 +296,19 @@ namespace FirebirdSql.Data.Entity
 		static private readonly Dictionary<string, FunctionHandler> _canonicalFunctionHandlers = InitializeCanonicalFunctionHandlers();
 		static private readonly Dictionary<string, string> _functionNameToOperatorDictionary = InitializeFunctionNameToOperatorDictionary();
 		static private readonly char[] hexDigits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
+        static private INamingStrategy namingStrategy = new NamingStrategyBase();
+        static public INamingStrategy NamingStrategy
+        {
+            get
+            {
+                return namingStrategy;
+            }
+            set
+            {
+                namingStrategy = value;
+            }
+        }
 
 		private delegate ISqlFragment FunctionHandler(SqlGenerator sqlgen, DbFunctionExpression functionExpr);
 
@@ -3609,7 +3625,7 @@ namespace FirebirdSql.Data.Entity
 		{
 			Debug.Assert(!String.IsNullOrEmpty(name));
 			// We assume that the names are not quoted to begin with.
-			return "\"" + name.Replace("\"", "\"\"") + "\"";
+            return namingStrategy.QuoteIdentifier(name);
 		}
 
 		/// <summary>
