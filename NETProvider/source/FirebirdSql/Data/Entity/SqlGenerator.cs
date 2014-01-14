@@ -221,7 +221,7 @@ namespace FirebirdSql.Data.Entity
 	/// </example>
 	/// </para>
 	/// </remarks>
-	internal sealed class SqlGenerator : DbExpressionVisitor<ISqlFragment>
+	public sealed class SqlGenerator : DbExpressionVisitor<ISqlFragment>
 	{
 		#region Visitor parameter stacks
 		/// <summary>

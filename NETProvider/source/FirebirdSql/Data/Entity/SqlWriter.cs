@@ -35,7 +35,7 @@ namespace FirebirdSql.Data.Entity
 	/// This extends StringWriter primarily to add the ability to add an indent
 	/// to each line that is written out.
 	/// </summary>
-	internal class SqlWriter : StringWriter
+	public class SqlWriter : StringWriter
 	{
 		#region · Fields ·
 
