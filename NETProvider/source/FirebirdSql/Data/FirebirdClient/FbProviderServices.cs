@@ -27,6 +27,7 @@ using System.Xml;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
+using System.Linq;
 #if (!EF_6)
 using System.Data.Common.CommandTrees;
 using System.Data.Metadata.Edm;
@@ -34,6 +35,8 @@ using System.Data.Metadata.Edm;
 using System.Data.Entity.Core.Common;
 using System.Data.Entity.Core.Common.CommandTrees;
 using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Infrastructure;
+using System.Data.Entity.Infrastructure.DependencyResolution;
 #endif
 
 using FirebirdSql.Data.Entity;
@@ -47,7 +50,14 @@ namespace FirebirdSql.Data.FirebirdClient
 	public class FbProviderServices : DbProviderServices
 #pragma warning restore 3009
 	{
-		internal static readonly FbProviderServices Instance = new FbProviderServices();
+		public static readonly FbProviderServices Instance = new FbProviderServices();
+
+		private FbProviderServices()
+		{
+#if (EF_6)
+			AddDependencyResolver(new SingletonDependencyResolver<IDbConnectionFactory>(new FbConnectionFactory()));
+#endif
+		}
 
 		protected override DbCommandDefinition CreateDbCommandDefinition(DbProviderManifest manifest, DbCommandTree commandTree)
 		{
@@ -56,7 +66,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			return result;
 		}
 
-		protected FbConnection CheckAndCastToFbConnection(DbConnection connection)
+		private FbConnection CheckAndCastToFbConnection(DbConnection connection)
 		{
 			if (!(connection is FbConnection))
 			{
@@ -368,13 +378,8 @@ namespace FirebirdSql.Data.FirebirdClient
 					var resultsAsStructuralType = resultsType as StructuralType;
 					if (resultsAsStructuralType != null)
 					{
-						var result = new Type[resultsAsStructuralType.Members.Count];
-						for (int i = 0; i < resultsAsStructuralType.Members.Count; i++)
-						{
-							var member = resultsAsStructuralType.Members[i];
-							result[i] = ((PrimitiveType)member.TypeUsage.EdmType).ClrEquivalentType;
-						}
-						return result;
+						var members = resultsAsStructuralType.Members;
+						return members.Select(ExtractExpectedTypeForCoercion).ToArray();
 					}
 				}
 			}
@@ -386,22 +391,16 @@ namespace FirebirdSql.Data.FirebirdClient
 				{
 					Debug.Assert(MetadataHelpers.IsCollectionType(functionTree.ResultType.EdmType), "Result type of a function is expected to be a collection of RowType or PrimitiveType");
 					
-					var elementType = MetadataHelpers.GetElementTypeUsage(functionTree.ResultType).EdmType;
+					var typeUsage = MetadataHelpers.GetElementTypeUsage(functionTree.ResultType);
+					var elementType = typeUsage.EdmType;
 					if (MetadataHelpers.IsRowType(elementType))
 					{
 						var members = ((RowType)elementType).Members;
-						var result = new Type[members.Count];
-						for (int i = 0; i < members.Count; i++)
-						{
-							var member = members[i];
-							var primitiveType = (PrimitiveType)member.TypeUsage.EdmType;
-							result[i] = primitiveType.ClrEquivalentType;
-						}
-						return result;
+						return members.Select(ExtractExpectedTypeForCoercion).ToArray();
 					}
 					else if (MetadataHelpers.IsPrimitiveType(elementType))
 					{
-						return new Type[] { ((PrimitiveType)elementType).ClrEquivalentType };
+						return new[] { MakeTypeCoercion(((PrimitiveType)elementType).ClrEquivalentType, typeUsage) };
 					}
 					else
 					{
@@ -411,6 +410,19 @@ namespace FirebirdSql.Data.FirebirdClient
 			}
 
 			return null;
+		}
+
+		private static Type ExtractExpectedTypeForCoercion(EdmMember member)
+		{
+			var type = ((PrimitiveType)member.TypeUsage.EdmType).ClrEquivalentType;
+			return MakeTypeCoercion(type, member.TypeUsage);
+		}
+
+		private static Type MakeTypeCoercion(Type type, TypeUsage typeUsage)
+		{
+			if (type.IsValueType && MetadataHelpers.IsNullable(typeUsage))
+				return typeof(Nullable<>).MakeGenericType(type);
+			return type;
 		}
 
 #if (!NET_35)

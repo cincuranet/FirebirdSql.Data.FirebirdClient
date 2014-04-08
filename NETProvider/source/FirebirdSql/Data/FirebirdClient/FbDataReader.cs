@@ -428,10 +428,25 @@ namespace FirebirdSql.Data.FirebirdClient
 #if (!(NET_35 && !ENTITY_FRAMEWORK))
 			// type coercions for EF
 			if (this.command.ExpectedColumnTypes != null)
-				if (this.command.ExpectedColumnTypes.ElementAtOrDefault(i) == typeof(bool))
+			{
+				var type = this.command.ExpectedColumnTypes.ElementAtOrDefault(i);
+				var nullableUnderlying = Nullable.GetUnderlyingType(type);
+				if (nullableUnderlying != null)
+				{
+					if (this.IsDBNull(i))
+					{
+						return null;
+					}
+					if (nullableUnderlying == typeof(bool))
+					{
+						return this.GetBoolean(i);
+					}
+				}
+				if (type == typeof(bool))
 				{
 					return this.GetBoolean(i);
 				}
+			}
 #endif
 
 			this.CheckState();
@@ -744,7 +759,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			if (!columnsIndexesOrdinal.TryGetValue(name, out index))
 				if (!columnsIndexesOrdinalCI.TryGetValue(name, out index))
 					if (!columnsIndexesInvariantCI.TryGetValue(name, out index))
-							throw new IndexOutOfRangeException("Could not find specified column in results.");
+						throw new IndexOutOfRangeException("Could not find specified column in results.");
 			return index;
 		}
 

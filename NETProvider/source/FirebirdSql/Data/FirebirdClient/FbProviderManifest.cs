@@ -62,8 +62,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		/// <param name="manifestToken">A token used to infer the capabilities of the store</param>
 		public FbProviderManifest(string manifestToken)
 			: base(FbProviderManifest.GetProviderManifest())
-		{
-		}
+		{ }
 
 		#endregion
 
@@ -85,7 +84,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		protected override XmlReader GetDbInformation(string informationType)
 		{
 			if (informationType == DbProviderManifest.StoreSchemaDefinition
-#if (NET_45)
+#if (NET_45 || EF_6)
 				|| informationType == DbProviderManifest.StoreSchemaDefinitionVersion3
 #endif
 				)
@@ -93,14 +92,14 @@ namespace FirebirdSql.Data.FirebirdClient
 				return GetStoreSchemaDescription(informationType);
 			}
 			if (informationType == DbProviderManifest.StoreSchemaMapping
-#if (NET_45)
+#if (NET_45 || EF_6)
 				|| informationType == DbProviderManifest.StoreSchemaMappingVersion3
 #endif
 				)
 			{
 				return GetStoreSchemaMapping(informationType);
 			}
-#if (NET_45)
+#if (NET_45 || EF_6)
 			if (informationType == DbProviderManifest.ConceptualSchemaDefinition || informationType == DbProviderManifest.ConceptualSchemaDefinitionVersion3)
 			{
 				return null;
@@ -114,14 +113,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			if (this._primitiveTypes == null)
 			{
-				//if (this._version == StoreVersion.Sql9 || this._version == StoreVersion.Sql10)
-				//{
 				this._primitiveTypes = base.GetStoreTypes();
-				//}
-				//else
-				//{
-				//    throw new ArgumentException("SQL Server 2000 not supported via sample provider.");
-				//}
 			}
 
 			return this._primitiveTypes;
@@ -131,14 +123,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			if (this._functions == null)
 			{
-				//if (this._version == StoreVersion.Sql9 || this._version == StoreVersion.Sql10)
-				//{
 				this._functions = base.GetStoreFunctions();
-				//}
-				//else
-				//{
-				//    throw new ArgumentException("SQL Server 2000 not supported via sample provider.");
-				//}
 			}
 
 			return this._functions;
@@ -432,12 +417,12 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		private XmlReader GetStoreSchemaMapping(string mslName)
 		{
-			return GetXmlResource("FirebirdSql.Data.Entity.StoreSchemaMapping.msl");
+			return GetXmlResource(string.Format("FirebirdSql.Data.Entity.{0}.msl", mslName));
 		}
 
 		private XmlReader GetStoreSchemaDescription(string ssdlName)
 		{
-			return GetXmlResource("FirebirdSql.Data.Entity.StoreSchemaDefinition.ssdl");
+			return GetXmlResource(string.Format("FirebirdSql.Data.Entity.{0}.ssdl", ssdlName));
 		}
 
 		internal static XmlReader GetXmlResource(string resourceName)
