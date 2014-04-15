@@ -82,6 +82,16 @@ namespace FirebirdSql.Data.Entity
 				result.AppendLine();
 				foreach (var identity in entitySet.ElementType.KeyMembers.Where(pk => MetadataHelpers.IsStoreGeneratedIdentity(pk)).Select(i => i.Name))
 				{
+					result.AppendLine(string.Concat("CREATE GENERATOR GEN_", MetadataHelpers.GetTableName(entitySet), "_", identity, ";"));
+					result.AppendLine(string.Concat("SET GENERATOR GEN_", MetadataHelpers.GetTableName(entitySet), "_", identity, " TO 0;"));
+					result.AppendLine("set term !!;");
+					result.AppendLine(string.Concat("CREATE TRIGGER ", MetadataHelpers.GetTableName(entitySet), "_BI FOR ", SqlGenerator.QuoteIdentifier(MetadataHelpers.GetTableName(entitySet))));
+					result.AppendLine("ACTIVE BEFORE INSERT POSITION 0");
+					result.AppendLine("AS");
+					result.AppendLine("BEGIN");
+					result.AppendLine(string.Concat("if (NEW.", SqlGenerator.QuoteIdentifier(identity), " is NULL OR NEW.", SqlGenerator.QuoteIdentifier(identity), "=0) then NEW.", SqlGenerator.QuoteIdentifier(identity), " = GEN_ID(GEN_", MetadataHelpers.GetTableName(entitySet), "_", identity, ", 1);"));
+					result.AppendLine("END!!");
+					result.AppendLine("set term ; !!");
 					additionalColumnComments.Add(identity, "#PK_GEN#");
 				}
 				foreach (var comment in additionalColumnComments)
