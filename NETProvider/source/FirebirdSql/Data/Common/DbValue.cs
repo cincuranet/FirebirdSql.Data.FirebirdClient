@@ -310,7 +310,10 @@ namespace FirebirdSql.Data.Common
 
 				case DbDataType.Guid:
 					return this.GetGuid().ToByteArray();
-
+					
+				case DbDataType.Null:
+					return new byte[0];
+					
 				default:
 					throw new NotSupportedException("Unknown data type");
 			}
