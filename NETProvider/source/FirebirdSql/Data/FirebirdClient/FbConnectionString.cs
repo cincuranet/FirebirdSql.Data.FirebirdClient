@@ -91,6 +91,8 @@ namespace FirebirdSql.Data.FirebirdClient
 			{ "no dbtriggers", "no db triggers" },
 			{ "no database triggers", "no db triggers" },
 			{ "nodatabasetriggers", "no db triggers" },
+			{ "page size", "page size" },
+			{ "pagesize", "page size" },
 		};
 
 		#endregion
@@ -103,6 +105,11 @@ namespace FirebirdSql.Data.FirebirdClient
 		#endregion
 
 		#region · Properties ·
+
+		public int PageSize
+		{
+			get { return this.GetInt32("page size"); }
+		}
 
 		public string UserID
 		{
@@ -406,6 +413,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			this.options.Add("client library", "fbembed");
 			this.options.Add("cache pages", 0);
 			this.options.Add("no db triggers", false);
+			this.options.Add("page size", 4096);
 		}
 
 		private void ParseConnectionInfo(string connectInfo)
