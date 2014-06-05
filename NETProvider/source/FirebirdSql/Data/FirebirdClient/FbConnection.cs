@@ -53,15 +53,20 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public static void CreateDatabase(string connectionString)
 		{
-			FbConnection.CreateDatabase(connectionString, 4096, true, false);
+			FbConnection.CreateDatabase(connectionString, true, false);
 		}
 
 		public static void CreateDatabase(string connectionString, bool overwrite)
 		{
-			FbConnection.CreateDatabase(connectionString, 4096, true, overwrite);
+			FbConnection.CreateDatabase(connectionString, true, overwrite);
 		}
 
 		public static void CreateDatabase(string connectionString, int pageSize, bool forcedWrites, bool overwrite)
+		{
+			FbConnection.CreateDatabase(string.Concat(connectionString, ";pagesize=", pageSize), forcedWrites, overwrite);
+		}
+
+		public static void CreateDatabase(string connectionString, bool forcedWrites, bool overwrite)
 		{
 			FbConnectionString options = new FbConnectionString(connectionString);
 			options.Validate();
@@ -108,10 +113,7 @@ namespace FirebirdSql.Data.FirebirdClient
 				dpb.Append(IscCodes.isc_dpb_overwrite, (overwrite ? 1 : 0));
 
 				// Page	Size
-				if (pageSize > 0)
-				{
-					dpb.Append(IscCodes.isc_dpb_page_size, pageSize);
-				}
+				dpb.Append(IscCodes.isc_dpb_page_size, options.PageSize);
 
 				// Create the new database
 				FbConnectionInternal db = new FbConnectionInternal(options);
