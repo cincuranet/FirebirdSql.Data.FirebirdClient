@@ -100,7 +100,7 @@ namespace FirebirdSql.Data.Client.Native
 							{
 								exception = new IscException();
 							}
-							exception.Errors.Add(new IscError(arg.ToInt32(), e.ToInt32()));
+							exception.Errors.Add(new IscError((int)arg.ToInt64(), (int)e.ToInt64()));
 						}
 						break;
 				}
