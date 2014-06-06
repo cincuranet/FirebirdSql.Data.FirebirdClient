@@ -13,18 +13,19 @@
  *	   language governing rights and limitations under the License.
  * 
  *	Copyright (c) 2002 - 2007 Carlos Guzman Alvarez
- *	Copyright (c) 2007 - 2012 Jiri Cincura (jiri@cincura.net)
+ *	Copyright (c) 2007 - 2014 Jiri Cincura (jiri@cincura.net)
  *	All Rights Reserved.
  */
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Permissions;
-
-using FirebirdSql.Data.Common;
 using System.Text;
+using System.Threading;
+using FirebirdSql.Data.Common;
 
 namespace FirebirdSql.Data.Client.Managed.Version10
 {
@@ -44,6 +45,8 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 		private int protocolVersion;
 		private int protocolArchitecture;
 		private int protocolMinimunType;
+
+		private Timer timer;
 
 		#endregion
 
@@ -128,6 +131,34 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 			{
 				throw new IscException(IscCodes.isc_arg_gds, IscCodes.isc_network_error, dataSource);
 			}
+		}
+
+		public virtual void Connect2(Action callback)
+		{
+			this.Connect();
+			this.timer = new Timer(_ =>
+			{
+				bool oldBlockingState = this.socket.Blocking;
+				try
+				{
+					byte[] tmp = new byte[1];
+					this.socket.Blocking = false;
+					this.socket.Send(tmp, 0, SocketFlags.None);
+					Trace.WriteLine("Events alive.");
+				}
+				catch (SocketException e)
+				{
+					if (!e.NativeErrorCode.Equals(10035))
+					{
+						this.timer.Dispose();
+						callback();
+					}
+				}
+				finally
+				{
+					this.socket.Blocking = oldBlockingState;
+				}
+			}, null, TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(1.0));
 		}
 
 		public virtual void Identify(string database)

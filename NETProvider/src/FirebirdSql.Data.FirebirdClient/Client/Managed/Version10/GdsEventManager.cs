@@ -60,7 +60,13 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 			{
 				GdsConnection connection = new GdsConnection(ipAddress, portNumber);
 
-				connection.Connect();
+				connection.Connect2(() =>
+				{
+					this.syncContext.Send(_ =>
+					{
+						throw new Exception("Looks like events are done.");
+					}, null);
+				});
 
 				this.database = new GdsDatabase(connection);
 			}
