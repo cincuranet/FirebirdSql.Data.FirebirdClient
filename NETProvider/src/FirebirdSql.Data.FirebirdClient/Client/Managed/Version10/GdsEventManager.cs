@@ -37,15 +37,6 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 
 		#endregion
 
-		#region · Properties ·
-
-		//public Hashtable EventList
-		//{
-		//    get { return this.events; }
-		//}
-
-		#endregion
-
 		#region · Constructors ·
 
 		public GdsEventManager(int handle, string ipAddress, int portNumber)
@@ -144,7 +135,10 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 					switch (operation)
 					{
 						case IscCodes.op_response:
-							this.database.ReadResponse();
+							lock (this.database.SyncObject)
+							{
+								this.database.ReadResponse();
+							}
 							break;
 
 						case IscCodes.op_exit:
@@ -153,10 +147,13 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 							return;
 
 						case IscCodes.op_event:
-							dbHandle = this.database.ReadInt32();
-							buffer = this.database.ReadBuffer();
-							ast = this.database.ReadBytes(8);
-							eventId = this.database.ReadInt32();
+							lock (this.database.SyncObject)
+							{
+								dbHandle = this.database.ReadInt32();
+								buffer = this.database.ReadBuffer();
+								ast = this.database.ReadBytes(8);
+								eventId = this.database.ReadInt32();
+							}
 
 							if (this.events.ContainsKey(eventId))
 							{
