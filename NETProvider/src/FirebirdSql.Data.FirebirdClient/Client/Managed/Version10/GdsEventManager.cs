@@ -130,7 +130,10 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 			{
 				while (this.events.Count > 0)
 				{
-					operation = this.database.NextOperation();
+					lock (this.database.SyncObject)
+					{
+						operation = this.database.NextOperation();
+					}
 
 					switch (operation)
 					{
