@@ -17,7 +17,6 @@
  */
 
 using System;
-using System.Data;
 using System.Transactions;
 
 using FirebirdSql.Data.FirebirdClient;
@@ -31,21 +30,77 @@ namespace FirebirdSql.Data.UnitTests
 	[TestFixture]
 	public class TransactionScopeTests : TestsBase
 	{
-		#region · Constructors ·
-
-		public TransactionScopeTests()
-			: base()
+		[Test]
+		public void ExplicitEnlist()
 		{
+			var csb = BuildConnectionStringBuilder();
+			using (var connection = new FbConnection(csb.ToString()))
+			{
+				using (var scope = new TransactionScope())
+				{
+					connection.Open();
+					connection.EnlistTransaction(System.Transactions.Transaction.Current);
+					Assert.That(ExecuteNonQuery("insert into TEST (int_field) values (1002)", connection), Is.EqualTo(1));
+					scope.Complete();
+				}
+			}
+			Assert.That(ExecuteScalar("select count(*) from test where int_field = 1002"), Is.EqualTo(1));
 		}
 
-		#endregion
+		[Test]
+		public void ImplicitEnlist()
+		{
+			var csb = BuildConnectionStringBuilder();
+			csb.Enlist = true;
+			var connectionString = csb.ToString();
+			using (var scope = new TransactionScope())
+			{
+				using (var connection = new FbConnection(connectionString))
+				{
+					connection.Open();
+					Assert.That(ExecuteNonQuery("insert into TEST (int_field) values (1002)", connection), Is.EqualTo(1));
+				}
+				scope.Complete();
+			}
+			Assert.That(ExecuteScalar("select count(*) from test where int_field = 1002"), Is.EqualTo(1));
+		}
 
-		#region · Unit Tests ·
+		[Test]
+		public void ImplicitEnlist_WithoutTransactionScope_ShouldNotThrow()
+		{
+			var csb = BuildConnectionStringBuilder();
+			csb.Enlist = true;
+			var connectionString = csb.ToString();
+			using (var connection = new FbConnection(connectionString))
+			{
+				connection.Open();
+				Assert.That(ExecuteNonQuery("insert into TEST (int_field) values (1002)", connection), Is.EqualTo(1));
+			}
+			Assert.That(ExecuteScalar("select count(*) from test where int_field = 1002"), Is.EqualTo(1));
+		}
+
+		[Test]
+		public void Rollback_SingleConnection()
+		{
+			var csb = BuildConnectionStringBuilder();
+			csb.Enlist = true;
+			var connectionString = csb.ToString();
+			using (var scope = new TransactionScope())
+			{
+				using (var connection = new FbConnection(connectionString))
+				{
+					connection.Open();
+					Assert.That(ExecuteNonQuery("insert into TEST (int_field) values (1002)", connection), Is.EqualTo(1));
+					// DO NOT COMMIT
+				}
+			}
+			Assert.That(ExecuteScalar("select count(*) from test where int_field = 1002"), Is.EqualTo(0));
+		}
 
 		[Test]
 		public void SimpleSelectTest()
 		{
-			FbConnectionStringBuilder csb = base.BuildConnectionStringBuilder();
+			FbConnectionStringBuilder csb = BuildConnectionStringBuilder();
 
 			csb.Enlist = true;
 
@@ -73,7 +128,7 @@ namespace FirebirdSql.Data.UnitTests
 		[Test]
 		public void InsertTest()
 		{
-			FbConnectionStringBuilder csb = base.BuildConnectionStringBuilder();
+			FbConnectionStringBuilder csb = BuildConnectionStringBuilder();
 
 			csb.Enlist = true;
 
@@ -99,7 +154,23 @@ namespace FirebirdSql.Data.UnitTests
 			}
 		}
 
-		#endregion
+		private int ExecuteNonQuery(string sql, FbConnection connection)
+		{
+			if (connection == null)
+				connection = Connection;
+			using (var cmd = new FbCommand(sql, connection))
+			{
+				return cmd.ExecuteNonQuery();
+			}
+		}
+
+		private object ExecuteScalar(string sql, FbConnection connection = null)
+		{
+			if (connection == null)
+				connection = Connection;
+			using (var cmd = new FbCommand(sql, connection))
+				return cmd.ExecuteScalar();
+		}
 	}
 }
 
