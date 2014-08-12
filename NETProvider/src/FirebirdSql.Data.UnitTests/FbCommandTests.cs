@@ -640,19 +640,17 @@ namespace FirebirdSql.Data.UnitTests
 			using (FbCommand cmd = Connection.CreateCommand())
 			{
 				const string data = "1234";
-				byte[] read = null;
+				string read = string.Empty;
 
 				cmd.CommandText = string.Format("select cast('{0}' as varchar(10) character set octets) from rdb$database", data);
 				using (FbDataReader reader = cmd.ExecuteReader())
 				{
 					if (reader.Read())
 					{
-						read = (byte[])reader[0];
+						read = (string)reader[0];
 					}
 				}
-
-				byte[] expected = Encoding.ASCII.GetBytes(data);
-				Assert.AreEqual(expected, read);
+				Assert.AreEqual(data, read);
 			}
 		}
 
@@ -661,21 +659,18 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			using (FbCommand cmd = Connection.CreateCommand())
 			{
-				const string data = "1234";
-				byte[] read = null;
+				const string data = "1234\0\0\0\0\0\0";
+				string read = string.Empty;
 
 				cmd.CommandText = string.Format("select cast('{0}' as char(10) character set octets) from rdb$database", data);
 				using (FbDataReader reader = cmd.ExecuteReader())
 				{
 					if (reader.Read())
 					{
-						read = (byte[])reader[0];
+						read = (string)reader[0];
 					}
 				}
-
-				byte[] expected = new byte[10];
-				Encoding.ASCII.GetBytes(data).CopyTo(expected, 0);
-				Assert.AreEqual(expected, read);
+				Assert.AreEqual(data, read);
 			}
 		}
 
