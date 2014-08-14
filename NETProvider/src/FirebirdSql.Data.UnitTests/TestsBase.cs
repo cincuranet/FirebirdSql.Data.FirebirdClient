@@ -17,15 +17,14 @@
  */
 
 using System;
-using System.Text;
-using System.Configuration;
 using System.Collections;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Security.Cryptography;
-
-using NUnit.Framework;
+using System.Text;
 using FirebirdSql.Data.FirebirdClient;
+using NUnit.Framework;
 
 namespace FirebirdSql.Data.UnitTests
 {
