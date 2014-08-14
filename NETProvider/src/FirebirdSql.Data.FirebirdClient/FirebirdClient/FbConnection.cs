@@ -20,16 +20,11 @@
  */
 
 using System;
-using System.Collections;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
-using System.Globalization;
-using System.Text;
-using System.Text.RegularExpressions;
 
 using FirebirdSql.Data.Common;
-using FirebirdSql.Data.Services;
 
 namespace FirebirdSql.Data.FirebirdClient
 {
@@ -476,10 +471,6 @@ namespace FirebirdSql.Data.FirebirdClient
 				{
 					throw new InvalidOperationException("Connection already Open.");
 				}
-				if (this.options.Enlist && System.Transactions.Transaction.Current == null)
-				{
-					throw new InvalidOperationException("There is no active TransactionScope to enlist transactions.");
-				}
 
 				this.DemandPermission();
 
@@ -501,7 +492,8 @@ namespace FirebirdSql.Data.FirebirdClient
 
 					try
 					{
-						this.innerConnection.EnlistTransaction(System.Transactions.Transaction.Current);
+						if (options.Enlist)
+							this.innerConnection.EnlistTransaction(System.Transactions.Transaction.Current);
 					}
 					catch
 					{

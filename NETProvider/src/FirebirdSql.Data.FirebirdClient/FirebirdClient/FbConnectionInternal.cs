@@ -43,7 +43,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		private FbConnection owningConnection;
 		private bool disposed;
 		private object preparedCommandsCleanupSyncRoot;
-		private FbEnlistmentNotification enlistmentNotification;
+		private FbInternalResourceManager _resourceManager;
 
 		#endregion
 
@@ -74,7 +74,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public bool IsEnlisted
 		{
-			get { return this.enlistmentNotification != null && !this.enlistmentNotification.IsCompleted; }
+			get { return _resourceManager != null; }
 		}
 
 		public FbConnectionString Options
@@ -233,7 +233,7 @@ namespace FirebirdSql.Data.FirebirdClient
 				try
 				{
 					this.activeTransaction = new FbTransaction(this.owningConnection, level);
-					this.activeTransaction.BeginTransaction();
+					this.activeTransaction.BeginTransaction(this);
 
 					if (transactionName != null)
 					{
@@ -311,28 +311,31 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void EnlistTransaction(System.Transactions.Transaction transaction)
 		{
-			if (this.owningConnection != null && this.options.Enlist)
+			if (this.owningConnection != null)
 			{
-				if (this.enlistmentNotification != null && this.enlistmentNotification.SystemTransaction == transaction)
+				if (_resourceManager != null)
+					return;
+				if (transaction == null)
 					return;
 
 				if (this.HasActiveTransaction)
 				{
 					throw new ArgumentException("Unable to enlist in transaction, a local transaction already exists");
 				}
-				if (this.enlistmentNotification != null)
+				if (_resourceManager != null)
 				{
 					throw new ArgumentException("Already enlisted in a transaction");
 				}
 
-				this.enlistmentNotification = new FbEnlistmentNotification(this, transaction);
-				this.enlistmentNotification.Completed += new EventHandler(EnlistmentCompleted);
+				_resourceManager = new FbInternalResourceManager(this);
+				_resourceManager.Enlist(transaction);
 			}
 		}
 
-		private void EnlistmentCompleted(object sender, EventArgs e)
+		internal void PromotableLocalTransactionCompleted()
 		{
-			this.enlistmentNotification = null;
+			_resourceManager = null;
+			DisposeTransaction();
 		}
 
 		public FbTransaction BeginTransaction(System.Transactions.IsolationLevel isolationLevel)

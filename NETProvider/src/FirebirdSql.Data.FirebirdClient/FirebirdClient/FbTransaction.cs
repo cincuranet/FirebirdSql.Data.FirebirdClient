@@ -355,11 +355,16 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		internal void BeginTransaction()
 		{
+			BeginTransaction(this.connection.InnerConnection);
+		}
+
+		internal void BeginTransaction(FbConnectionInternal innerConnection)
+		{
 			lock (this)
 			{
 				try
 				{
-					IDatabase database = this.connection.InnerConnection.Database;
+					IDatabase database = innerConnection.Database;
 					this.transaction = database.BeginTransaction(this.BuildTpb());
 				}
 				catch (IscException ex)

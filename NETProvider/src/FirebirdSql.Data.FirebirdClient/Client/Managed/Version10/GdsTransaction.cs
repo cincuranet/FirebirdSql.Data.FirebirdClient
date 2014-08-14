@@ -349,7 +349,7 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 
 		private void CheckTransactionState()
 		{
-			if (this.state != TransactionState.Active)
+			if (this.state == TransactionState.NoTransaction)
 			{
 				throw GetNoValidTransactionException();
 			}
