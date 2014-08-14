@@ -39,11 +39,12 @@ namespace FirebirdSql.Data.FirebirdClient
 		private IDatabase db;
 		private FbTransaction activeTransaction;
 		private List<WeakReference> preparedCommands;
-		private FbConnectionString options;
-		private FbConnection owningConnection;
+		private FbConnectionString _options;
+		private FbConnection _owningConnection;
 		private bool disposed;
 		private object preparedCommandsCleanupSyncRoot;
-		private FbEnlistmentNotification enlistmentNotification;
+		private FbInternalResourceManager _resourceManager;
+		//private FbPromotableSinglePhaseNotification _promotableFbTransactionEnlister;
 
 		#endregion
 
@@ -51,35 +52,35 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public IDatabase Database
 		{
-			get { return this.db; }
+			get { return db; }
 		}
 
 		public bool HasActiveTransaction
 		{
 			get
 			{
-				return this.activeTransaction != null && !this.activeTransaction.IsUpdated;
+				return activeTransaction != null && !activeTransaction.IsUpdated;
 			}
 		}
 
 		public FbTransaction ActiveTransaction
 		{
-			get { return this.activeTransaction; }
+			get { return activeTransaction; }
 		}
 
 		public FbConnection OwningConnection
 		{
-			get { return this.owningConnection; }
+			get { return _owningConnection; }
 		}
 
 		public bool IsEnlisted
 		{
-			get { return this.enlistmentNotification != null && !this.enlistmentNotification.IsCompleted; }
+			get { return _resourceManager != null && !_resourceManager.IsCompleted; }
 		}
 
 		public FbConnectionString Options
 		{
-			get { return this.options; }
+			get { return _options; }
 		}
 
 		public bool CancelDisabled { get; set; }
@@ -90,10 +91,10 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public FbConnectionInternal(FbConnectionString options)
 		{
-			this.preparedCommands = new List<WeakReference>();
-			this.preparedCommandsCleanupSyncRoot = new object();
+			preparedCommands = new List<WeakReference>();
+			preparedCommandsCleanupSyncRoot = new object();
 
-			this.options = options;
+			_options = options;
 
 			GC.SuppressFinalize(this);
 		}
@@ -107,7 +108,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			// Do not re-create Dispose clean-up code here.
 			// Calling Dispose(false) is optimal in terms of
 			// readability and maintainability.
-			this.Dispose(false);
+			Dispose(false);
 		}
 
 		#endregion
@@ -116,7 +117,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void Dispose()
 		{
-			this.Dispose(true);
+			Dispose(true);
 
 			// This object will be cleaned up by the Dispose method.
 			// Therefore, you should call GC.SupressFinalize to
@@ -130,17 +131,17 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			lock (this)
 			{
-				if (!this.disposed)
+				if (!disposed)
 				{
 					// release any unmanaged resources
-					this.Disconnect();
+					Disconnect();
 
 					if (disposing)
 					{
 						// release managed resources here
 					}
 
-					this.disposed = true;
+					disposed = true;
 				}
 			}
 		}
@@ -151,14 +152,14 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void CreateDatabase(DatabaseParameterBuffer dpb)
 		{
-			IDatabase db = ClientFactory.CreateDatabase(this.options);
-			db.CreateDatabase(dpb, this.options.DataSource, this.options.Port, this.options.Database);
+			IDatabase db = ClientFactory.CreateDatabase(_options);
+			db.CreateDatabase(dpb, _options.DataSource, _options.Port, _options.Database);
 		}
 
 		public void DropDatabase()
 		{
-			IDatabase db = ClientFactory.CreateDatabase(this.options);
-			db.Attach(this.BuildDpb(db, this.options), this.options.DataSource, this.options.Port, this.options.Database);
+			IDatabase db = ClientFactory.CreateDatabase(_options);
+			db.Attach(BuildDpb(db, _options), _options.DataSource, _options.Port, _options.Database);
 			db.DropDatabase();
 		}
 
@@ -168,27 +169,27 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void Connect()
 		{
-			if (Charset.GetCharset(this.options.Charset) == null)
+			if (Charset.GetCharset(_options.Charset) == null)
 			{
 				throw new FbException("Invalid character set specified");
 			}
 
 			try
 			{
-				this.db = ClientFactory.CreateDatabase(this.options);
-				this.db.Charset = Charset.GetCharset(this.options.Charset);
-				this.db.Dialect = this.options.Dialect;
-				this.db.PacketSize = this.options.PacketSize;
+				db = ClientFactory.CreateDatabase(_options);
+				db.Charset = Charset.GetCharset(_options.Charset);
+				db.Dialect = _options.Dialect;
+				db.PacketSize = _options.PacketSize;
 
-				DatabaseParameterBuffer dpb = this.BuildDpb(this.db, options);
+				DatabaseParameterBuffer dpb = BuildDpb(db, _options);
 
-				if (options.FallIntoTrustedAuth)
+				if (_options.FallIntoTrustedAuth)
 				{
-					this.db.AttachWithTrustedAuth(dpb, this.options.DataSource, this.options.Port, this.options.Database);
+					db.AttachWithTrustedAuth(dpb, _options.DataSource, _options.Port, _options.Database);
 				}
 				else
 				{
-					this.db.Attach(dpb, this.options.DataSource, this.options.Port, this.options.Database);
+					db.Attach(dpb, _options.DataSource, _options.Port, _options.Database);
 				}
 			}
 			catch (IscException ex)
@@ -199,20 +200,20 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void Disconnect()
 		{
-			if (this.db != null)
+			if (db != null)
 			{
 				try
 				{
-					this.db.Dispose();
+					db.Dispose();
 				}
 				catch
 				{
 				}
 				finally
 				{
-					this.db = null;
-					this.owningConnection = null;
-					this.options = null;
+					db = null;
+					_owningConnection = null;
+					_options = null;
 				}
 			}
 		}
@@ -225,19 +226,19 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			lock (this)
 			{
-				if (this.HasActiveTransaction)
+				if (HasActiveTransaction)
 				{
 					throw new InvalidOperationException("A transaction is currently active. Parallel transactions are not supported.");
 				}
 
 				try
 				{
-					this.activeTransaction = new FbTransaction(this.owningConnection, level);
-					this.activeTransaction.BeginTransaction();
+					activeTransaction = new FbTransaction(_owningConnection, level);
+					activeTransaction.BeginTransaction(this);
 
 					if (transactionName != null)
 					{
-						this.activeTransaction.Save(transactionName);
+						activeTransaction.Save(transactionName);
 					}
 				}
 				catch (IscException ex)
@@ -246,28 +247,27 @@ namespace FirebirdSql.Data.FirebirdClient
 				}
 			}
 
-			return this.activeTransaction;
+			return activeTransaction;
 		}
 
 		public FbTransaction BeginTransaction(FbTransactionOptions options, string transactionName)
 		{
 			lock (this)
 			{
-				if (this.HasActiveTransaction)
+				if (HasActiveTransaction)
 				{
 					throw new InvalidOperationException("A transaction is currently active. Parallel transactions are not supported.");
 				}
 
 				try
 				{
-					this.activeTransaction = new FbTransaction(
-						this.owningConnection, IsolationLevel.Unspecified);
+					activeTransaction = new FbTransaction(_owningConnection, IsolationLevel.Unspecified);
 
-					this.activeTransaction.BeginTransaction(options);
+					activeTransaction.BeginTransaction(options);
 
 					if (transactionName != null)
 					{
-						this.activeTransaction.Save(transactionName);
+						activeTransaction.Save(transactionName);
 					}
 				}
 				catch (IscException ex)
@@ -276,26 +276,26 @@ namespace FirebirdSql.Data.FirebirdClient
 				}
 			}
 
-			return this.activeTransaction;
+			return activeTransaction;
 		}
 
 		public void DisposeTransaction()
 		{
-			if (this.activeTransaction != null && !this.IsEnlisted)
+			if (activeTransaction != null && !IsEnlisted)
 			{
-				this.activeTransaction.Dispose();
-				this.activeTransaction = null;
+				activeTransaction.Dispose();
+				activeTransaction = null;
 			}
 		}
 
 		public void TransactionUpdated()
 		{
-			for (int i = 0; i < this.preparedCommands.Count; i++)
+			for (int i = 0; i < preparedCommands.Count; i++)
 			{
-				if (!this.preparedCommands[i].IsAlive)
+				if (!preparedCommands[i].IsAlive)
 					continue;
 
-				FbCommand command = this.preparedCommands[i].Target as FbCommand;
+				FbCommand command = preparedCommands[i].Target as FbCommand;
 
 				if (command.Transaction != null)
 				{
@@ -311,28 +311,23 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void EnlistTransaction(System.Transactions.Transaction transaction)
 		{
-			if (this.owningConnection != null && this.options.Enlist)
-			{
-				if (this.enlistmentNotification != null && this.enlistmentNotification.SystemTransaction == transaction)
-					return;
+			if (_resourceManager != null && _resourceManager.SystemTransaction == transaction)
+				return;
 
-				if (this.HasActiveTransaction)
-				{
-					throw new ArgumentException("Unable to enlist in transaction, a local transaction already exists");
-				}
-				if (this.enlistmentNotification != null)
-				{
-					throw new ArgumentException("Already enlisted in a transaction");
-				}
+			if (HasActiveTransaction)
+				throw new ArgumentException("Unable to enlist in transaction, a local transaction already exists");
 
-				this.enlistmentNotification = new FbEnlistmentNotification(this, transaction);
-				this.enlistmentNotification.Completed += new EventHandler(EnlistmentCompleted);
-			}
+			if (_resourceManager != null)
+				throw new ArgumentException("Already enlisted in a transaction");
+
+			_resourceManager = new FbInternalResourceManager(this);
+			_resourceManager.Enlist(transaction);
 		}
 
-		private void EnlistmentCompleted(object sender, EventArgs e)
+		internal void PromotableLocalTransactionCompleted()
 		{
-			this.enlistmentNotification = null;
+			_resourceManager = null;
+			DisposeTransaction();
 		}
 
 		public FbTransaction BeginTransaction(System.Transactions.IsolationLevel isolationLevel)
@@ -340,26 +335,26 @@ namespace FirebirdSql.Data.FirebirdClient
 			switch (isolationLevel)
 			{
 				case System.Transactions.IsolationLevel.Chaos:
-					return this.BeginTransaction(System.Data.IsolationLevel.Chaos, null);
+					return BeginTransaction(System.Data.IsolationLevel.Chaos, null);
 
 				case System.Transactions.IsolationLevel.ReadUncommitted:
-					return this.BeginTransaction(System.Data.IsolationLevel.ReadUncommitted, null);
+					return BeginTransaction(System.Data.IsolationLevel.ReadUncommitted, null);
 
 				case System.Transactions.IsolationLevel.RepeatableRead:
-					return this.BeginTransaction(System.Data.IsolationLevel.RepeatableRead, null);
+					return BeginTransaction(System.Data.IsolationLevel.RepeatableRead, null);
 
 				case System.Transactions.IsolationLevel.Serializable:
-					return this.BeginTransaction(System.Data.IsolationLevel.Serializable, null);
+					return BeginTransaction(System.Data.IsolationLevel.Serializable, null);
 
 				case System.Transactions.IsolationLevel.Snapshot:
-					return this.BeginTransaction(System.Data.IsolationLevel.Snapshot, null);
+					return BeginTransaction(System.Data.IsolationLevel.Snapshot, null);
 
 				case System.Transactions.IsolationLevel.Unspecified:
-					return this.BeginTransaction(System.Data.IsolationLevel.Unspecified, null);
+					return BeginTransaction(System.Data.IsolationLevel.Unspecified, null);
 
 				case System.Transactions.IsolationLevel.ReadCommitted:
 				default:
-					return this.BeginTransaction(System.Data.IsolationLevel.ReadCommitted, null);
+					return BeginTransaction(System.Data.IsolationLevel.ReadCommitted, null);
 			}
 		}
 
@@ -369,7 +364,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public DataTable GetSchema(string collectionName, string[] restrictions)
 		{
-			return FbSchemaFactory.GetSchema(this.owningConnection, collectionName, restrictions);
+			return FbSchemaFactory.GetSchema(_owningConnection, collectionName, restrictions);
 		}
 
 		#endregion
@@ -378,33 +373,33 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void AddPreparedCommand(FbCommand command)
 		{
-			int position = this.preparedCommands.Count;
-			for (int i = 0; i < this.preparedCommands.Count; i++)
+			int position = preparedCommands.Count;
+			for (int i = 0; i < preparedCommands.Count; i++)
 			{
-				if (!this.preparedCommands[i].IsAlive)
+				if (!preparedCommands[i].IsAlive)
 				{
 					position = i;
 					break;
 				}
-				if (this.preparedCommands[i].Target == command)
+				if (preparedCommands[i].Target == command)
 				{
 					return;
 				}
 			}
-			this.preparedCommands.Insert(position, new WeakReference(command));
+			preparedCommands.Insert(position, new WeakReference(command));
 		}
 
 		public void RemovePreparedCommand(FbCommand command)
 		{
 			lock (preparedCommandsCleanupSyncRoot)
 			{
-				for (int i = this.preparedCommands.Count - 1; i >= 0; i--)
+				for (int i = preparedCommands.Count - 1; i >= 0; i--)
 				{
-					var cmd = this.preparedCommands[i];
+					var cmd = preparedCommands[i];
 					if (cmd != null && cmd.Target == command)
 					{
 						cmd.Target = null;
-						this.preparedCommands.RemoveAt(i);
+						preparedCommands.RemoveAt(i);
 						return;
 					}
 				}
@@ -413,8 +408,8 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void ReleasePreparedCommands()
 		{
-			WeakReference[] toProcess = new WeakReference[this.preparedCommands.Count];
-			this.preparedCommands.CopyTo(toProcess);
+			WeakReference[] toProcess = new WeakReference[preparedCommands.Count];
+			preparedCommands.CopyTo(toProcess);
 			for (int i = 0; i < toProcess.Length; i++)
 			{
 				WeakReference current = toProcess[i];
@@ -446,7 +441,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 			lock (preparedCommandsCleanupSyncRoot)
 			{
-				this.preparedCommands.Clear();
+				preparedCommands.Clear();
 			}
 		}
 
@@ -456,11 +451,11 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void CloseEventManager()
 		{
-			if (this.db != null && this.db.HasRemoteEventSupport)
+			if (db != null && db.HasRemoteEventSupport)
 			{
-				lock (this.db)
+				lock (db)
 				{
-					this.db.CloseEventManager();
+					db.CloseEventManager();
 				}
 			}
 		}
@@ -479,7 +474,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 			try
 			{
-				this.db.GetDatabaseInfo(items, 16);
+				db.GetDatabaseInfo(items, 16);
 
 				return true;
 			}
@@ -602,26 +597,26 @@ namespace FirebirdSql.Data.FirebirdClient
 		#region Cancelation
 		public void EnableCancel()
 		{
-			this.db.CancelOperation(IscCodes.fb_cancel_enable);
-			this.CancelDisabled = false;
+			db.CancelOperation(IscCodes.fb_cancel_enable);
+			CancelDisabled = false;
 		}
 
 		public void DisableCancel()
 		{
-			this.db.CancelOperation(IscCodes.fb_cancel_disable);
-			this.CancelDisabled = true;
+			db.CancelOperation(IscCodes.fb_cancel_disable);
+			CancelDisabled = true;
 		}
 
 		public void CancelCommand()
 		{
-			this.db.CancelOperation(IscCodes.fb_cancel_raise);
+			db.CancelOperation(IscCodes.fb_cancel_raise);
 		}
 		#endregion
 
 		#region Infrastructure
 		public FbConnectionInternal SetOwningConnection(FbConnection owningConnection)
 		{
-			this.owningConnection = owningConnection;
+			_owningConnection = owningConnection;
 			return this;
 		}
 		#endregion

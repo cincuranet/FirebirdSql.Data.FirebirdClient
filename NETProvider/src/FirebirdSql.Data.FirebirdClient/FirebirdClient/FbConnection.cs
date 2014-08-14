@@ -23,7 +23,6 @@ using System;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
-
 using FirebirdSql.Data.Common;
 
 namespace FirebirdSql.Data.FirebirdClient
@@ -491,7 +490,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 					try
 					{
-						if (System.Transactions.Transaction.Current != null)
+						if (_options.Enlist && System.Transactions.Transaction.Current != null)
 							_innerConnection.EnlistTransaction(System.Transactions.Transaction.Current);
 					}
 					catch

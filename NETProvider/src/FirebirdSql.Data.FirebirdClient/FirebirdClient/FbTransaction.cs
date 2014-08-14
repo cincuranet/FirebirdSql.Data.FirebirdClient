@@ -22,7 +22,6 @@
 using System;
 using System.Data;
 using System.Data.Common;
-using System.Collections;
 
 using FirebirdSql.Data.Common;
 
@@ -32,8 +31,8 @@ namespace FirebirdSql.Data.FirebirdClient
 	{
 		#region · Fields ·
 
-		private FbConnection connection;
-		private ITransaction transaction;
+		private FbConnection _connection;
+		private ITransaction _transaction;
 		private IsolationLevel isolationLevel;
 		private bool disposed;
 		private bool isUpdated;
@@ -46,9 +45,9 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			get
 			{
-				if (!this.isUpdated)
+				if (!isUpdated)
 				{
-					return this.connection;
+					return _connection;
 				}
 				else
 				{
@@ -59,7 +58,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public override IsolationLevel IsolationLevel
 		{
-			get { return this.isolationLevel; }
+			get { return isolationLevel; }
 		}
 
 		#endregion
@@ -68,12 +67,12 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		internal ITransaction Transaction
 		{
-			get { return this.transaction; }
+			get { return _transaction; }
 		}
 
 		internal bool IsUpdated
 		{
-			get { return this.isUpdated; }
+			get { return isUpdated; }
 		}
 
 		#endregion
@@ -82,7 +81,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		protected override DbConnection DbConnection
 		{
-			get { return this.connection; }
+			get { return _connection; }
 		}
 
 		#endregion
@@ -96,8 +95,8 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		internal FbTransaction(FbConnection connection, IsolationLevel il)
 		{
-			this.isolationLevel = il;
-			this.connection = connection;
+			isolationLevel = il;
+			_connection = connection;
 		}
 
 		#endregion
@@ -106,7 +105,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		~FbTransaction()
 		{
-			this.Dispose(false);
+			Dispose(false);
 		}
 
 		#endregion
@@ -117,25 +116,25 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			lock (this)
 			{
-				if (!this.disposed)
+				if (!disposed)
 				{
 					try
 					{
 						// release any unmanaged resources
-						if (this.transaction != null)
+						if (_transaction != null)
 						{
-							if (this.transaction.State == TransactionState.Active && !this.isUpdated)
+							if (_transaction.State == TransactionState.Active && !isUpdated)
 							{
-								this.transaction.Dispose();
-								this.transaction = null;
+								_transaction.Dispose();
+								_transaction = null;
 							}
 						}
 
 						// release any managed resources
 						if (disposing)
 						{
-							this.connection = null;
-							this.transaction = null;
+							_connection = null;
+							_transaction = null;
 						}
 					}
 					catch
@@ -143,9 +142,9 @@ namespace FirebirdSql.Data.FirebirdClient
 					}
 					finally
 					{
-						this.isolationLevel = IsolationLevel.ReadCommitted;
-						this.isUpdated = true;
-						this.disposed = true;
+						isolationLevel = IsolationLevel.ReadCommitted;
+						isUpdated = true;
+						disposed = true;
 					}
 				}
 			}
@@ -159,15 +158,15 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			lock (this)
 			{
-				if (this.isUpdated)
+				if (isUpdated)
 				{
 					throw new InvalidOperationException("This Transaction has completed; it is no longer usable.");
 				}
 
 				try
 				{
-					this.transaction.Commit();
-					this.UpdateTransaction();
+					_transaction.Commit();
+					UpdateTransaction();
 				}
 				catch (IscException ex)
 				{
@@ -180,15 +179,15 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			lock (this)
 			{
-				if (this.isUpdated)
+				if (isUpdated)
 				{
 					throw new InvalidOperationException("This Transaction has completed; it is no longer usable.");
 				}
 
 				try
 				{
-					this.transaction.Rollback();
-					this.UpdateTransaction();
+					_transaction.Rollback();
+					UpdateTransaction();
 				}
 				catch (IscException ex)
 				{
@@ -216,7 +215,7 @@ namespace FirebirdSql.Data.FirebirdClient
 						throw new ArgumentException("No transaction name was be specified.");
 					}
 				}
-				if (this.isUpdated)
+				if (isUpdated)
 				{
 					throw new InvalidOperationException("This Transaction has completed; it is no longer usable.");
 				}
@@ -225,7 +224,7 @@ namespace FirebirdSql.Data.FirebirdClient
 				{
 					FbCommand command = new FbCommand(
 						"SAVEPOINT " + savePointName,
-						this.connection,
+						_connection,
 						this);
 					command.ExecuteNonQuery();
 					command.Dispose();
@@ -252,7 +251,7 @@ namespace FirebirdSql.Data.FirebirdClient
 						throw new ArgumentException("No transaction name was be specified.");
 					}
 				}
-				if (this.isUpdated)
+				if (isUpdated)
 				{
 					throw new InvalidOperationException("This Transaction has completed; it is no longer usable.");
 				}
@@ -261,7 +260,7 @@ namespace FirebirdSql.Data.FirebirdClient
 				{
 					FbCommand command = new FbCommand(
 						"RELEASE SAVEPOINT " + savePointName,
-						this.connection,
+						_connection,
 						this);
 					command.ExecuteNonQuery();
 					command.Dispose();
@@ -288,7 +287,7 @@ namespace FirebirdSql.Data.FirebirdClient
 						throw new ArgumentException("No transaction name was be specified.");
 					}
 				}
-				if (this.isUpdated)
+				if (isUpdated)
 				{
 					throw new InvalidOperationException("This Transaction has completed; it is no longer usable.");
 				}
@@ -297,7 +296,7 @@ namespace FirebirdSql.Data.FirebirdClient
 				{
 					FbCommand command = new FbCommand(
 						"ROLLBACK WORK TO SAVEPOINT " + savePointName,
-						this.connection,
+						_connection,
 						this);
 					command.ExecuteNonQuery();
 					command.Dispose();
@@ -313,14 +312,14 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			lock (this)
 			{
-				if (this.isUpdated)
+				if (isUpdated)
 				{
 					throw new InvalidOperationException("This Transaction has completed; it is no longer usable.");
 				}
 
 				try
 				{
-					this.transaction.CommitRetaining();
+					_transaction.CommitRetaining();
 				}
 				catch (IscException ex)
 				{
@@ -333,14 +332,14 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			lock (this)
 			{
-				if (this.isUpdated)
+				if (isUpdated)
 				{
 					throw new InvalidOperationException("This Transaction has completed; it is no longer usable.");
 				}
 
 				try
 				{
-					this.transaction.RollbackRetaining();
+					_transaction.RollbackRetaining();
 				}
 				catch (IscException ex)
 				{
@@ -355,12 +354,17 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		internal void BeginTransaction()
 		{
+			BeginTransaction(_connection.InnerConnection);
+		}
+
+		internal void BeginTransaction(FbConnectionInternal innerConnection)
+		{
 			lock (this)
 			{
 				try
 				{
-					IDatabase database = this.connection.InnerConnection.Database;
-					this.transaction = database.BeginTransaction(this.BuildTpb());
+					IDatabase database = innerConnection.Database;
+					_transaction = database.BeginTransaction(BuildTpb());
 				}
 				catch (IscException ex)
 				{
@@ -375,8 +379,8 @@ namespace FirebirdSql.Data.FirebirdClient
 			{
 				try
 				{
-					IDatabase database = this.connection.InnerConnection.Database;
-					this.transaction = database.BeginTransaction(this.BuildTpb(options));
+					IDatabase database = _connection.InnerConnection.Database;
+					_transaction = database.BeginTransaction(BuildTpb(options));
 				}
 				catch (IscException ex)
 				{
@@ -391,14 +395,14 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		private void UpdateTransaction()
 		{
-			if (this.connection != null && this.connection.InnerConnection != null)
+			if (_connection != null && _connection.InnerConnection != null)
 			{
-				this.connection.InnerConnection.TransactionUpdated();
+				_connection.InnerConnection.TransactionUpdated();
 			}
 
-			this.isUpdated = true;
-			this.connection = null;
-			this.transaction = null;
+			isUpdated = true;
+			_connection = null;
+			_transaction = null;
 		}
 
 		private TransactionParameterBuffer BuildTpb()
@@ -409,7 +413,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 			options.TransactionBehavior |= FbTransactionBehavior.NoWait;
 
-			switch (this.isolationLevel)
+			switch (isolationLevel)
 			{
 				case IsolationLevel.Serializable:
 					options.TransactionBehavior |= FbTransactionBehavior.Consistency;
@@ -428,7 +432,7 @@ namespace FirebirdSql.Data.FirebirdClient
 					break;
 			}
 
-			return this.BuildTpb(options);
+			return BuildTpb(options);
 		}
 
 		private TransactionParameterBuffer BuildTpb(FbTransactionOptions options)
@@ -479,7 +483,7 @@ namespace FirebirdSql.Data.FirebirdClient
 				else
 				{
 					throw new ArgumentException("Must specify either LockRead or LockWrite.");
-				}				
+				}
 				tpb.Append(lockType, table.Key);
 
 				int? lockBehavior = null;
@@ -522,7 +526,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			{
 				tpb.Append(IscCodes.isc_tpb_no_auto_undo);
 			}
-			
+
 			return tpb;
 		}
 
