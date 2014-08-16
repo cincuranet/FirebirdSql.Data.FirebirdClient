@@ -30,6 +30,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Runtime.Remoting.Messaging;
 using System.Diagnostics;
+using System.Linq;
 
 using FirebirdSql.Data.Common;
 
@@ -53,6 +54,35 @@ namespace FirebirdSql.Data.FirebirdClient
 		private bool implicitTransaction;
 		private int commandTimeout;
 		private int fetchSize;
+		/// <summary>
+		///  Extracts named parameters from a Sql statement
+		///  Match if prefix is absent. [['"]\s?|^--.*|/\*.*]
+		///      Select from 3 alternatives
+		///          ['"]\s?
+		///              Any character in this class: ['"]
+		///              Whitespace, zero or one repetitions
+		///          ^--.*
+		///              Beginning of line or string
+		///              --
+		///              Any character, any number of repetitions
+		///          /\*.*
+		///              /
+		///              Literal *
+		///              Any character, any number of repetitions
+		///  @\b\w+\b
+		///      @
+		///      First or last character in a word
+		///      Alphanumeric, one or more repetitions
+		///      First or last character in a word
+		///  Match if suffix is absent. [.*\*/]
+		///      .*\*/
+		///          Any character, any number of repetitions
+		///          Literal *
+		///          /
+		///  
+		///
+		/// </summary>		
+		private readonly Regex _paramsRegex = new Regex("(?<!['\"]\\s?|^--.*|/\\*.*)@\\b\\w+\\b(?!.*\\*/)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
 #if (!(NET_35 && !ENTITY_FRAMEWORK))
 		private Type[] expectedColumnTypes;
 #endif
@@ -1279,66 +1309,12 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		private string ParseNamedParameters(string sql)
 		{
-			StringBuilder builder = new StringBuilder();
-			StringBuilder paramBuilder = new StringBuilder();
-			bool inSingleQuotes = false;
-			bool inDoubleQuotes = false;
-			bool inParam = false;
-
-			this.namedParameters.Clear();
-
-			if (sql.IndexOf('@') == -1)
-			{
+			if (!_paramsRegex.IsMatch(sql))
 				return sql;
-			}
 
-			for (int i = 0; i < sql.Length; i++)
-			{
-				char sym = sql[i];
-
-				if (inParam)
-				{
-					if (Char.IsLetterOrDigit(sym) || sym == '_' || sym == '$')
-					{
-						paramBuilder.Append(sym);
-					}
-					else
-					{
-						this.namedParameters.Add(paramBuilder.ToString());
-						paramBuilder.Length = 0;
-						builder.Append('?');
-						builder.Append(sym);
-						inParam = false;
-					}
-				}
-				else
-				{
-					if (sym == '\'' && !inDoubleQuotes)
-					{
-						inSingleQuotes = !inSingleQuotes;
-					}
-					else if (sym == '\"' && !inSingleQuotes)
-					{
-						inDoubleQuotes = !inDoubleQuotes;
-					}
-					else if (!(inSingleQuotes || inDoubleQuotes) && sym == '@')
-					{
-						inParam = true;
-						paramBuilder.Append(sym);
-						continue;
-					}
-
-					builder.Append(sym);
-				}
-			}
-
-			if (inParam)
-			{
-				this.namedParameters.Add(paramBuilder.ToString());
-				builder.Append('?');
-			}
-
-			return builder.ToString();
+			var matches = _paramsRegex.Matches(sql);
+			namedParameters.AddRange(from Match m in matches select m.Value);
+			return _paramsRegex.Replace(sql, "?");
 		}
 
 		private void CheckCommand()
