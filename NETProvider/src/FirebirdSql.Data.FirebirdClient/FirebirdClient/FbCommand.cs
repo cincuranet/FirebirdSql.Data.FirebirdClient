@@ -56,11 +56,12 @@ namespace FirebirdSql.Data.FirebirdClient
 		private int fetchSize;
 		/// <summary>
 		///  Extracts named parameters from a Sql statement
-		///  Match if prefix is absent. [['"]\s?|^--.*|/\*.*]
-		///      Select from 3 alternatives
+		///  Match if prefix is absent. [['"]\s?|[a-zA-Z]|^--.*|/\*.*]
+		///      Select from 4 alternatives
 		///          ['"]\s?
 		///              Any character in this class: ['"]
 		///              Whitespace, zero or one repetitions
+		///          Any character in this class: [a-zA-Z]
 		///          ^--.*
 		///              Beginning of line or string
 		///              --
@@ -74,15 +75,19 @@ namespace FirebirdSql.Data.FirebirdClient
 		///      First or last character in a word
 		///      Alphanumeric, one or more repetitions
 		///      First or last character in a word
-		///  Match if suffix is absent. [.*\*/]
-		///      .*\*/
-		///          Any character, any number of repetitions
-		///          Literal *
-		///          /
+		///  Match if suffix is absent. [\s?['"]|.*\*/]
+		///      Select from 2 alternatives
+		///          \s?['"]
+		///              Whitespace, zero or one repetitions
+		///              Any character in this class: ['"]
+		///          .*\*/
+		///              Any character, any number of repetitions
+		///              Literal *
+		///              /
 		///  
 		///
 		/// </summary>		
-		private readonly Regex _paramsRegex = new Regex("(?<!['\"]\\s?|^--.*|/\\*.*)@\\b\\w+\\b(?!.*\\*/)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+		private readonly Regex _paramsRegex = new Regex("(?<!['\"]\\s?|[a-zA-Z]|^--.*|/\\*.*)@\\b\\w+\\b(?!\\s?['\"]|.*\\*/)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
 #if (!(NET_35 && !ENTITY_FRAMEWORK))
 		private Type[] expectedColumnTypes;
 #endif
