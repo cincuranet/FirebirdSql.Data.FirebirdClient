@@ -1309,10 +1309,10 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		private string ParseNamedParameters(string sql)
 		{
-			if (!_paramsRegex.IsMatch(sql))
+			var matches = _paramsRegex.Matches(sql);
+			if (matches.Count == 0)
 				return sql;
 
-			var matches = _paramsRegex.Matches(sql);
 			namedParameters.AddRange(from Match m in matches select m.Value);
 			return _paramsRegex.Replace(sql, "?");
 		}
