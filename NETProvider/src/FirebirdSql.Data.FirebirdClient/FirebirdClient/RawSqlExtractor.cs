@@ -28,19 +28,19 @@ namespace FirebirdSql.Data.FirebirdClient
 			var result = new StringBuilder();
 			var beginOfLineComment = sql.IndexOf(LINE_COMMENT);
 			var beginOfBlockComment = sql.IndexOf(BLOCK_COMMENT_START);
-			if (beginOfLineComment > -1)
+			if (beginOfBlockComment > -1)
 			{
-				result.Append(sql.Substring(0, beginOfLineComment));
-				var endOfLineComment = sql.IndexOf(Environment.NewLine, beginOfLineComment);
-				result.Append(RemoveComments(sql.Substring(endOfLineComment + Environment.NewLine.Length)));
+				result.Append(sql.Substring(0, beginOfBlockComment));
+				var endOfBlockComment = sql.IndexOf(BLOCK_COMMENT_END, beginOfBlockComment);
+				result.Append(RemoveComments(sql.Substring(endOfBlockComment + BLOCK_COMMENT_END.Length)));
 			}
 			else
 			{
-				if (beginOfBlockComment > -1)
+				if (beginOfLineComment > -1)
 				{
-					result.Append(sql.Substring(0, beginOfBlockComment));
-					var endOfBlockComment = sql.IndexOf(BLOCK_COMMENT_END, beginOfBlockComment);
-					result.Append(RemoveComments(sql.Substring(endOfBlockComment + BLOCK_COMMENT_END.Length)));
+					result.Append(sql.Substring(0, beginOfLineComment));
+					var endOfLineComment = sql.IndexOf(Environment.NewLine, beginOfLineComment);
+					result.Append(RemoveComments(sql.Substring(endOfLineComment + Environment.NewLine.Length)));
 				}
 				else
 					result.Append(sql);

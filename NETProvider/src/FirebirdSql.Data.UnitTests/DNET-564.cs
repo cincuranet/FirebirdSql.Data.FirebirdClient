@@ -122,13 +122,30 @@ namespace FirebirdSql.Data.UnitTests
 			using (var command = new FbCommand(@"select count(int_field)
                                                  from test 
                                                  /* 
-                                                 this is a comment with '
+                                                 --this is a comment with '
                                                  where varchar_field = @p0
                                                  */"))
 			{
 				command.Connection = Connection;
 				command.Transaction = Connection.BeginTransaction();
-				command.Parameters.Add("@p0", FbDbType.Text).Value = "IRow Number 0";
+				command.ExecuteScalar();
+				var result = command.ExecuteScalar();
+				Assert.That(result, Is.GreaterThan(0));
+			}
+		}
+
+		[Test]
+		public void ShouldParseQueryThatContainBothCommentKindsOrderWithAParamToken02()
+		{
+			using (var command = new FbCommand(@"select count(int_field)
+                                                 from test 
+                                                 /* 
+                                                 -- this is a comment with '
+                                                 where varchar_field = @p0
+                                                 --*/"))
+			{
+				command.Connection = Connection;
+				command.Transaction = Connection.BeginTransaction();
 				command.ExecuteScalar();
 				var result = command.ExecuteScalar();
 				Assert.That(result, Is.GreaterThan(0));
