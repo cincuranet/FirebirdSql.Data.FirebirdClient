@@ -58,10 +58,10 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 
 		#region Static Methods
 
-		internal static string GenerateUpdateSql(DbUpdateCommandTree tree, out List<DbParameter> parameters)
+		internal static string GenerateUpdateSql(DbUpdateCommandTree tree, out List<DbParameter> parameters, bool generateParameters = true)
 		{
 			StringBuilder commandText = new StringBuilder(CommandTextBuilderInitialCapacity);
-			ExpressionTranslator translator = new ExpressionTranslator(commandText, tree, null != tree.Returning);
+			ExpressionTranslator translator = new ExpressionTranslator(commandText, tree, null != tree.Returning, generateParameters);
 			bool first = true;
 
 			commandText.Append("UPDATE ");
@@ -115,10 +115,10 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 			return commandText.ToString();
 		}
 
-		internal static string GenerateDeleteSql(DbDeleteCommandTree tree, out List<DbParameter> parameters)
+		internal static string GenerateDeleteSql(DbDeleteCommandTree tree, out List<DbParameter> parameters, bool generateParameters = true)
 		{
 			StringBuilder commandText = new StringBuilder(CommandTextBuilderInitialCapacity);
-			ExpressionTranslator translator = new ExpressionTranslator(commandText, tree, false);
+			ExpressionTranslator translator = new ExpressionTranslator(commandText, tree, false, generateParameters);
 
 			commandText.Append("DELETE FROM ");
 			tree.Target.Expression.Accept(translator);
@@ -132,10 +132,10 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 			return commandText.ToString();
 		}
 
-		internal static string GenerateInsertSql(DbInsertCommandTree tree, out List<DbParameter> parameters)
+		internal static string GenerateInsertSql(DbInsertCommandTree tree, out List<DbParameter> parameters, bool generateParameters = true)
 		{
 			StringBuilder commandText = new StringBuilder(CommandTextBuilderInitialCapacity);
-			ExpressionTranslator translator = new ExpressionTranslator(commandText, tree, null != tree.Returning);
+			ExpressionTranslator translator = new ExpressionTranslator(commandText, tree, null != tree.Returning, generateParameters);
 			bool first = true;
 
 			commandText.Append("INSERT INTO ");
