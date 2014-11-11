@@ -77,13 +77,6 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 
 		#region Methods
 
-		/// <summary>
-		/// Reset atBeginningofLine if we detect the newline string.
-		/// <see cref="SqlBuilder.AppendLine"/>
-		/// Add as many tabs as the value of indent if we are at the 
-		/// beginning of a line.
-		/// </summary>
-		/// <param name="value"></param>
 		public override void Write(string value)
 		{
 			if (value == Environment.NewLine)
@@ -105,15 +98,16 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 			}
 		}
 
-		/// <summary>
-		/// Writes a line terminator to the text stream.
-		/// </summary>
-		/// <exception cref="T:System.ObjectDisposedException">The <see cref="T:System.IO.TextWriter"/> is closed. </exception>
-		/// <exception cref="T:System.IO.IOException">An I/O error occurs. </exception>
 		public override void WriteLine()
 		{
 			base.WriteLine();
 			this.atBeginningOfLine = true;
+		}
+
+		public override void WriteLine(string value)
+		{
+			Write(value);
+			WriteLine();
 		}
 
 		#endregion
