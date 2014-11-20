@@ -30,6 +30,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Runtime.Remoting.Messaging;
 using System.Diagnostics;
+using System.Linq;
 
 using FirebirdSql.Data.Common;
 
@@ -1292,9 +1293,11 @@ namespace FirebirdSql.Data.FirebirdClient
 				return sql;
 			}
 
-			for (int i = 0; i < sql.Length; i++)
+			var rawSql = new RawSqlExtractor(sql).Extract();
+
+			for (int i = 0; i < rawSql.Length; i++)
 			{
-				char sym = sql[i];
+				char sym = rawSql[i];
 
 				if (inParam)
 				{
