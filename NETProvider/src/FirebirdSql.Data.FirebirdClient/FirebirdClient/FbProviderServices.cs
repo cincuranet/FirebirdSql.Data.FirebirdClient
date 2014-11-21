@@ -417,10 +417,13 @@ namespace FirebirdSql.Data.EntityFramework6
 			string script = DbCreateDatabaseScript(GetDbProviderManifestToken(connection), storeItemCollection);
 			FbScript fbScript = new FbScript(script);
 			fbScript.Parse();
-			using (var fbConnection = new FbConnection(connection.ConnectionString))
+			if (fbScript.Results.Any())
 			{
-				var execution = new FbBatchExecution(fbConnection, fbScript);
-				execution.Execute();
+				using (var fbConnection = new FbConnection(connection.ConnectionString))
+				{
+					var execution = new FbBatchExecution(fbConnection, fbScript);
+					execution.Execute();
+				}
 			}
 		}
 
