@@ -843,11 +843,11 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 
 					case PrimitiveTypeKind.Decimal:
 						var sqlPrimitiveType = GetSqlPrimitiveType(e.ResultType);
-						string strDecimal = ((Decimal)e.Value).ToString(CultureInfo.InvariantCulture);
+						var strDecimal = ((Decimal)e.Value).ToString(CultureInfo.InvariantCulture);
 
-						int pointPosition = strDecimal.IndexOf('.');
+						var pointPosition = strDecimal.IndexOf('.');
 
-						int precision = 9;
+						var precision = 9;
 						FacetDescription precisionFacetDescription;
 						// there's always the max value in manifest
 						if (MetadataHelpers.TryGetTypeFacetDescriptionByName(e.ResultType.EdmType, MetadataHelpers.PrecisionFacetName, out precisionFacetDescription))
@@ -874,12 +874,10 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 						break;
 
 					case PrimitiveTypeKind.String:
-						bool isUnicode = MetadataHelpers.GetFacetValueOrDefault<bool>(e.ResultType, MetadataHelpers.UnicodeFacetName, true);
+						var isUnicode = MetadataHelpers.GetFacetValueOrDefault<bool>(e.ResultType, MetadataHelpers.UnicodeFacetName, true);
 						// constant is always considered Unicode
 						isUnicode = true;
-						int length =
-							MetadataHelpers.GetFacetValueOrDefault<int?>(e.ResultType, MetadataHelpers.MaxLengthFacetName, null)
-							?? (isUnicode ? FbProviderManifest.UnicodeVarcharMaxSize : FbProviderManifest.AsciiVarcharMaxSize);
+						var length = MetadataHelpers.GetFacetValueOrDefault<int?>(e.ResultType, MetadataHelpers.MaxLengthFacetName, null);
 						result.Append(FormatString((string)e.Value, true, length));
 						break;
 
@@ -3354,7 +3352,7 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 			return string.Format("x'{0}'", BitConverter.ToString(value).Replace("-", string.Empty));
 		}
 
-		internal static string FormatString(string value, bool isUnicode, int length)
+		internal static string FormatString(string value, bool isUnicode, int? explicitLength = null)
 		{
 			var result = new StringBuilder();
 			result.Append("CAST(");
@@ -3365,7 +3363,7 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 			result.Append("'");
 			result.Append(value.Replace("'", "''"));
 			result.Append("' AS VARCHAR(");
-			result.Append(length);
+			result.Append(explicitLength ?? value.Length);
 			result.Append("))");
 			return result.ToString();
 		}
@@ -3415,8 +3413,7 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 			string typeName = primitiveType.Name;
 			bool isUnicode = true;
 			bool isFixedLength = false;
-			int maxLength = 0;
-			string length = string.Empty;
+			int length = 0;
 			byte precision = 0;
 			byte scale = 0;
 
@@ -3462,28 +3459,15 @@ namespace FirebirdSql.Data.EntityFramework6.SqlGen
 				case PrimitiveTypeKind.String:
 					isUnicode = MetadataHelpers.GetFacetValueOrDefault<bool>(type, MetadataHelpers.UnicodeFacetName, true);
 					isFixedLength = MetadataHelpers.GetFacetValueOrDefault<bool>(type, MetadataHelpers.FixedLengthFacetName, false);
-					maxLength = MetadataHelpers.GetFacetValueOrDefault<int>(type, MetadataHelpers.MaxLengthFacetName, Int32.MinValue);
-					if (maxLength == Int32.MinValue)
-					{
-						// try to get maximum length, if not enough, server will return error
-						if (isUnicode)
-							length = FbProviderManifest.UnicodeVarcharMaxSize.ToString(CultureInfo.InvariantCulture);
-						else
-							length = FbProviderManifest.AsciiVarcharMaxSize.ToString(CultureInfo.InvariantCulture);
-					}
-					else
-					{
-						// if the length will be too much, server will return error
-						length = maxLength.ToString(CultureInfo.InvariantCulture);
-					}
-
+					length = MetadataHelpers.GetFacetValueOrDefault<int?>(type, MetadataHelpers.MaxLengthFacetName, null)
+						?? (isUnicode ? FbProviderManifest.UnicodeVarcharMaxSize : FbProviderManifest.AsciiVarcharMaxSize);
 					if (isFixedLength)
 					{
 						typeName = (isUnicode ? "CHAR(" : "CHAR(") + length + ")";
 					}
 					else
 					{
-						if (int.Parse(length) > (isUnicode ? FbProviderManifest.UnicodeVarcharMaxSize : FbProviderManifest.AsciiVarcharMaxSize))
+						if (length > (isUnicode ? FbProviderManifest.UnicodeVarcharMaxSize : FbProviderManifest.AsciiVarcharMaxSize))
 						{
 							typeName = "BLOB SUB_TYPE TEXT";
 						}
