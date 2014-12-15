@@ -39,9 +39,13 @@ namespace FirebirdSql.Data.Common
 		private string _message;
 		#endregion
 
-		#region · Properties ·
+        #region · Static Fields ·
+        private static Dictionary<string, ResourceSet> _resources = new Dictionary<string, ResourceSet>();
+        #endregion
 
-		public List<IscError> Errors { get; private set; }
+        #region · Properties ·
+
+        public List<IscError> Errors { get; private set; }
 
 		public override string Message
 		{
@@ -194,10 +198,8 @@ namespace FirebirdSql.Data.Common
 			// step #2, see if we can find a mapping.
 			else
 			{
-				using (var rs = CreateResourceSet("FirebirdSql.Data.Resources.sqlstate_mapping"))
-				{
-					this.SQLSTATE = rs.GetString(this.ErrorCode.ToString());
-				}
+				var rs = CreateResourceSet("FirebirdSql.Data.Resources.sqlstate_mapping");
+				this.SQLSTATE = rs.GetString(this.ErrorCode.ToString());
 			}
 		}
 
@@ -205,74 +207,72 @@ namespace FirebirdSql.Data.Common
 		{
 			StringBuilder builder = new StringBuilder();
 
-			using (var rs = CreateResourceSet("FirebirdSql.Data.Resources.isc_error_msg"))
+            var rs = CreateResourceSet("FirebirdSql.Data.Resources.isc_error_msg");
+			for (int i = 0; i < this.Errors.Count; i++)
 			{
-				for (int i = 0; i < this.Errors.Count; i++)
+				if (this.Errors[i].Type == IscCodes.isc_arg_gds ||
+					this.Errors[i].Type == IscCodes.isc_arg_warning)
 				{
-					if (this.Errors[i].Type == IscCodes.isc_arg_gds ||
-						this.Errors[i].Type == IscCodes.isc_arg_warning)
+					int code = this.Errors[i].ErrorCode;
+					string message = null;
+
+					try
 					{
-						int code = this.Errors[i].ErrorCode;
-						string message = null;
+						message = rs.GetString(code.ToString());
+					}
+					catch
+					{
+						message = BuildDefaultErrorMessage(code);
+					}
 
-						try
+					ArrayList param = new ArrayList();
+
+					int index = i + 1;
+
+					while (index < this.Errors.Count && this.Errors[index].IsArgument)
+					{
+						param.Add(this.Errors[index++].StrParam);
+						i++;
+					}
+
+					object[] args = (object[])param.ToArray(typeof(object));
+
+					try
+					{
+						if (code == IscCodes.isc_except)
 						{
-							message = rs.GetString(code.ToString());
+							// Custom exception	add	the	first argument as error	code
+							this.ErrorCode = Convert.ToInt32(args[0], CultureInfo.InvariantCulture);
 						}
-						catch
+						else if (code == IscCodes.isc_except2)
 						{
-							message = BuildDefaultErrorMessage(code);
+							// Custom exception. Next Error should be the exception name.
+							// And the next one the Exception message
 						}
-
-						ArrayList param = new ArrayList();
-
-						int index = i + 1;
-
-						while (index < this.Errors.Count && this.Errors[index].IsArgument)
+						else if (code == IscCodes.isc_stack_trace)
 						{
-							param.Add(this.Errors[index++].StrParam);
-							i++;
+							// The next error contains the PSQL Stack Trace
+							if (builder.Length > 0)
+							{
+								builder.Append(Environment.NewLine);
+							}
+							builder.AppendFormat(CultureInfo.CurrentCulture, "{0}", args);
 						}
-
-						object[] args = (object[])param.ToArray(typeof(object));
-
-						try
+						else
 						{
-							if (code == IscCodes.isc_except)
+							if (builder.Length > 0)
 							{
-								// Custom exception	add	the	first argument as error	code
-								this.ErrorCode = Convert.ToInt32(args[0], CultureInfo.InvariantCulture);
+								builder.Append(Environment.NewLine);
 							}
-							else if (code == IscCodes.isc_except2)
-							{
-								// Custom exception. Next Error should be the exception name.
-								// And the next one the Exception message
-							}
-							else if (code == IscCodes.isc_stack_trace)
-							{
-								// The next error contains the PSQL Stack Trace
-								if (builder.Length > 0)
-								{
-									builder.Append(Environment.NewLine);
-								}
-								builder.AppendFormat(CultureInfo.CurrentCulture, "{0}", args);
-							}
-							else
-							{
-								if (builder.Length > 0)
-								{
-									builder.Append(Environment.NewLine);
-								}
-
-								builder.AppendFormat(CultureInfo.CurrentCulture, message, args);
-							}
-						}
-						catch
-						{
-							message = BuildDefaultErrorMessage(code);
 
 							builder.AppendFormat(CultureInfo.CurrentCulture, message, args);
 						}
+					}
+					catch
+					{
+						message = BuildDefaultErrorMessage(code);
+
+						builder.AppendFormat(CultureInfo.CurrentCulture, message, args);
 					}
 				}
 			}
@@ -294,11 +294,24 @@ namespace FirebirdSql.Data.Common
 
 		private ResourceSet CreateResourceSet(string resourceName)
 		{
-			using (var resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName + ".resources"))
-			{
-				return new ResourceSet(resourceStream);
+            ResourceSet resourceSet;
+            lock (_resources)
+            {
+                if (!_resources.TryGetValue(resourceName, out resourceSet))
+                {
+                    using (var resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName + ".resources"))
+                    {
+                        _resources.Add(resourceName, resourceSet = new ResourceSet(resourceStream));
+                        // Mono initializes ResourceSet lazily on the first call to GetObject.
+                        // Without the following call the initizalization would take place after the stream is disposed.
+                        // Any call to ResourceSet.GetStream would still require resourceStream to be open, so in case
+                        // this call is needed this function should be changed accordingly.
+                        resourceSet.GetEnumerator();
+                    }
+                }
 			}
-		}
+            return resourceSet;
+        }
 
 		#endregion
 	}
