@@ -403,6 +403,9 @@ namespace FirebirdSql.Data.FirebirdClient
 
 						this.disposed = true;
 					}
+					catch
+					{
+					}
 					finally
 					{
 						base.Dispose(disposing);
