@@ -479,6 +479,15 @@ namespace FirebirdSql.Data.EntityFramework6
 		{
 			return IsStoreGeneratedComputed(member) || IsStoreGeneratedIdentity(member);
 		}
+
+		internal static string HashString(string genName)
+		{
+			using (var hasher = new SHA1Managed())
+			{
+				var hash = hasher.ComputeHash(Encoding.UTF8.GetBytes(genName));
+				return new string(Convert.ToBase64String(hash).Take(30).ToArray());
+			}
+		}
 	}
 }
 #endif

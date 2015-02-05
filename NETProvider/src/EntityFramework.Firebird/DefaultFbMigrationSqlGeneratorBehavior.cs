@@ -17,21 +17,16 @@
  *	
  */
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FirebirdSql.Data.EntityFramework6.SqlGen;
+using FirebirdSql.Data.Entity;
 
 namespace FirebirdSql.Data.EntityFramework6
 {
-	public class DefaultFbMigrationSqlGeneratorBehavior : IFbMigrationSqlGeneratorBehavior
+	public abstract class BaseFbMigrationSqlGeneratorBehavior : IFbMigrationSqlGeneratorBehavior
 	{
-		const string IdentitySequenceName = "GEN_IDENTITY";
-
 		public IEnumerable<string> CreateIdentityForColumn(string columnName, string tableName)
 		{
+			var generatorName = IdentitySequenceName(columnName, tableName);
 			using (var writer = FbMigrationSqlGenerator.SqlWriter())
 			{
 				writer.WriteLine("EXECUTE BLOCK");
@@ -39,13 +34,13 @@ namespace FirebirdSql.Data.EntityFramework6
 				writer.WriteLine("BEGIN");
 				writer.Indent++;
 				writer.Write("if (not exists(select 1 from rdb$generators where rdb$generator_name = '");
-				writer.Write(IdentitySequenceName);
+				writer.Write(generatorName);
 				writer.Write("')) then");
 				writer.WriteLine();
 				writer.WriteLine("begin");
 				writer.Indent++;
 				writer.Write("execute statement 'create sequence ");
-				writer.Write(IdentitySequenceName);
+				writer.Write(FbMigrationSqlGenerator.Quote(generatorName));
 				writer.Write("';");
 				writer.WriteLine();
 				writer.Indent--;
@@ -57,7 +52,6 @@ namespace FirebirdSql.Data.EntityFramework6
 
 			using (var writer = FbMigrationSqlGenerator.SqlWriter())
 			{
-
 				writer.Write("CREATE OR ALTER TRIGGER ");
 				writer.Write(FbMigrationSqlGenerator.Quote(CreateTriggerName(columnName, tableName)));
 				writer.Write(" ACTIVE BEFORE INSERT ON ");
@@ -75,7 +69,7 @@ namespace FirebirdSql.Data.EntityFramework6
 				writer.Write("new.");
 				writer.Write(FbMigrationSqlGenerator.Quote(columnName));
 				writer.Write(" = next value for ");
-				writer.Write(IdentitySequenceName);
+				writer.Write(generatorName);
 				writer.Write(";");
 				writer.WriteLine();
 				writer.Indent--;
@@ -89,6 +83,7 @@ namespace FirebirdSql.Data.EntityFramework6
 		public IEnumerable<string> DropIdentityForColumn(string columnName, string tableName)
 		{
 			var triggerName = CreateTriggerName(columnName, tableName);
+			var generatorName = IdentitySequenceName(columnName, tableName);
 			using (var writer = FbMigrationSqlGenerator.SqlWriter())
 			{
 				writer.WriteLine("EXECUTE BLOCK");
@@ -111,9 +106,45 @@ namespace FirebirdSql.Data.EntityFramework6
 				writer.Write("END");
 				yield return writer.ToString();
 			}
+
+			using (var writer = FbMigrationSqlGenerator.SqlWriter())
+			{
+				writer.WriteLine("EXECUTE BLOCK");
+				writer.WriteLine("AS");
+				writer.WriteLine("BEGIN");
+				writer.Indent++;
+				writer.Write("if (exists(select 1 from rdb$dependencies where rdb$depended_on_name = '");
+				writer.Write(generatorName);
+				writer.Write("')) then");
+				writer.WriteLine();
+				writer.WriteLine("begin");
+				writer.Indent++;
+				writer.Write("execute statement 'drop sequence ");
+				writer.Write(FbMigrationSqlGenerator.Quote(generatorName));
+				writer.Write("';");
+				writer.WriteLine();
+				writer.Indent--;
+				writer.WriteLine("end");
+				writer.Indent--;
+				writer.Write("END");
+				yield return writer.ToString();
+			}
 		}
 
-		static string CreateTriggerName(string columnName, string tableName)
+		protected abstract string IdentitySequenceName(string tableName, string columnName);
+		protected abstract string CreateTriggerName(string columnName, string tableName);
+	}
+
+	internal class DefaultFbMigrationSqlGeneratorBehavior : BaseFbMigrationSqlGeneratorBehavior
+	{
+		private static readonly string IdentitySequenceNameStr = "GEN_IDENTITY";
+
+		protected override string IdentitySequenceName(string tableName, string columnName)
+		{
+			return IdentitySequenceNameStr;
+		}
+
+		protected override string CreateTriggerName(string columnName, string tableName)
 		{
 			return string.Format("ID_{0}_{1}", tableName, columnName);
 		}

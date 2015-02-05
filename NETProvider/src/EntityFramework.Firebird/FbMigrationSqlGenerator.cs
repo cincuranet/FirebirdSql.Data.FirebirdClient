@@ -119,7 +119,7 @@ namespace FirebirdSql.Data.EntityFramework6
 				writer.Write("ALTER TABLE ");
 				writer.Write(Quote(ExtractName(operation.DependentTable)));
 				writer.Write(" ADD CONSTRAINT ");
-				writer.Write(Quote(CreateItemName(operation.Name)));
+				writer.Write(Quote(CreateConstraintName(operation.Name)));
 				writer.Write(" FOREIGN KEY (");
 				WriteColumns(writer, operation.DependentColumns.Select(Quote));
 				writer.Write(") REFERENCES ");
@@ -142,7 +142,7 @@ namespace FirebirdSql.Data.EntityFramework6
 				writer.Write("ALTER TABLE ");
 				writer.Write(Quote(ExtractName(operation.Table)));
 				writer.Write(" ADD CONSTRAINT ");
-				writer.Write(Quote(CreateItemName(operation.Name)));
+				writer.Write(Quote(CreatePrimaryConstraintName(ExtractName(operation.Table))));
 				writer.Write(" PRIMARY KEY (");
 				WriteColumns(writer, operation.Columns.Select(Quote));
 				writer.Write(")");
@@ -197,12 +197,21 @@ namespace FirebirdSql.Data.EntityFramework6
 				writer.Write(Quote(column.Name));
 				writer.Write(" TYPE ");
 				writer.Write(BuildPropertyType(column));
-				// possible NOT NULL drop was dropped with statement above
-				if (column.IsNullable != null && !column.IsNullable.Value)
-				{
-					writer.Write(" NOT NULL");
-				}
 				yield return Statement(writer);
+			}
+
+			// possible NOT NULL drop was dropped with statement above
+			if (column.IsNullable != null && !column.IsNullable.Value)
+			{
+				using (var writer = SqlWriter())
+				{
+					writer.Write("ALTER TABLE ");
+					writer.Write(Quote(tableName));
+					writer.Write(" ADD CHECK (");
+					writer.Write(Quote(column.Name));
+					writer.Write(" IS NOT NULL)");
+					yield return Statement(writer);
+				}
 			}
 
 			if (column.DefaultValue != null || !string.IsNullOrWhiteSpace(column.DefaultValueSql))
@@ -257,7 +266,7 @@ namespace FirebirdSql.Data.EntityFramework6
 					writer.Write("UNIQUE ");
 				}
 				writer.Write("INDEX ");
-				writer.Write(Quote(CreateItemName(operation.Name)));
+				writer.Write(Quote(CreateIndexName(operation.Table, operation.Name)));
 				writer.Write(" ON ");
 				writer.Write(Quote(ExtractName(operation.Table)));
 				writer.Write("(");
@@ -336,7 +345,7 @@ namespace FirebirdSql.Data.EntityFramework6
 				writer.Write("ALTER TABLE ");
 				writer.Write(Quote(ExtractName(operation.DependentTable)));
 				writer.Write(" DROP CONSTRAINT ");
-				writer.Write(Quote(CreateItemName(operation.Name)));
+				writer.Write(Quote(CreateConstraintName(operation.Name)));
 				yield return Statement(writer);
 			}
 		}
@@ -346,7 +355,7 @@ namespace FirebirdSql.Data.EntityFramework6
 			using (var writer = SqlWriter())
 			{
 				writer.Write("DROP INDEX ");
-				writer.Write(Quote(CreateItemName(operation.Name)));
+				writer.Write(Quote(CreateIndexName(operation.Table, operation.Name)));
 				yield return Statement(writer);
 			}
 		}
@@ -358,7 +367,7 @@ namespace FirebirdSql.Data.EntityFramework6
 				writer.Write("ALTER TABLE ");
 				writer.Write(Quote(ExtractName(operation.Table)));
 				writer.Write(" DROP CONSTRAINT ");
-				writer.Write(Quote(CreateItemName(operation.Name)));
+				writer.Write(Quote(CreateConstraintName(operation.Name)));
 				yield return Statement(writer);
 			}
 		}
@@ -523,6 +532,12 @@ namespace FirebirdSql.Data.EntityFramework6
 				additionalCommands.AddRange(identity.Where(x => !string.IsNullOrWhiteSpace(x)));
 			}
 
+			if (column.ClrType == typeof (bool))
+			{
+				const string format = "ALTER TABLE \"{0}\" ADD CHECK (\"{1}\" IN (1,0));";
+				additionalCommands.Add(string.Format(format, tableName, column.Name));
+			}
+
 			return Tuple.Create(builder.ToString(), additionalCommands.AsEnumerable());
 		}
 
@@ -611,12 +626,12 @@ namespace FirebirdSql.Data.EntityFramework6
 			return SqlGenerator.GetSqlPrimitiveType(typeUsage);
 		}
 
-		static string ExtractName(string name)
+		private static string ExtractName(string name)
 		{
 			return name.Substring(name.LastIndexOf('.') + 1);
 		}
 
-		static string CreateItemName(string name)
+		private static string CreateItemName(string name)
 		{
 			while (true)
 			{
@@ -625,7 +640,35 @@ namespace FirebirdSql.Data.EntityFramework6
 					break;
 				name = match.Result("${prefix}${suffix}");
 			}
+
 			return name;
+		}
+
+		private static string CreateIndexName(string tableName, string name)
+		{
+			var genName = string.Concat("IX_", ExtractName(tableName), "_", name.Replace("IX_", ""));
+			if (genName.Length >= 31)
+			{
+				return MetadataHelpers.HashString(genName);
+			}
+
+			return genName;
+		}
+
+		private static string CreateConstraintName(string name)
+		{
+			var genName = CreateItemName(name);
+			if (genName.Length > 31)
+			{
+				return MetadataHelpers.HashString(genName);
+			}
+
+			return genName;
+		}
+
+		private string CreatePrimaryConstraintName(string p)
+		{
+			return string.Concat("PK_", p);
 		}
 
 		static void WriteColumns(SqlWriter writer, IEnumerable<string> columns, bool separateLines = false)
