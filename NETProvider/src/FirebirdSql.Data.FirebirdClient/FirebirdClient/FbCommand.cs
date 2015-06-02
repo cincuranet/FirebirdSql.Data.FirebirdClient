@@ -1279,66 +1279,9 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		private string ParseNamedParameters(string sql)
 		{
-			StringBuilder builder = new StringBuilder();
-			StringBuilder paramBuilder = new StringBuilder();
-			bool inSingleQuotes = false;
-			bool inDoubleQuotes = false;
-			bool inParam = false;
-
-			this.namedParameters.Clear();
-
-			if (sql.IndexOf('@') == -1)
-			{
-				return sql;
-			}
-
-			for (int i = 0; i < sql.Length; i++)
-			{
-				char sym = sql[i];
-
-				if (inParam)
-				{
-					if (Char.IsLetterOrDigit(sym) || sym == '_' || sym == '$')
-					{
-						paramBuilder.Append(sym);
-					}
-					else
-					{
-						this.namedParameters.Add(paramBuilder.ToString());
-						paramBuilder.Length = 0;
-						builder.Append('?');
-						builder.Append(sym);
-						inParam = false;
-					}
-				}
-				else
-				{
-					if (sym == '\'' && !inDoubleQuotes)
-					{
-						inSingleQuotes = !inSingleQuotes;
-					}
-					else if (sym == '\"' && !inSingleQuotes)
-					{
-						inDoubleQuotes = !inDoubleQuotes;
-					}
-					else if (!(inSingleQuotes || inDoubleQuotes) && sym == '@')
-					{
-						inParam = true;
-						paramBuilder.Append(sym);
-						continue;
-					}
-
-					builder.Append(sym);
-				}
-			}
-
-			if (inParam)
-			{
-				this.namedParameters.Add(paramBuilder.ToString());
-				builder.Append('?');
-			}
-
-			return builder.ToString();
+			namedParameters.Clear();
+			var processor = new FbCommandNamedParamsProcessor(sql, namedParameters);
+			return processor.Process();
 		}
 
 		private void CheckCommand()
