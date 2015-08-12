@@ -1,15 +1,27 @@
 version: 0.0.0.{build}
 os: Default Azure
 configuration:
-- Debug
 - Release_40
 - Release_45
 shallow_clone: true
+matrix: 
+    fast_finish: true
+before_test:
+  - ps: Start-FileDownload 'http://garr.dl.sourceforge.net/project/firebird/firebird-win32/2.5.4-Release/Firebird-2.5.4.26856_0_Win32.exe' | Out-Null
+  - ps: .\Firebird-2.5.4.26856_0_Win32.exe /VERYSILENT /SP- /NORESTART /DIR="c:\firebird-db" /NOCPL | Out-Null
+  - ps: Start-FileDownload 'http://cznic.dl.sourceforge.net/project/firebird/firebird-win64/2.5.4-Release/Firebird-2.5.4.26856-0_x64_embed.zip' | Out-Null
+  - ps: $sourceDir = (Get-Item -Path ".\" -Verbose).FullName
+  - ps: $targetDir = $sourceDir + '\NETProvider\src\FirebirdSql.Data.UnitTests\bin\' + $env:Configuration
+  - ps: '[System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem") | Out-Null'
+  - ps: '[System.IO.Compression.ZipFile]::ExtractToDirectory($sourceDir + "\Firebird-2.5.4.26856-0_x64_embed.zip", $targetDir) | Out-Null'
+  - ps: Stop-Service FirebirdServerDefaultInstance | Out-Null
+  - ps: c:\firebird-db\bin\fbserver.exe -a
 build:
   project: NETProvider\src\NETProvider.sln
   parallel: true
   verbosity: minimal
-test: off
+test_script:
+    - nunit-console.exe ".\NETProvider\src\FirebirdSql.Data.UnitTests\bin\%CONFIGURATION%\FirebirdSql.Data.UnitTests.dll" /framework:net-4.0 /exclude=Local
 artifacts:
 - path: NETProvider\src\FirebirdSql.Data.FirebirdClient\bin\$(Configuration)\FirebirdSql.Data.FirebirdClient.dll
 - path: NETProvider\src\FirebirdSql.Data.FirebirdClient\bin\$(Configuration)\FirebirdSql.Data.FirebirdClient.pdb
