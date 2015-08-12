@@ -187,7 +187,7 @@ namespace FirebirdSql.Data.Common
 		{
 			IscError error = this.Errors.Find(e => e.Type == IscCodes.isc_arg_sql_state);
 			// step #1, maybe we already have a SQLSTATE stuffed in the status vector
-			if (error != null)
+			if (error != null && !string.IsNullOrEmpty(error.StrParam))
 			{
 				this.SQLSTATE = error.StrParam;
 			}
