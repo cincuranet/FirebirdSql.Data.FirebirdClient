@@ -29,13 +29,14 @@ using NUnit.Framework;
 
 namespace FirebirdSql.Data.UnitTests
 {
-	[TestFixture]
+	[TestFixture(FbServerType.Default)]
+	[TestFixture(FbServerType.Embedded)]
 	public class FbCommandTests : TestsBase
 	{
 		#region Constructors
 
-		public FbCommandTests()
-			: base(false)
+		public FbCommandTests(FbServerType serverType)
+			: base(serverType, false)
 		{
 		}
 
@@ -356,42 +357,57 @@ namespace FirebirdSql.Data.UnitTests
 		[Test]
 		public void UnicodeTest()
 		{
-			string createTable = "CREATE TABLE VARCHARTEST (VARCHAR_FIELD  VARCHAR(10));";
-
-			FbCommand ct = new FbCommand(createTable, this.Connection);
-			ct.ExecuteNonQuery();
-			ct.Dispose();
-
-			ArrayList l = new ArrayList();
-
-			l.Add("INSERT INTO VARCHARTEST (VARCHAR_FIELD) VALUES ('1');");
-			l.Add("INSERT INTO VARCHARTEST (VARCHAR_FIELD) VALUES ('11');");
-			l.Add("INSERT INTO VARCHARTEST (VARCHAR_FIELD) VALUES ('111');");
-			l.Add("INSERT INTO VARCHARTEST (VARCHAR_FIELD) VALUES ('1111');");
-
-			foreach (string statement in l)
+			try
 			{
-				FbCommand insert = new FbCommand(statement, this.Connection);
-				insert.ExecuteNonQuery();
-				insert.Dispose();
+				string createTable = "CREATE TABLE VARCHARTEST (VARCHAR_FIELD  VARCHAR(10));";
+
+				FbCommand ct = new FbCommand(createTable, this.Connection);
+				ct.ExecuteNonQuery();
+				ct.Dispose();
+
+				ArrayList l = new ArrayList();
+
+				l.Add("INSERT INTO VARCHARTEST (VARCHAR_FIELD) VALUES ('1');");
+				l.Add("INSERT INTO VARCHARTEST (VARCHAR_FIELD) VALUES ('11');");
+				l.Add("INSERT INTO VARCHARTEST (VARCHAR_FIELD) VALUES ('111');");
+				l.Add("INSERT INTO VARCHARTEST (VARCHAR_FIELD) VALUES ('1111');");
+
+				foreach (string statement in l)
+				{
+					FbCommand insert = new FbCommand(statement, this.Connection);
+					insert.ExecuteNonQuery();
+					insert.Dispose();
+				}
+
+				string sql = "select * from	varchartest";
+
+				FbCommand cmd = new FbCommand(sql, this.Connection);
+				FbDataReader r = cmd.ExecuteReader();
+
+				while (r.Read())
+				{
+					Console.WriteLine("{0} :: {1}", r[0], r[0].ToString().Length);
+				}
+
+				r.Close();
+				cmd.Dispose();
 			}
-
-			string sql = "select * from	varchartest";
-
-			FbCommand cmd = new FbCommand(sql, this.Connection);
-			FbDataReader r = cmd.ExecuteReader();
-
-			while (r.Read())
+			finally
 			{
-				Console.WriteLine("{0} :: {1}", r[0], r[0].ToString().Length);
-			}
+				string dropTable = "DROP TABLE VARCHARTEST;";
 
-			r.Close();
+				using (FbCommand ct = new FbCommand(dropTable, this.Connection))
+				{
+					ct.ExecuteNonQuery();
+				}
+			}
 		}
 
 		[Test]
 		public void SimplifiedChineseTest()
 		{
+			try
+			{
 			string createTable = "CREATE TABLE TABLE1 (FIELD1 varchar(20))";
 			FbCommand create = new FbCommand(createTable, this.Connection);
 			create.ExecuteNonQuery();
@@ -428,6 +444,14 @@ namespace FirebirdSql.Data.UnitTests
 			select.Dispose();
 
 			Assert.AreEqual("中文", result, "Incorrect results in	plain insert");
+			}
+			finally
+			{
+				string dropTable = "DROP TABLE TABLE1";
+				FbCommand drop = new FbCommand(dropTable, this.Connection);
+				drop.ExecuteNonQuery();
+				drop.Dispose();
+			}
 		}
 
 		[Test]
@@ -682,7 +706,7 @@ namespace FirebirdSql.Data.UnitTests
 		[Test]
 		public void CommandCancellationTest()
 		{
-			if (GetServerVersion() < new Version("2.5.0.0"))
+			if (GetServerVersion(this.FbServerType) < new Version("2.5.0.0"))
 			{
 				Assert.Inconclusive("Not supported on this version.");
 				return;
@@ -725,7 +749,7 @@ end";
 			using (var cmd = Connection.CreateCommand())
 			{
 				cmd.CommandText = "recreate table NoCommandPlanTest (id int)";
-				cmd.ExecuteNonQuery();
+				cmd.Prepare();
 				var plan = default(string);
 				Assert.DoesNotThrow(() => { plan=cmd.CommandPlan; });
 				Assert.IsEmpty(plan);
