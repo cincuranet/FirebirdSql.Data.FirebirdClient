@@ -32,8 +32,9 @@ using NUnit.Framework;
 
 namespace FirebirdSql.Data.UnitTests
 {
-	[TestFixture(FbServerType.Default)]
-	public class FbServicesTests : TestsBase
+	[TestFixture(FbServerType.Embedded)]
+    [TestFixture(FbServerType.Default)]
+    public class FbServicesTests : TestsBase
 	{
 		#region Constructors
 
@@ -235,64 +236,6 @@ namespace FirebirdSql.Data.UnitTests
 			logSvc.ServiceOutput += ServiceOutput;
 
 			logSvc.Execute();
-		}
-
-		[Test]
-		public void AddUserTest()
-		{
-			FbSecurity securitySvc = new FbSecurity();
-
-			securitySvc.ConnectionString = BuildServicesConnectionString(this.FbServerType, false);
-
-			FbUserData user = new FbUserData();
-
-			user.UserName = "new_user";
-			user.UserPassword = "1";
-
-			securitySvc.AddUser(user);
-		}
-
-		[Test]
-		public void DeleteUser()
-		{
-			FbSecurity securitySvc = new FbSecurity();
-
-			securitySvc.ConnectionString = BuildServicesConnectionString(this.FbServerType, false);
-
-			FbUserData user = new FbUserData();
-
-			user.UserName = "new_user";
-
-			securitySvc.DeleteUser(user);
-		}
-
-		[Test]
-		public void DisplayUser()
-		{
-			FbSecurity securitySvc = new FbSecurity();
-
-			securitySvc.ConnectionString = BuildServicesConnectionString(this.FbServerType, false);
-
-			FbUserData user = securitySvc.DisplayUser("SYSDBA");
-
-			Console.WriteLine("User name {0}", user.UserName);
-		}
-
-		[Test]
-		public void DisplayUsers()
-		{
-			FbSecurity securitySvc = new FbSecurity();
-
-			securitySvc.ConnectionString = BuildServicesConnectionString(this.FbServerType, false);
-
-			FbUserData[] users = securitySvc.DisplayUsers();
-
-			Console.WriteLine("User List");
-
-			for (int i = 0; i < users.Length; i++)
-			{
-				Console.WriteLine("User {0} name {1}", i, users[i].UserName);
-			}
 		}
 
 		[Test]
