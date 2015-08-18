@@ -27,6 +27,7 @@ using NUnit.Framework;
 
 namespace FirebirdSql.Data.UnitTests
 {
+	[TestFixture]
 	public class FbConnectionStringTests
 	{
 		[Test]
