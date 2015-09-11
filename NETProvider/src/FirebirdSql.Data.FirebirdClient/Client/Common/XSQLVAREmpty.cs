@@ -12,28 +12,24 @@
  *	   express or implied. See the License for the specific
  *	   language governing rights and limitations under the License.
  *
- *	Copyright (c) 2002, 2007 Carlos Guzman Alvarez
+ *	Copyright (c) 2015 Jiri Cincura (jiri@cincura.net)
  *	All Rights Reserved.
  *
- *  Contributors:
- *    Jiri Cincura (jiri@cincura.net)
  */
 
 using System;
-using System.IO;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace FirebirdSql.Data.Client.Common
 {
 	[StructLayout(LayoutKind.Sequential)]
-	internal struct XSQLDA
+	internal class XSQLVAREmpty
 	{
-		public short version;
-		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)]
-		public string sqldaid;
-		public int sqldabc;
-		public short sqln;
-		public short sqld;
+		short _padding01;
+		short _padding02;
+		short _padding03;
+		short _padding04;
+		public IntPtr sqldata;
+		public IntPtr sqlind;
 	}
 }

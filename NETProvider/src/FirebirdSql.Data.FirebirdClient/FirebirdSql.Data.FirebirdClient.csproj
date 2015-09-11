@@ -135,6 +135,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client\Common\XSQLVAREmpty.cs" />
     <Compile Include="Client\Managed\Version11\AuthResponse.cs" />
     <Compile Include="Client\Managed\Version11\SSPIHelper.cs" />
     <Compile Include="Client\Managed\Version12\GdsDatabase.cs" />
