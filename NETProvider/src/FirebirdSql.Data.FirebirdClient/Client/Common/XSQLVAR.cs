@@ -14,6 +14,9 @@
  *
  *	Copyright (c) 2002, 2007 Carlos Guzman Alvarez
  *	All Rights Reserved.
+ *
+ *  Contributors:
+ *    Jiri Cincura (jiri@cincura.net)
  */
 
 using System;
@@ -22,7 +25,7 @@ using System.Runtime.InteropServices;
 namespace FirebirdSql.Data.Client.Common
 {
 	[StructLayout(LayoutKind.Sequential)]
-	internal class XSQLVAREmpty
+	internal class XSQLVAR
 	{
 		public short sqltype;
 		public short sqlscale;
@@ -30,11 +33,6 @@ namespace FirebirdSql.Data.Client.Common
 		public short sqllen;
 		public IntPtr sqldata;
 		public IntPtr sqlind;
-	}
-
-	[StructLayout(LayoutKind.Sequential)]
-	internal class XSQLVAR : XSQLVAREmpty
-	{
 		public short sqlname_length;
 		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
 		public byte[] sqlname;

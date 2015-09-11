@@ -14,6 +14,9 @@
  *
  *	Copyright (c) 2002, 2007 Carlos Guzman Alvarez
  *	All Rights Reserved.
+ *
+ *  Contributors:
+ *    Jiri Cincura (jiri@cincura.net)
  */
 
 using System;
@@ -24,13 +27,13 @@ using System.Runtime.InteropServices;
 namespace FirebirdSql.Data.Client.Common
 {
 	[StructLayout(LayoutKind.Sequential)]
-	internal struct	XSQLDA
+	internal struct XSQLDA
 	{
-		public short	version;
-		[MarshalAs(UnmanagedType.ByValTStr,	SizeConst=8)]
-		public string	sqldaid;
-		public int		sqldabc;
-		public short	sqln;
-		public short	sqld;
+		public short version;
+		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)]
+		public string sqldaid;
+		public int sqldabc;
+		public short sqln;
+		public short sqld;
 	}
 }
