@@ -599,7 +599,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			return ((Func<CommandBehavior, FbDataReader>)this.ExecuteReader).BeginInvoke(behavior, callback, objectState);
 		}
 
-#if NET4_5
+#if NET_45
 		public IAsyncResult BeginExecuteReader2( AsyncCallback callback, object objectState)
 		{
 			ExecuteDbReaderState state = (ExecuteDbReaderState)objectState;
@@ -620,7 +620,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			}
 		}
 
-#if NET4_5
+#if NET_45
 		public DbDataReader EndExecuteReader2(IAsyncResult asyncResult)
 		{
 			ExecuteDbReaderState state = (ExecuteDbReaderState)asyncResult.AsyncState;
