@@ -505,11 +505,13 @@ namespace FirebirdSql.Data.FirebirdClient
 #if NET_45
 		public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken)
 		{
+			cancellationToken.Register(this.Cancel);
 			return Task.Factory.FromAsync(this.BeginExecuteNonQuery, this.EndExecuteNonQuery, cancellationToken);
 		}
 
 		public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)
 		{
+			cancellationToken.Register(this.Cancel);
 			return Task.Factory.FromAsync(this.BeginExecuteScalar, this.EndExecuteScalar, cancellationToken);
 		}
 #endif
@@ -518,9 +520,22 @@ namespace FirebirdSql.Data.FirebirdClient
 			// BeginInvoke might be slow, but the query processing will make this irrelevant
 			return ((Func<int>)this.ExecuteNonQuery).BeginInvoke(callback, objectState);
 		}
+
 		public int EndExecuteNonQuery(IAsyncResult asyncResult)
 		{
-			return ((Func<int>)(asyncResult as AsyncResult).AsyncDelegate).EndInvoke(asyncResult);
+			try
+			{
+				return ((Func<int>)(asyncResult as AsyncResult).AsyncDelegate).EndInvoke(asyncResult);
+			}
+			catch(FbException ex)
+			{
+				if("HY008" == ex.SQLSTATE)
+				{
+					throw new OperationCanceledException("ExecuteNonQuery was cancelled", ex, (CancellationToken)asyncResult.AsyncState);
+				}
+
+				throw;
+			}
 		}
 
 		public new FbDataReader ExecuteReader()
@@ -568,8 +583,9 @@ namespace FirebirdSql.Data.FirebirdClient
 			return ((Func<CommandBehavior, FbDataReader>)this.ExecuteReader).BeginInvoke(behavior, callback, objectState);
 		}
 
-		public IAsyncResult BeginExecuteReader2(CommandBehavior behavior, AsyncCallback callback, object objectState)
+		public IAsyncResult BeginExecuteReader2( AsyncCallback callback, object objectState)
 		{
+			CommandBehavior behavior = (CommandBehavior)objectState;
 			// BeginInvoke might be slow, but the query processing will make this irrelevant
 			return ((Func<CommandBehavior, DbDataReader>)this.ExecuteReader).BeginInvoke(behavior, callback, objectState);
 		}
@@ -588,7 +604,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public DbDataReader EndExecuteReader2(IAsyncResult asyncResult)
 		{
-			return ((Func<CommandBehavior, DbDataReader>)(asyncResult as AsyncResult).AsyncDelegate).EndInvoke(asyncResult);			
+			return ((Func<CommandBehavior, DbDataReader>)(asyncResult as AsyncResult).AsyncDelegate).EndInvoke(asyncResult);
 		}
 
 		public override object ExecuteScalar()
@@ -650,10 +666,10 @@ namespace FirebirdSql.Data.FirebirdClient
 			return ((Func<object>)(asyncResult as AsyncResult).AsyncDelegate).EndInvoke(asyncResult);
 		}
 
-#endregion
+		#endregion
 
-#region DbCommand Protected Methods
-		
+		#region DbCommand Protected Methods
+
 		protected override DbParameter CreateDbParameter()
 		{
 			return CreateParameter();
@@ -666,12 +682,13 @@ namespace FirebirdSql.Data.FirebirdClient
 #if NET_45
 		protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
 		{
-			return Task.Factory.FromAsync((callback, state) => this.BeginExecuteReader2(behavior, callback, state), this.EndExecuteReader2, cancellationToken);
+			cancellationToken.Register(this.Cancel);
+			return Task.Factory.FromAsync(this.BeginExecuteReader2, this.EndExecuteReader2, behavior);
 		}
 #endif
-#endregion
+		#endregion
 
-#region Internal Methods
+		#region Internal Methods
 
 		internal void CloseReader()
 		{
@@ -852,9 +869,9 @@ namespace FirebirdSql.Data.FirebirdClient
 			}
 		}
 
-#endregion
+		#endregion
 
-#region Input parameter descriptor generation methods
+		#region Input parameter descriptor generation methods
 
 		private void DescribeInput()
 		{
@@ -1133,9 +1150,9 @@ namespace FirebirdSql.Data.FirebirdClient
 			}
 		}
 
-#endregion
+		#endregion
 
-#region Private Methods
+		#region Private Methods
 
 		private void Prepare(bool returnsSet)
 		{
@@ -1427,6 +1444,6 @@ namespace FirebirdSql.Data.FirebirdClient
 			return (value == DBNull.Value || value == null);
 		}
 
-#endregion
+		#endregion
 	}
 }

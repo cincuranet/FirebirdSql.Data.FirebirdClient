@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FirebirdSql.Data.FirebirdClient;
+using System.Threading;
 
 namespace FirebirdSql.Data.UnitTests
 {
@@ -32,6 +33,20 @@ namespace FirebirdSql.Data.UnitTests
 		}
 
 		[Test]
+		public void TestCancellationExecuteScalarAsync()
+		{
+			string query = "SELECT FIRST(1) int_field from test";
+			using (var command = this.Connection.CreateCommand())
+			{
+				command.CommandText = query;
+				CancellationTokenSource cts = new CancellationTokenSource();
+				Task<object> ret = command.ExecuteScalarAsync(cts.Token);
+				cts.Cancel();
+				AssertOperationCancelledException(ret);
+			}
+		}
+
+		[Test]
 		public void TestExecuteNonQueryAsync()
 		{
 			string query = "SELECT FIRST(1) int_field from test";
@@ -46,15 +61,38 @@ namespace FirebirdSql.Data.UnitTests
 		}
 
 		[Test]
+		public void TestCancellationExecuteNonQueryAsync()
+		{
+			string query = "SELECT FIRST(1) int_field from test";
+			using (var command = this.Connection.CreateCommand())
+			{
+				command.CommandText = query;
+				CancellationTokenSource cts = new CancellationTokenSource();
+				Task<int> ret = command.ExecuteNonQueryAsync(cts.Token);
+				cts.Cancel();
+				AssertOperationCancelledException(ret);
+			}
+		}
+
+		private static void AssertOperationCancelledException(Task ret)
+		{
+			try
+			{
+				ret.Wait();
+			}
+			catch (AggregateException ex)
+			{
+				Assert.IsTrue(ex.InnerException is OperationCanceledException);
+			}
+		}
+
+		[Test]
 		public void TestExecuteReaderAsync()
 		{
 			using (FbTransaction transaction = Connection.BeginTransaction())
 			{
 				using (FbCommand command = new FbCommand("select * from TEST", Connection, transaction))
 				{
-					Console.WriteLine();
-					Console.WriteLine("DataReader - Read Method - Test");
-
 					var readerOpenTask = command.ExecuteReaderAsync();
 					Assert.False(readerOpenTask.Wait(0));
 					using (var reader = readerOpenTask.Result )
