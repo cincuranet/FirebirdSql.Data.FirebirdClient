@@ -262,6 +262,10 @@ namespace FirebirdSql.Data.FirebirdClient
 #if NET_45
 		public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
 		{
+			if (cancellationToken.IsCancellationRequested)
+			{
+				throw new OperationCanceledException(cancellationToken);
+			}
 
 			CheckState();
 
