@@ -26,7 +26,8 @@ using System.Data;
 using System.Data.Common;
 using System.Globalization;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using FirebirdSql.Data.Common;
 
 namespace FirebirdSql.Data.FirebirdClient
@@ -258,7 +259,46 @@ namespace FirebirdSql.Data.FirebirdClient
 
 			return retValue;
 		}
+#if NET_45
+		public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
+		{
+			if (cancellationToken.IsCancellationRequested)
+			{
+				throw new OperationCanceledException(cancellationToken);
+			}
 
+			CheckState();
+
+			bool retValue = false;
+
+			if (IsCommandBehavior(CommandBehavior.SingleRow) &&
+				_position != STARTPOS)
+			{
+			}
+			else
+			{
+				if (IsCommandBehavior(CommandBehavior.SchemaOnly))
+				{
+				}
+				else
+				{
+					_row = await Task.Factory.StartNew(() => _command.Fetch());
+
+					if (_row != null)
+					{
+						_position++;
+						retValue = true;
+					}
+					else
+					{
+						_eof = true;
+					}
+				}
+			}
+
+			return retValue;
+		}
+#endif
 		public override DataTable GetSchemaTable()
 		{
 			CheckState();
@@ -680,9 +720,9 @@ namespace FirebirdSql.Data.FirebirdClient
 			return false;
 		}
 
-		#endregion
+#endregion
 
-		#region Private Methods
+#region Private Methods
 
 		private void CheckPosition()
 		{
@@ -761,9 +801,9 @@ namespace FirebirdSql.Data.FirebirdClient
 			return index;
 		}
 
-		#endregion
+#endregion
 
-		#region Static Methods
+#region Static Methods
 
 		private static bool IsReadOnly(FbDataReader r)
 		{
@@ -852,6 +892,6 @@ namespace FirebirdSql.Data.FirebirdClient
 			}
 		}
 
-		#endregion
+#endregion
 	}
 }

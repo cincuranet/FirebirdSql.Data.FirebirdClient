@@ -143,6 +143,7 @@
     <Compile Include="Common\IscErrorMessages.cs" />
     <Compile Include="Common\PageSizeHelper.cs" />
     <Compile Include="Common\SqlStateMapping.cs" />
+    <Compile Include="Common\TaskHelpers.cs" />
     <Compile Include="Common\TimeoutHelper.cs" />
     <Compile Include="Common\TraceHelper.cs" />
     <Compile Include="Entity\DmlSqlGenerator.cs" />
