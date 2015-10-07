@@ -184,8 +184,10 @@ namespace FirebirdSql.Data.FirebirdClient
 					},
 					() =>
 					{
-						foreach (var item in _busy)
-							item.Dispose();
+						if(_busy.Any())
+						{
+							throw new InvalidOperationException("Running connections exist.");
+						}
 					});
 			}
 
