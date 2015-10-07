@@ -186,7 +186,7 @@ namespace FirebirdSql.Data.FirebirdClient
 					{
 						if(_busy.Any())
 						{
-							throw new InvalidOperationException("Running connections exist.");
+							throw new InvalidOperationException("Connections with running queries are persist. Cleared only free connections.");
 						}
 					});
 			}

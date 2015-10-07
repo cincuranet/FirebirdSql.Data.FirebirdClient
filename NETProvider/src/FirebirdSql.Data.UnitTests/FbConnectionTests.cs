@@ -326,6 +326,34 @@ namespace FirebirdSql.Data.UnitTests
 			}
 		}
 
+		[Test]
+		public void DNET_638_AssureThatExceptionIsThrownWhileClearingPoolWithOpenedConnection()
+		{
+			FbConnectionStringBuilder csb = BuildConnectionStringBuilder(FbServerType);
+			using (var conn = new FbConnection(csb.ToString()))
+			{
+				conn.Open();
+				Assert.Throws<InvalidOperationException>(() => FbConnection.ClearAllPools());
+			}
+		}
+
+		[Test]
+		public void DNET_638_AssureThatExceptionIsNotThrownWhileClearingAnotherPool()
+		{
+			FbConnectionStringBuilder csb = BuildConnectionStringBuilder(FbServerType);
+
+			using (var conn = new FbConnection(csb.ToString()))
+			{
+				conn.Open();
+				FbConnectionStringBuilder csb2 = BuildConnectionStringBuilder(FbServerType);
+				csb2.DataSource = "anotherdb.fdb";
+				using (var conn2 = new FbConnection(csb.ToString()))
+				{
+					Assert.DoesNotThrow(() => FbConnection.ClearPool(conn2));
+				}
+			}
+		}
+
 		#endregion
 
 		#region Methods
