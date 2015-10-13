@@ -330,10 +330,23 @@ namespace FirebirdSql.Data.UnitTests
 		public void DNET_638_AssureThatExceptionIsThrownWhileClearingPoolWithOpenedConnection()
 		{
 			FbConnectionStringBuilder csb = BuildConnectionStringBuilder(FbServerType);
+			csb.Pooling = true;
 			using (var conn = new FbConnection(csb.ToString()))
 			{
 				conn.Open();
-				Assert.Throws<InvalidOperationException>(() => FbConnection.ClearAllPools());
+				try
+				{
+					FbConnection.ClearAllPools();
+				}
+				catch(AggregateException ex)
+				{
+					Assert.AreEqual(1, ex.InnerExceptions.Count);
+					Assert.IsInstanceOf<InvalidOperationException>(ex.InnerException);
+				}
+				catch(Exception)
+				{
+					Assert.Fail("Unexpected exception");
+				}
 			}
 		}
 
@@ -341,13 +354,15 @@ namespace FirebirdSql.Data.UnitTests
 		public void DNET_638_AssureThatExceptionIsNotThrownWhileClearingAnotherPool()
 		{
 			FbConnectionStringBuilder csb = BuildConnectionStringBuilder(FbServerType);
+			csb.Pooling = true;
 
 			using (var conn = new FbConnection(csb.ToString()))
 			{
 				conn.Open();
 				FbConnectionStringBuilder csb2 = BuildConnectionStringBuilder(FbServerType);
+				csb2.Pooling = true;
 				csb2.DataSource = "anotherdb.fdb";
-				using (var conn2 = new FbConnection(csb.ToString()))
+				using (var conn2 = new FbConnection(csb2.ToString()))
 				{
 					Assert.DoesNotThrow(() => FbConnection.ClearPool(conn2));
 				}
