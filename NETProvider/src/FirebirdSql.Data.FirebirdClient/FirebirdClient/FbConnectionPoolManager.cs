@@ -105,7 +105,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 					var connection = _available.Any()
 						? _available.Pop().Connection
-						: CreateNewConnectionIfPossibleImpl(_connectionString);
+						: CreateNewConnection(_connectionString);
 					connection.SetOwningConnection(owner);
 					_busy.Add(connection);
 					return connection;
@@ -119,11 +119,15 @@ namespace FirebirdSql.Data.FirebirdClient
 					CheckDisposedImpl();
 
 					var removed = _busy.Remove(connection);
-					if (removed)
+					if (removed && _available.Count < _connectionString.MaxPoolSize)
 					{
 						_available.Push(new Item(DateTimeOffset.UtcNow, connection));
 					}
-				}
+                    else
+                    {
+                        connection.Dispose();
+                    }
+                }
 			}
 
 			public void CleanupPool()
@@ -193,13 +197,6 @@ namespace FirebirdSql.Data.FirebirdClient
 			{
 				if (_disposed)
 					throw new ObjectDisposedException(typeof(Pool).Name);
-			}
-
-			FbConnectionInternal CreateNewConnectionIfPossibleImpl(FbConnectionString connectionString)
-			{
-				if (_busy.Count() + 1 > connectionString.MaxPoolSize)
-					throw new InvalidOperationException("Connection pool is full.");
-				return CreateNewConnection(connectionString);
 			}
 		}
 
