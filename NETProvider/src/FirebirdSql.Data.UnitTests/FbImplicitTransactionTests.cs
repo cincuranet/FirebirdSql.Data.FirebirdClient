@@ -25,14 +25,14 @@ using FirebirdSql.Data.FirebirdClient;
 
 namespace FirebirdSql.Data.UnitTests
 {
-	[TestFixture(FbServerType.Default)]
-	[TestFixture(FbServerType.Embedded)]
+	[TestFixture(FbServerType.Default, EngineVersion.v3_0)] [TestFixture(FbServerType.Default, EngineVersion.v2_5)]
+	[TestFixture(FbServerType.Embedded, EngineVersion.v3_0)][TestFixture(FbServerType.Embedded, EngineVersion.v2_5)]
 	public class FbImplicitTransactionTests : TestsBase
 	{
 		#region Constructors
 
-		public FbImplicitTransactionTests(FbServerType serverType)
-			: base(serverType, false)
+		public FbImplicitTransactionTests(FbServerType serverType, EngineVersion version)
+			: base(serverType, false, version)
 		{
 		}
 

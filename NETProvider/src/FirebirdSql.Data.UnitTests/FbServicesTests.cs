@@ -34,13 +34,13 @@ using System.Threading;
 
 namespace FirebirdSql.Data.UnitTests
 {
-	[TestFixture(FbServerType.Default)]
+	[TestFixture(FbServerType.Default, EngineVersion.v3_0)] [TestFixture(FbServerType.Default, EngineVersion.v2_5)]
 	public class FbServicesTests : TestsBase
 	{
 		#region Constructors
 
-		public FbServicesTests(FbServerType serverType)
-			: base(serverType, false)
+		public FbServicesTests(FbServerType serverType, EngineVersion version)
+			: base(serverType, false, version)
 		{
 		}
 
@@ -82,7 +82,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbBackup backupSvc = new FbBackup();
 
-			backupSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			backupSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 			backupSvc.Options = FbBackupFlags.IgnoreLimbo;
 			backupSvc.BackupFiles.Add(new FbBackupFile(TestsSetup.BackupRestoreFile, 2048));
 			backupSvc.Verbose = true;
@@ -95,7 +95,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbRestore restoreSvc = new FbRestore();
 
-			restoreSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			restoreSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 			restoreSvc.Options = FbRestoreFlags.Create | FbRestoreFlags.Replace;
 			restoreSvc.PageSize = 4096;
 			restoreSvc.Verbose = true;
@@ -126,7 +126,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbStreamingBackup backupSvc = new FbStreamingBackup();
 
-			backupSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			backupSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 			backupSvc.Options = FbBackupFlags.IgnoreLimbo;
 			backupSvc.OutputStream = buffer;
 
@@ -138,7 +138,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbStreamingRestore restoreSvc = new FbStreamingRestore();
 
-			restoreSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			restoreSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 			restoreSvc.Options = FbRestoreFlags.Create | FbRestoreFlags.Replace;
 			restoreSvc.PageSize = 4096;
 			restoreSvc.Verbose = true;
@@ -154,7 +154,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbValidation validationSvc = new FbValidation();
 
-			validationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			validationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 			validationSvc.Options = FbValidationFlags.ValidateDatabase;
 
 			validationSvc.ServiceOutput += ServiceOutput;
@@ -167,7 +167,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbValidation validationSvc = new FbValidation();
 
-			validationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			validationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 			validationSvc.Options = FbValidationFlags.SweepDatabase;
 
 			validationSvc.ServiceOutput += ServiceOutput;
@@ -180,7 +180,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbConfiguration configurationSvc = new FbConfiguration();
 
-			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 
 			configurationSvc.SetSweepInterval(1000);
 			configurationSvc.SetReserveSpace(true);
@@ -193,7 +193,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbConfiguration configurationSvc = new FbConfiguration();
 
-			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 
 			configurationSvc.DatabaseShutdown(FbShutdownMode.Forced, 10);
 			configurationSvc.DatabaseOnline();
@@ -211,7 +211,7 @@ namespace FirebirdSql.Data.UnitTests
 
 			FbConfiguration configurationSvc = new FbConfiguration();
 
-			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 
 			configurationSvc.DatabaseShutdown2(FbShutdownOnlineMode.Full, FbShutdownType.ForceShutdown, 10);
 			configurationSvc.DatabaseOnline2(FbShutdownOnlineMode.Normal);
@@ -222,7 +222,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbStatistical statisticalSvc = new FbStatistical();
 
-			statisticalSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			statisticalSvc.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 			statisticalSvc.Options = FbStatisticalFlags.SystemTablesRelations;
 
 			statisticalSvc.ServiceOutput += ServiceOutput;
@@ -235,7 +235,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbLog logSvc = new FbLog();
 
-			logSvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			logSvc.ConnectionString = BuildServicesConnectionString(FbServerType, false, EngineVersion);
 
 			logSvc.ServiceOutput += ServiceOutput;
 
@@ -247,7 +247,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbSecurity securitySvc = new FbSecurity();
 
-			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false, EngineVersion);
 
 			FbUserData user = new FbUserData();
 
@@ -262,7 +262,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbSecurity securitySvc = new FbSecurity();
 
-			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false, EngineVersion);
 
 			FbUserData user = new FbUserData();
 
@@ -276,7 +276,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbSecurity securitySvc = new FbSecurity();
 
-			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false, EngineVersion);
 
 			FbUserData user = securitySvc.DisplayUser("SYSDBA");
 
@@ -288,7 +288,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbSecurity securitySvc = new FbSecurity();
 
-			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false, EngineVersion);
 
 			FbUserData[] users = securitySvc.DisplayUsers();
 
@@ -305,7 +305,7 @@ namespace FirebirdSql.Data.UnitTests
 		{
 			FbServerProperties serverProp = new FbServerProperties();
 
-			serverProp.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			serverProp.ConnectionString = BuildServicesConnectionString(FbServerType, false, EngineVersion);
 
 			FbServerConfig serverConfig = serverProp.GetServerConfig();
 			FbDatabasesInfo databasesInfo = serverProp.GetDatabasesInfo();
@@ -336,7 +336,7 @@ namespace FirebirdSql.Data.UnitTests
 			{
 				var nbak = new FbNBackup();
 
-				nbak.ConnectionString = BuildServicesConnectionString(FbServerType);
+				nbak.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 				nbak.Level = l;
 				nbak.BackupFile = TestsSetup.BackupRestoreFile + l.ToString();
 				nbak.DirectIO = true;
@@ -351,11 +351,11 @@ namespace FirebirdSql.Data.UnitTests
 		}
 		void NBackupBackupRestoreTest_RestorePart()
 		{
-			FbConnection.DropDatabase(BuildConnectionString(FbServerType));
+			FbConnection.DropDatabase(BuildConnectionString(FbServerType, EngineVersion));
 
 			var nrest = new FbNRestore();
 
-			nrest.ConnectionString = BuildServicesConnectionString(FbServerType);
+			nrest.ConnectionString = BuildServicesConnectionString(FbServerType, EngineVersion);
 			nrest.BackupFiles = Enumerable.Range(0, 2).Select(l => TestsSetup.BackupRestoreFile + l.ToString());
 			nrest.DirectIO = true;
 
@@ -368,7 +368,7 @@ namespace FirebirdSql.Data.UnitTests
 		public void TraceTest()
 		{
 			var trace = new FbTrace();
-			trace.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			trace.ConnectionString = BuildServicesConnectionString(FbServerType, false, EngineVersion);
 			trace.DatabasesConfigurations.Add(new FbDatabaseTraceConfiguration()
 			{
 				Enabled = true,
@@ -393,7 +393,7 @@ namespace FirebirdSql.Data.UnitTests
 			ThreadPool.QueueUserWorkItem(_ =>
 			{
 				Thread.Sleep(2000);
-				new FbTrace(BuildServicesConnectionString(FbServerType, false)).Stop(sessionId);
+				new FbTrace(BuildServicesConnectionString(FbServerType, false, EngineVersion)).Stop(sessionId);
 			});
 			trace.Start("test");
 		}
