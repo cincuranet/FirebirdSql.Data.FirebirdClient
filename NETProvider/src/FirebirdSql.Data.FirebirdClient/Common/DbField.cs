@@ -150,16 +150,16 @@ namespace FirebirdSql.Data.Common
 			{
 				EnsureArray();
 
-				return _arrayHandle;
-			}
+					return _arrayHandle;
+				}
 
 			set
 			{
 				EnsureArray();
 
-				_arrayHandle = value;
-			}
-		}
+					_arrayHandle = value;
+				}
+				}
 
 		public DbValue DbValue
 		{
@@ -424,7 +424,9 @@ namespace FirebirdSql.Data.Common
 					case IscCodes.SQL_TYPE_DATE:
 						Value = TypeDecoder.DecodeDate(BitConverter.ToInt32(buffer, 0));
 						break;
-
+					case IscCodes.SQL_BOOLEAN:
+						Value = BitConverter.ToBoolean(buffer, 0);
+						break;
 					default:
 						throw new NotSupportedException("Unknown data type");
 				}
@@ -481,6 +483,9 @@ namespace FirebirdSql.Data.Common
 
 					case DbDataType.Time:
 						Value = TimeSpan.Zero;
+						break;
+					case DbDataType.Boolean:
+						Value = false;
 						break;
 
 					default:
@@ -622,8 +627,11 @@ namespace FirebirdSql.Data.Common
 				case IscCodes.SQL_NULL:
 					return DbDataType.Null;
 
+				case IscCodes.SQL_BOOLEAN:
+					return DbDataType.Boolean;
+
 				default:
-					throw new SystemException("Invalid data type");
+					throw new SystemException("Invalid data type: " + SqlType);
 			}
 		}
 

@@ -99,6 +99,13 @@ namespace FirebirdSql.Data.Common
 			return Convert.ToChar(_value, CultureInfo.CurrentCulture);
 		}
 
+		public byte[] GetBool()
+		{
+			byte[] ret = new byte[4];
+			ret[0] = Convert.ToByte(this._value);
+			return ret;
+		}
+
 		public bool GetBoolean()
 		{
 			return Convert.ToBoolean(_value, CultureInfo.InvariantCulture);
@@ -312,8 +319,10 @@ namespace FirebirdSql.Data.Common
 				case DbDataType.Guid:
 					return GetGuid().ToByteArray();
 
+				case DbDataType.Boolean:
+					return GetBool();
 				default:
-					throw new NotSupportedException("Unknown data type");
+					throw new NotSupportedException("Unknown data type: "+ Field.DbDataType);
 			}
 		}
 
