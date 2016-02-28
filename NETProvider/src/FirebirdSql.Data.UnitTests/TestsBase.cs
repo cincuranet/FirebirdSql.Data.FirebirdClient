@@ -43,6 +43,7 @@ namespace FirebirdSql.Data.UnitTests
 		private FbTransaction _transaction;
 		private bool _withTransaction;
 		private FbServerType _fbServerType;
+		private EngineVersion _version;
 
 		#endregion
 
@@ -58,6 +59,11 @@ namespace FirebirdSql.Data.UnitTests
 			get { return _fbServerType; }
 		}
 
+		public EngineVersion EngineVersion
+		{
+			get { return _version; }
+		}
+
 		public FbTransaction Transaction
 		{
 			get { return _transaction; }
@@ -68,15 +74,16 @@ namespace FirebirdSql.Data.UnitTests
 
 		#region	Constructors
 
-		public TestsBase(FbServerType serverType)
-			: this(serverType, false)
+		public TestsBase(FbServerType serverType, EngineVersion version)
+			: this(serverType, false, version)
 		{
 		}
 
-		public TestsBase(FbServerType serverType, bool withTransaction)
+		public TestsBase(FbServerType serverType, bool withTransaction, EngineVersion version)
 		{
 			_fbServerType = serverType;
 			_withTransaction = withTransaction;
+			_version = version;
 		}
 
 		#endregion
@@ -86,9 +93,9 @@ namespace FirebirdSql.Data.UnitTests
 		[SetUp]
 		public virtual void SetUp()
 		{
-			TestsSetup.SetUp(_fbServerType);
+			TestsSetup.SetUp(_fbServerType, _version);
 
-			string cs = BuildConnectionString(_fbServerType);
+			string cs = BuildConnectionString(_fbServerType, _version);
 			InsertTestData(cs);
 			_connection = new FbConnection(cs);
 			_connection.Open();
@@ -101,7 +108,7 @@ namespace FirebirdSql.Data.UnitTests
 		[TearDown]
 		public virtual void TearDown()
 		{
-			string cs = BuildConnectionString(_fbServerType);
+			string cs = BuildConnectionString(_fbServerType, _version);
 			if (_withTransaction)
 			{
 				try
@@ -220,17 +227,17 @@ end";
 
 		#region	ConnectionString Building methods
 
-		public static string BuildConnectionString(FbServerType serverType)
+		public static string BuildConnectionString(FbServerType serverType, EngineVersion version)
 		{
-			return BuildConnectionStringBuilder(serverType).ToString();
+			return BuildConnectionStringBuilder(serverType, version).ToString();
 		}
 
-		public static string BuildServicesConnectionString(FbServerType serverType)
+		public static string BuildServicesConnectionString(FbServerType serverType, EngineVersion version)
 		{
-			return BuildServicesConnectionString(serverType, true);
+			return BuildServicesConnectionString(serverType, true, version);
 		}
 
-		public static string BuildServicesConnectionString(FbServerType serverType, bool includeDatabase)
+		public static string BuildServicesConnectionString(FbServerType serverType, bool includeDatabase, EngineVersion version)
 		{
 			FbConnectionStringBuilder cs = new FbConnectionStringBuilder();
 
@@ -239,25 +246,57 @@ end";
 			cs.DataSource = TestsSetup.DataSource;
 			if (includeDatabase)
 			{
-				cs.Database = TestsSetup.Database;
+				if (version == EngineVersion.v2_5)
+				{
+					cs.Database = serverType + TestsSetup.Database25;
+				}
+				else if (version == EngineVersion.v3_0)
+				{
+					cs.Database = serverType + TestsSetup.Database3;
+				}
+				else throw new NotImplementedException();
 			}
+
+			if (version == EngineVersion.v3_0)
+			{
+				cs.ClientLibrary = TestsSetup.ClientLibrary3;
+			}
+			else if (version == EngineVersion.v2_5)
+			{
+				cs.ClientLibrary = TestsSetup.ClientLibrary25;
+			}
+			else throw new NotImplementedException();
+
 			cs.ServerType = serverType;
 
 			return cs.ToString();
 		}
 
-		public static FbConnectionStringBuilder BuildConnectionStringBuilder(FbServerType serverType)
+		public static FbConnectionStringBuilder BuildConnectionStringBuilder(FbServerType serverType, EngineVersion version)
 		{
 			FbConnectionStringBuilder cs = new FbConnectionStringBuilder();
 
 			cs.UserID = TestsSetup.UserID;
 			cs.Password = TestsSetup.Password;
 			cs.DataSource = TestsSetup.DataSource;
-			cs.Database = TestsSetup.Database;
-			cs.Port = TestsSetup.Port;
 			cs.Charset = TestsSetup.Charset;
 			cs.Pooling = TestsSetup.Pooling;
 			cs.ServerType = serverType;
+
+			if (version == EngineVersion.v3_0)
+			{
+				cs.ClientLibrary = TestsSetup.ClientLibrary3;
+				cs.Port = TestsSetup.Port3;
+				cs.Database = serverType + TestsSetup.Database3;
+			}
+			else if (version == EngineVersion.v2_5)
+			{
+				cs.ClientLibrary = TestsSetup.ClientLibrary25;
+				cs.Port = TestsSetup.Port25;
+				cs.Database = serverType + TestsSetup.Database25;
+			}
+			else throw new NotImplementedException();
+
 			return cs;
 		}
 
@@ -268,13 +307,13 @@ end";
 		public Version GetServerVersion()
 		{
 			var server = new FbServerProperties();
-			server.ConnectionString = BuildServicesConnectionString(_fbServerType);
+			server.ConnectionString = BuildServicesConnectionString(_fbServerType, _version);
 			return FbServerProperties.ParseServerVersion(server.GetServerVersion());
 		}
 
 		public int GetActiveConnections()
 		{
-			var csb = BuildConnectionStringBuilder(_fbServerType);
+			var csb = BuildConnectionStringBuilder(_fbServerType, _version);
 			csb.Pooling = false;
 			using (var conn = new FbConnection(csb.ToString()))
 			{
@@ -282,7 +321,7 @@ end";
 				using (var cmd = conn.CreateCommand())
 				{
 					cmd.CommandText = "select count(*) from mon$attachments where mon$attachment_id <> current_connection";
-					return (int)cmd.ExecuteScalar();
+					return Convert.ToInt32(cmd.ExecuteScalar());
 				}
 			}
 		}
