@@ -177,8 +177,8 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 			if (!CanRead)
 				throw new InvalidOperationException("Read operations are not allowed by this stream");
 
-			return _innerStream.Read(buffer, offset, count);
-		}
+				return _innerStream.Read(buffer, offset, count);
+			}
 
 		public override void WriteByte(byte value)
 		{
@@ -194,8 +194,8 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 			if (!CanWrite)
 				throw new InvalidOperationException("Write operations are not allowed by this stream");
 
-			_innerStream.Write(buffer, offset, count);
-		}
+				_innerStream.Write(buffer, offset, count);
+			}
 
 		public byte[] ToArray()
 		{
@@ -203,7 +203,7 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 
 			var memoryStream = _innerStream as MemoryStream;
 			if (memoryStream == null)
-				throw new InvalidOperationException();
+			throw new InvalidOperationException();
 			return memoryStream.ToArray();
 		}
 
@@ -449,6 +449,13 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 				case DbDataType.TimeStamp:
 					fieldValue = ReadDateTime();
 					break;
+
+				case DbDataType.Boolean:
+					fieldValue = BitConverter.ToInt32(ReadOpaque(4), 0) != 0;
+					break;
+
+				default:
+					throw new NotImplementedException("Not implemented type: " + field.DbDataType);
 			}
 
 			int sqlInd = ReadInt32();
@@ -719,7 +726,7 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 							break;
 
 						case DbDataType.Boolean:
-							Write(Convert.ToBoolean(param.Value));
+							WriteOpaque(param.DbValue.GetBool());
 							break;
 
 						default:
@@ -743,7 +750,7 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 		{
 			if (_innerStream == null)
 				throw new ObjectDisposedException($"The {nameof(XdrStream)} is closed.");
-		}
+			}
 
 		private void ResetOperation()
 		{

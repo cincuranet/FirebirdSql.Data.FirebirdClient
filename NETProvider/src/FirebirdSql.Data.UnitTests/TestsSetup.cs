@@ -24,31 +24,43 @@ using System.Text;
 using System.Threading.Tasks;
 using FirebirdSql.Data.FirebirdClient;
 using NUnit.Framework;
+using FirebirdSql.Data.Services;
 
 namespace FirebirdSql.Data.UnitTests
 {
+	public enum EngineVersion
+	{
+		v2_5,
+		v3_0
+	}
+
 	[SetUpFixture]
 	public class TestsSetup
 	{
 		internal const string UserID = "SYSDBA";
 		internal const string Password = "masterkey";
-		internal const string Database = "netprovider_tests.fdb";
+		internal const string Database25 = "netprovider_tests.fdb";
+		internal const string Database3 = "netprovider_tests3.fdb";
 		internal const string DataSource = "localhost";
-		internal const int Port = 3050;
+		internal const int Port25 = 3050;
+		internal const int Port3 = 3051;
 		internal const string Charset = "utf8";
 		internal const bool Pooling = false;
 		internal const int PageSize = 4096;
 		internal const bool ForcedWrite = false;
 		internal const string BackupRestoreFile = "netprovider_tests.fbk";
+		internal const string ClientLibrary3 = @"..\fb3\fbclient.dll";
+		internal const string ClientLibrary25 = @"..\fb25\fbembed.dll";
 
-		private static HashSet<FbServerType> _initalized = new HashSet<FbServerType>();
+		private static HashSet<Tuple<FbServerType, EngineVersion> > _initalized = new HashSet<Tuple<FbServerType, EngineVersion>>();
 
-		public static void SetUp(FbServerType serverType)
+		public static void SetUp(FbServerType serverType, EngineVersion version = EngineVersion.v2_5)
 		{
-			if (!_initalized.Contains(serverType))
+			var item = Tuple.Create(serverType, version);
+			if (!_initalized.Contains(item))
 			{
-				Prepare(serverType);
-				_initalized.Add(serverType);
+				Prepare(serverType, version);
+				_initalized.Add(item);
 			}
 		}
 
@@ -58,20 +70,20 @@ namespace FirebirdSql.Data.UnitTests
 			FbConnection.ClearAllPools();
 			foreach (var item in _initalized)
 			{
-				Drop(item);
+				Drop(item.Item1, item.Item2);
 			}
 			_initalized.Clear();
 		}
 
-		private static void Drop(FbServerType serverType)
+		private static void Drop(FbServerType serverType, EngineVersion version)
 		{
-			string cs = TestsBase.BuildConnectionString(serverType);
+			string cs = TestsBase.BuildConnectionString(serverType, version);
 			DropDatabase(cs);
 		}
 
-		private static void Prepare(FbServerType serverType)
+		private static void Prepare(FbServerType serverType, EngineVersion version)
 		{
-			string cs = TestsBase.BuildConnectionString(serverType);
+			string cs = TestsBase.BuildConnectionString(serverType, version);
 			CreateDatabase(cs);
 			CreateTables(cs);
 			CreateProcedures(cs);

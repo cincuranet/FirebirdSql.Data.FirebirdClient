@@ -288,9 +288,11 @@ namespace FirebirdSql.Data.Common
 					{
 						return DbDataType.Binary;
 					}
+				case IscCodes.blr_bool:
+					return DbDataType.Boolean;
 
 				default:
-					throw new ArgumentException("Invalid data type");
+					throw new ArgumentException("Invalid data type: " + blrType);
 			}
 		}
 
@@ -344,8 +346,11 @@ namespace FirebirdSql.Data.Common
 				case DbDataType.TimeStamp:
 					return "TIMESTAMP";
 
+				case DbDataType.Boolean:
+					return "BOOLEAN";
+
 				default:
-					return null;
+					throw new NotImplementedException("Not implemented type: " + dataType);
 			}
 		}
 
@@ -393,8 +398,11 @@ namespace FirebirdSql.Data.Common
 				case DbDataType.Time:
 					return "System.TimeSpan";
 
+				case DbDataType.Boolean:
+					return "System.Boolean";
+
 				default:
-					return null;
+					throw new NotImplementedException("Not implemented Sql type: " + dataType);
 			}
 		}
 

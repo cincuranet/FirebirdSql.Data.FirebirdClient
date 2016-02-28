@@ -222,6 +222,11 @@ namespace FirebirdSql.Data.Common
 							blr.WriteByte((byte)(len & 255));
 							blr.WriteByte((byte)(len >> 8));
 							break;
+						case IscCodes.SQL_BOOLEAN:
+							blr.WriteByte(IscCodes.blr_bool);
+							break;
+						default:
+							throw new NotImplementedException("Not implemented type: "+ dtype);
 					}
 
 					blr.WriteByte(IscCodes.blr_short);

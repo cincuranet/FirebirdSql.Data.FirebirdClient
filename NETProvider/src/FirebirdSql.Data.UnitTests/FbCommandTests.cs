@@ -29,14 +29,16 @@ using NUnit.Framework;
 
 namespace FirebirdSql.Data.UnitTests
 {
-	[TestFixture(FbServerType.Default)]
-	[TestFixture(FbServerType.Embedded)]
+	[TestFixture(FbServerType.Default, EngineVersion.v3_0)]
+	[TestFixture(FbServerType.Default, EngineVersion.v2_5)]
+	[TestFixture(FbServerType.Embedded, EngineVersion.v3_0)]
+	[TestFixture(FbServerType.Embedded, EngineVersion.v2_5)]
 	public class FbCommandTests : TestsBase
 	{
 		#region Constructors
 
-		public FbCommandTests(FbServerType serverType)
-			: base(serverType, false)
+		public FbCommandTests(FbServerType serverType, EngineVersion version)
+			: base(serverType, false, version)
 		{
 		}
 
@@ -406,48 +408,70 @@ namespace FirebirdSql.Data.UnitTests
 			try
 			{
 				string createTable = "CREATE TABLE TABLE1 (FIELD1 varchar(20))";
-				FbCommand create = new FbCommand(createTable, Connection);
-				create.ExecuteNonQuery();
-				create.Dispose();
+				using (FbCommand create = new FbCommand(createTable, Connection))
+				{
+					create.ExecuteNonQuery();
+				}
 
 				// insert using	parametrized SQL
 				string sql = "INSERT INTO Table1 VALUES	(@value)";
-				FbCommand command = new FbCommand(sql, Connection);
-				command.Parameters.Add("@value", FbDbType.VarChar).Value = "中文";
-				command.ExecuteNonQuery();
-				command.Dispose();
+				using (FbCommand command = new FbCommand(sql, Connection))
+				{
+					command.Parameters.Add("@value", FbDbType.VarChar).Value = "中文";
+					command.ExecuteNonQuery();
+				}
 
 				sql = "SELECT *	FROM TABLE1";
-				FbCommand select = new FbCommand(sql, Connection);
-				string result = select.ExecuteScalar().ToString();
-				select.Dispose();
+				string result;
+				using (FbCommand select = new FbCommand(sql, Connection))
+				{
+					result = select.ExecuteScalar().ToString();
+				}
 
 				Assert.AreEqual("中文", result, "Incorrect results in parametrized insert");
 
 				sql = "DELETE FROM TABLE1";
-				FbCommand delete = new FbCommand(sql, Connection);
-				delete.ExecuteNonQuery();
-				delete.Dispose();
+				using (FbCommand delete = new FbCommand(sql, Connection))
+				{
+					delete.ExecuteNonQuery();
+				}
 
 				// insert using	plain SQL
 				sql = "INSERT INTO Table1 VALUES ('中文')";
-				FbCommand plainCommand = new FbCommand(sql, Connection);
-				plainCommand.ExecuteNonQuery();
-				plainCommand.Dispose();
+				using (FbCommand plainCommand = new FbCommand(sql, Connection))
+				{
+					plainCommand.ExecuteNonQuery();
+				}
 
 				sql = "SELECT *	FROM TABLE1";
-				select = new FbCommand(sql, Connection);
-				result = select.ExecuteScalar().ToString();
-				select.Dispose();
+				using (var select = new FbCommand(sql, Connection))
+				{
+					result = select.ExecuteScalar().ToString();
+				}
 
 				Assert.AreEqual("中文", result, "Incorrect results in plain insert");
 			}
 			finally
 			{
 				string dropTable = "DROP TABLE TABLE1";
-				FbCommand drop = new FbCommand(dropTable, Connection);
-				drop.ExecuteNonQuery();
-				drop.Dispose();
+				FbConnection.ClearAllPools();
+				for (int i = 0; i < 10; ++i)
+				{
+					try
+					{
+						using (FbCommand drop = new FbCommand(dropTable, Connection))
+						{
+							drop.ExecuteNonQuery();
+						}
+					}
+					catch (FbException ex)
+					{
+						if (ex.ErrorCode != 335544345)
+						{
+							throw;
+						}
+					}
+				}
 			}
 		}
 
@@ -643,6 +667,12 @@ namespace FirebirdSql.Data.UnitTests
 		[Test]
 		public void ReturningClauseTest()
 		{
+			if (EngineVersion != EngineVersion.v2_5)
+			{
+				Assert.Inconclusive("Not supported");
+				return;
+			}
+
 			using (FbCommand cmd = Connection.CreateCommand())
 			{
 				const string columnValue = "foobar";
