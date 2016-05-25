@@ -6,3 +6,4 @@ obj
 DDEX/installer/out/
 DDEX/installer/in/
 Provider/deploy/out
+Provider/lib/NUnit3TestAdapter.3.0.10
