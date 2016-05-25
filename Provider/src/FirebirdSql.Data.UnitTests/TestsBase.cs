@@ -295,7 +295,16 @@ end";
 			return false;
 		}
 
-		protected static int GetId()
+        protected bool EnsureVersion(Func<Version, bool> checkCurrentVersion)
+        {
+            if (checkCurrentVersion(GetServerVersion()))
+                return true;
+
+            Assert.Inconclusive("Not supported on this version.");
+            return false;
+        }
+
+        protected static int GetId()
 		{
 			RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
 
