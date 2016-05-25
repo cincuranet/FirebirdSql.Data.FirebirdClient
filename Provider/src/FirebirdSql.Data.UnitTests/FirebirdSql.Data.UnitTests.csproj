@@ -98,6 +98,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FbBooleanSupportTests.cs" />
+    <Compile Include="FbBooleanSupportV2_5Tests.cs" />
     <Compile Include="FbConnectionStringTests.cs" />
     <Compile Include="FbConnectionStringBuilderTests.cs" />
     <Compile Include="FbExceptionTests.cs" />
