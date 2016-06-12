@@ -84,6 +84,26 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\..\lib\NUnit3TestAdapter.3.0.10\lib\Mono.Cecil.dll</HintPath>
+      <Private>True</Private>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="nunit.engine">
+      <HintPath>..\..\lib\NUnit3TestAdapter.3.0.10\lib\nunit.engine.dll</HintPath>
+      <Private>True</Private>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="nunit.engine.api">
+      <HintPath>..\..\lib\NUnit3TestAdapter.3.0.10\lib\nunit.engine.api.dll</HintPath>
+      <Private>True</Private>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="NUnit3.TestAdapter">
+      <HintPath>..\..\lib\NUnit3TestAdapter.3.0.10\lib\NUnit3.TestAdapter.dll</HintPath>
+      <Private>True</Private>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
