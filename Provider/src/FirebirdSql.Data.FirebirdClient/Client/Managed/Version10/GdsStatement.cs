@@ -901,9 +901,9 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 
 		protected object ReadRawValue(DbField field)
 		{
-			var innerCharset = !_database.Charset.IsNoneCharset ? _database.Charset : field.Charset;
+            var innerCharset = !_database.isCharsetNone ? _database.Charset : field.Charset;
 
-			switch (field.DbDataType)
+            switch (field.DbDataType)
 			{
 				case DbDataType.Char:
 					if (field.Charset.IsOctetsCharset)
