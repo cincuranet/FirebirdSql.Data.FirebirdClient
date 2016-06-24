@@ -59,13 +59,12 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 		private bool _disposed;
 		private XdrStream _xdrStream;
 		private object _syncObject;
-        private bool _isCharsetNone;
 
-        #endregion
+		#endregion
 
-        #region Properties
+		#region Properties
 
-        public int Handle
+		public int Handle
 		{
 			get { return _handle; }
 			protected set { _handle = value; }
@@ -86,24 +85,10 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 		public Charset Charset
 		{
 			get { return _charset; }
-			set {
-                    _charset = value;
-                    if (_charset != null)
-                    {
-                        _isCharsetNone = _charset.IsNoneCharset;
-                    }
-                }
+			set { _charset = value; }
 		}
 
-        public bool isCharsetNone
-        {
-            get {
-                return _isCharsetNone;
-            }
-        }
-
-
-        public short PacketSize
+		public short PacketSize
 		{
 			get { return _packetSize; }
 			set { _packetSize = value; }
