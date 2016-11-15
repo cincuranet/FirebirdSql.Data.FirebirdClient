@@ -322,7 +322,7 @@ namespace FirebirdSql.Data.Client.Managed
 					WriteMultiPartHelper(result, IscCodes.CNCT_specific_data, specificData);
 				}
 
-				var user = Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("USERNAME"));
+				var user = Encoding.UTF8.GetBytes(Environment.UserName);
 				result.WriteByte(IscCodes.CNCT_user);
 				result.WriteByte((byte)user.Length);
 				result.Write(user, 0, user.Length);
