@@ -126,7 +126,7 @@ namespace FirebirdSql.Data.Client.Managed
 				_socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
 				try
 				{
-					socket.SetKeepAlive(KeepAliveTime, KeepAliveInterval);
+					_socket.SetKeepAlive(KeepAliveTime, KeepAliveInterval);
 				}
 				catch (PlatformNotSupportedException)
 				{
