@@ -112,15 +112,7 @@ namespace FirebirdSql.Data.Client.Native
 
 		public object SyncObject
 		{
-			get
-			{
-				if (_syncObject == null)
-				{
-					Interlocked.CompareExchange(ref _syncObject, new object(), null);
-				}
-
-				return _syncObject;
-			}
+			get { return _syncObject; }
 		}
 
 		#endregion
@@ -135,15 +127,7 @@ namespace FirebirdSql.Data.Client.Native
 			_dialect = 3;
 			_packetSize = 8192;
 			_statusVector = new IntPtr[IscCodes.ISC_STATUS_LENGTH];
-		}
-
-		#endregion
-
-		#region Finalizer
-
-		~FesDatabase()
-		{
-			Dispose(false);
+			_syncObject = new object();
 		}
 
 		#endregion
@@ -152,27 +136,17 @@ namespace FirebirdSql.Data.Client.Native
 
 		public void Dispose()
 		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		private void Dispose(bool disposing)
-		{
 			if (!_disposed)
 			{
-				if (disposing)
-				{
-					Detach();
-					_warningMessage = null;
-					_charset = null;
-					_serverVersion = null;
-					_statusVector = null;
-					_transactionCount = 0;
-					_dialect = 0;
-					_handle.Dispose();
-					_packetSize = 0;
-				}
-
+				Detach();
+				_warningMessage = null;
+				_charset = null;
+				_serverVersion = null;
+				_statusVector = null;
+				_transactionCount = 0;
+				_dialect = 0;
+				_handle.Dispose();
+				_packetSize = 0;
 				_disposed = true;
 			}
 		}

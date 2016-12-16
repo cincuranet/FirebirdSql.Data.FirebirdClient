@@ -82,48 +82,26 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		#endregion
 
-		#region Finalizer
-
-		~FbTransaction()
-		{
-			Dispose(false);
-		}
-
-		#endregion
-
 		#region IDisposable methods
 
 		protected override void Dispose(bool disposing)
 		{
-			lock (this)
+			if (disposing)
 			{
 				if (!_disposed)
 				{
-					try
+					if (_transaction != null)
 					{
-						// release any unmanaged resources
-						if (_transaction != null)
+						if (!_isCompleted)
 						{
-							if (!_isCompleted)
-							{
-								_transaction.Dispose();
-							}
-						}
-
-						// release any managed resources
-						if (disposing)
-						{
-							_connection = null;
-							_transaction = null;
+							_transaction.Dispose();
 						}
 					}
-					catch
-					{ }
-					finally
-					{
-						_isCompleted = true;
-						_disposed = true;
-					}
+					_connection = null;
+					_transaction = null;
+					_isCompleted = true;
+					base.Dispose(disposing);
+					_disposed = true;
 				}
 			}
 		}
@@ -134,35 +112,29 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public override void Commit()
 		{
-			lock (this)
+			EnsureCompleted();
+			try
 			{
-				EnsureCompleted();
-				try
-				{
-					_transaction.Commit();
-					CompleteTransaction();
-				}
-				catch (IscException ex)
-				{
-					throw new FbException(ex.Message, ex);
-				}
+				_transaction.Commit();
+				CompleteTransaction();
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 		}
 
 		public override void Rollback()
 		{
-			lock (this)
+			EnsureCompleted();
+			try
 			{
-				EnsureCompleted();
-				try
-				{
-					_transaction.Rollback();
-					CompleteTransaction();
-				}
-				catch (IscException ex)
-				{
-					throw new FbException(ex.Message, ex);
-				}
+				_transaction.Rollback();
+				CompleteTransaction();
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 		}
 
@@ -173,92 +145,77 @@ namespace FirebirdSql.Data.FirebirdClient
 		public void Save(string savePointName)
 		{
 			EnsureSavePointName(savePointName);
-			lock (this)
+			EnsureCompleted();
+			try
 			{
-				EnsureCompleted();
-				try
+				using (var command = new FbCommand($"SAVEPOINT {savePointName}", _connection, this))
 				{
-					using (var command = new FbCommand($"SAVEPOINT {savePointName}", _connection, this))
-					{
-						command.ExecuteNonQuery();
-					}
+					command.ExecuteNonQuery();
 				}
-				catch (IscException ex)
-				{
-					throw new FbException(ex.Message, ex);
-				}
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 		}
 
 		public void Commit(string savePointName)
 		{
 			EnsureSavePointName(savePointName);
-			lock (this)
+			EnsureCompleted();
+			try
 			{
-				EnsureCompleted();
-				try
+				using (var command = new FbCommand($"RELEASE SAVEPOINT {savePointName}", _connection, this))
 				{
-					using (var command = new FbCommand($"RELEASE SAVEPOINT {savePointName}", _connection, this))
-					{
-						command.ExecuteNonQuery();
-					}
+					command.ExecuteNonQuery();
 				}
-				catch (IscException ex)
-				{
-					throw new FbException(ex.Message, ex);
-				}
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 		}
 
 		public void Rollback(string savePointName)
 		{
 			EnsureSavePointName(savePointName);
-			lock (this)
+			EnsureCompleted();
+			try
 			{
-				EnsureCompleted();
-				try
+				using (var command = new FbCommand($"ROLLBACK WORK TO SAVEPOINT {savePointName}", _connection, this))
 				{
-					using (var command = new FbCommand($"ROLLBACK WORK TO SAVEPOINT {savePointName}", _connection, this))
-					{
-						command.ExecuteNonQuery();
-					}
+					command.ExecuteNonQuery();
 				}
-				catch (IscException ex)
-				{
-					throw new FbException(ex.Message, ex);
-				}
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 		}
 
 		public void CommitRetaining()
 		{
-			lock (this)
+			EnsureCompleted();
+			try
 			{
-				EnsureCompleted();
-				try
-				{
-					_transaction.CommitRetaining();
-				}
-				catch (IscException ex)
-				{
-					throw new FbException(ex.Message, ex);
-				}
+				_transaction.CommitRetaining();
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 		}
 
 		public void RollbackRetaining()
 		{
-			lock (this)
+			EnsureCompleted();
+			try
 			{
-				EnsureCompleted();
-				try
-				{
-					_transaction.RollbackRetaining();
-				}
-				catch (IscException ex)
-				{
-					throw new FbException(ex.Message, ex);
-				}
+				_transaction.RollbackRetaining();
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 		}
 
@@ -268,31 +225,25 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		internal void BeginTransaction()
 		{
-			lock (this)
+			try
 			{
-				try
-				{
-					_transaction = _connection.InnerConnection.Database.BeginTransaction(BuildTpb());
-				}
-				catch (IscException ex)
-				{
-					throw new FbException(ex.Message, ex);
-				}
+				_transaction = _connection.InnerConnection.Database.BeginTransaction(BuildTpb());
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 		}
 
 		internal void BeginTransaction(FbTransactionOptions options)
 		{
-			lock (this)
+			try
 			{
-				try
-				{
-					_transaction = _connection.InnerConnection.Database.BeginTransaction(BuildTpb(options));
-				}
-				catch (IscException ex)
-				{
-					throw new FbException(ex.Message, ex);
-				}
+				_transaction = _connection.InnerConnection.Database.BeginTransaction(BuildTpb(options));
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 		}
 
