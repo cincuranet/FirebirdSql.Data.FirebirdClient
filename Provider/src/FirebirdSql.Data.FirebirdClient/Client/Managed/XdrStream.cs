@@ -74,12 +74,14 @@ namespace FirebirdSql.Data.Client.Managed
 
 		private Stream _innerStream;
 		private Charset _charset;
-		private bool _compression;
+		private readonly bool _compression;
 		private bool _ownsStream;
 
 		private long _position;
 		private List<byte> _outputBuffer;
 		private List<byte> _inputBuffer;
+		private InputBufferNoCompress _inputBufferNoCompress;
+
 		private Ionic.Zlib.ZlibCodec _deflate;
 		private Ionic.Zlib.ZlibCodec _inflate;
 		private byte[] _compressionBuffer;
@@ -133,6 +135,30 @@ namespace FirebirdSql.Data.Client.Managed
 			: this(new MemoryStream(buffer), charset, false, true)
 		{ }
 
+		// dont use MemoryStream because one is zeroing data on SetLength
+		struct InputBufferNoCompress
+		{
+			public InputBufferNoCompress(byte[] buffer)
+			{
+				Buffer = buffer;
+				Length = 0;
+				Position = 0;
+			}
+			public byte[] Buffer { get; }
+			public int Position { get; set; }
+			public int Length { get; set; }
+
+			public int Read(byte[] buffer, int offset, int count)
+			{
+				var n = Length - Position;
+				if (n > count) n = count;
+				if (n == 0) return 0;
+				Array.Copy(Buffer, Position, buffer, offset, n);
+				Position += n;
+				return n;
+			}
+		}
+
 		public XdrStream(Stream innerStream, Charset charset, bool compression, bool ownsStream)
 			: base()
 		{
@@ -143,7 +169,14 @@ namespace FirebirdSql.Data.Client.Managed
 
 			_position = 0;
 			_outputBuffer = new List<byte>(PreferredBufferSize);
-			_inputBuffer = new List<byte>(PreferredBufferSize);
+			if (_compression)
+			{
+				_inputBuffer = new List<byte>(PreferredBufferSize);
+			}
+			else
+			{
+				_inputBufferNoCompress = new InputBufferNoCompress(new byte[PreferredBufferSize]);
+			}
 			if (_compression)
 			{
 				_deflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Compress);
@@ -232,6 +265,24 @@ namespace FirebirdSql.Data.Client.Managed
 		{
 			CheckDisposed();
 			EnsureReadable();
+			if (count == 0) return 0;
+			
+			if (!_compression)
+			{
+				var toRead = count;
+				toRead -= _inputBufferNoCompress.Read(buffer, offset, count);
+				
+				if (toRead > 0)
+				{
+					_inputBufferNoCompress.Length = _innerStream.Read(_inputBufferNoCompress.Buffer, 0, PreferredBufferSize);
+					_inputBufferNoCompress.Position = 0;
+					toRead -= _inputBufferNoCompress.Read(buffer, offset + count - toRead, toRead);
+				}
+				
+				_position += count - toRead;
+				return count - toRead;
+			} 
+			
 
 			if (_inputBuffer.Count < count)
 			{
@@ -239,22 +290,19 @@ namespace FirebirdSql.Data.Client.Managed
 				var read = _innerStream.Read(readBuffer, 0, readBuffer.Length);
 				if (read != 0)
 				{
-					if (_compression)
-					{
-						_inflate.OutputBuffer = _compressionBuffer;
-						_inflate.AvailableBytesOut = _compressionBuffer.Length;
-						_inflate.NextOut = 0;
-						_inflate.InputBuffer = readBuffer;
-						_inflate.AvailableBytesIn = read;
-						_inflate.NextIn = 0;
-						var rc = _inflate.Inflate(Ionic.Zlib.FlushType.None);
-						if (rc != Ionic.Zlib.ZlibConstants.Z_OK)
-							throw new IOException($"Error '{rc}' while decompressing the data.");
-						if (_inflate.AvailableBytesIn != 0)
-							throw new IOException("Decompression buffer too small.");
-						readBuffer = _compressionBuffer;
-						read = _inflate.NextOut;
-					}
+					_inflate.OutputBuffer = _compressionBuffer;
+					_inflate.AvailableBytesOut = _compressionBuffer.Length;
+					_inflate.NextOut = 0;
+					_inflate.InputBuffer = readBuffer;
+					_inflate.AvailableBytesIn = read;
+					_inflate.NextIn = 0;
+					var rc = _inflate.Inflate(Ionic.Zlib.FlushType.None);
+					if (rc != Ionic.Zlib.ZlibConstants.Z_OK)
+						throw new IOException($"Error '{rc}' while decompressing the data.");
+					if (_inflate.AvailableBytesIn != 0)
+						throw new IOException("Decompression buffer too small.");
+					readBuffer = _compressionBuffer;
+					read = _inflate.NextOut;
 					_inputBuffer.AddRange(readBuffer.Take(read));
 				}
 			}
