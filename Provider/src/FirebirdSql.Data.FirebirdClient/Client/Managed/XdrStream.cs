@@ -257,11 +257,12 @@ namespace FirebirdSql.Data.Client.Managed
 					_inputBuffer.AddRange(readBuffer.Take(read));
 				}
 			}
-			var data = _inputBuffer.Take(count).ToArray();
-			_inputBuffer.RemoveRange(0, data.Length);
-			Array.Copy(data, 0, buffer, offset, data.Length);
-			_position += data.Length;
-			return data.Length;
+
+			var readed = _inputBuffer.Count >= count ? count : _inputBuffer.Count;
+			_inputBuffer.CopyTo(0, buffer, offset, readed);
+			_inputBuffer.RemoveRange(0, readed);
+			_position += readed;
+			return readed;
 		}
 
 		public override void WriteByte(byte value)
