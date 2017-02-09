@@ -83,6 +83,7 @@ namespace FirebirdSql.Data.Client.Managed
 		private Ionic.Zlib.ZlibCodec _deflate;
 		private Ionic.Zlib.ZlibCodec _inflate;
 		private byte[] _compressionBuffer;
+		private byte[] _smallBuffer = new byte[8];
 
 		private int _operation;
 
@@ -333,9 +334,8 @@ namespace FirebirdSql.Data.Client.Managed
 
 		#region XDR Read Methods
 
-		public byte[] ReadBytes(int count)
+		private int ReadBytes(byte[] buffer, int count)
 		{
-			var buffer = new byte[count];
 			if (count > 0)
 			{
 				var toRead = count;
@@ -348,7 +348,15 @@ namespace FirebirdSql.Data.Client.Managed
 				{
 					throw new IOException();
 				}
+
+				return count - toRead;
 			}
+			return 0;
+		}
+		public byte[] ReadBytes(int count)
+		{
+			var buffer = new byte[count];
+			ReadBytes(buffer, count);
 			return buffer;
 		}
 
@@ -394,14 +402,27 @@ namespace FirebirdSql.Data.Client.Managed
 			return Convert.ToInt16(ReadInt32());
 		}
 
+		private void Clear4Bytes(byte[] buffer, int offset)
+		{
+			buffer[offset] = 0;
+			buffer[offset + 1] = 0;
+			buffer[offset + 2] = 0;
+			buffer[offset + 3] = 0;
+		}
 		public int ReadInt32()
 		{
-			return IPAddress.HostToNetworkOrder(BitConverter.ToInt32(ReadBytes(4), 0));
+			Clear4Bytes(_smallBuffer, 0);
+			ReadBytes(_smallBuffer, 4);
+			return IPAddress.HostToNetworkOrder(BitConverter.ToInt32(_smallBuffer, 0));
 		}
 
 		public long ReadInt64()
 		{
-			return IPAddress.HostToNetworkOrder(BitConverter.ToInt64(ReadBytes(8), 0));
+			Clear4Bytes(_smallBuffer, 0);
+			Clear4Bytes(_smallBuffer, 4);
+			ReadBytes(_smallBuffer, 8);
+
+			return IPAddress.HostToNetworkOrder(BitConverter.ToInt64(_smallBuffer, 0));
 		}
 
 		public Guid ReadGuid(int length)
@@ -416,7 +437,8 @@ namespace FirebirdSql.Data.Client.Managed
 
 		public double ReadDouble()
 		{
-			return BitConverter.ToDouble(BitConverter.GetBytes(ReadInt64()), 0);
+			var value = ReadInt64();
+			return BitConverter.Int64BitsToDouble(value);
 		}
 
 		public DateTime ReadDateTime()
