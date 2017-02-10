@@ -78,7 +78,7 @@ namespace FirebirdSql.Data.Client.Managed
 		private readonly bool _compression;
 		private bool _ownsStream;
 
-		private List<byte> _outputBuffer;
+		private BinaryWriter _outputWriter;
 		// do not dispose reader to prevent unconditional dispose of _innerStream
 		private BinaryReader _inputReader;
 
@@ -141,21 +141,14 @@ namespace FirebirdSql.Data.Client.Managed
 			_compression = compression;
 			_ownsStream = ownsStream;
 
-			_outputBuffer = new List<byte>(PreferredBufferSize);
-
 			var streamWrapper = _innerStream;
 			if (compression)
 				streamWrapper = new DecompressionStream(_innerStream, PreferredBufferSize, 1024 * 1024);
 			else if (!(_innerStream is MemoryStream))
 				streamWrapper = new BufferedStream(_innerStream, PreferredBufferSize);
+			_inputReader = new BinaryReader(streamWrapper);
 
-			_inputReader = new BinaryReader(streamWrapper, Encoding.Unicode); // do not use Encoding really
-
-			if (_compression)
-			{
-				_deflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Compress);
-				_compressionBuffer = new byte[1024 * 1024];
-			}
+			_outputWriter = new BinaryWriter(new MemoryStream());
 
 			ResetOperation();
 		}
@@ -189,28 +182,44 @@ namespace FirebirdSql.Data.Client.Managed
 		{
 			CheckDisposed();
 
-			var buffer = _outputBuffer.ToArray();
-			_outputBuffer.Clear();
-			var count = buffer.Length;
-			if (_compression)
+			var ms = (MemoryStream) _outputWriter.BaseStream;
+#if NET40 || NET45
+			var buffer = new ArraySegment<byte>(ms.GetBuffer(), 0, (int)ms.Length);
+#else
+			ArraySegment<byte> buffer;
+			if (!(ms.TryGetBuffer(out buffer)))
 			{
-				_deflate.OutputBuffer = _compressionBuffer;
-				_deflate.AvailableBytesOut = _compressionBuffer.Length;
-				_deflate.NextOut = 0;
-				_deflate.InputBuffer = buffer;
-				_deflate.AvailableBytesIn = buffer.Length;
-				_deflate.NextIn = 0;
-				var rc = _deflate.Deflate(Ionic.Zlib.FlushType.Sync);
-				if (rc != Ionic.Zlib.ZlibConstants.Z_OK)
-					throw new IOException($"Error '{rc}' while compressing the data.");
-				if (_deflate.AvailableBytesIn != 0)
-					throw new IOException("Compression buffer too small.");
-				buffer = _compressionBuffer;
-				count = _deflate.NextOut;
+				buffer = new ArraySegment<byte>(ms.ToArray(), 0, (int)ms.Length);
 			}
-			_innerStream.Write(buffer, 0, count);
-			_innerStream.Flush();
-			_inputReader.BaseStream.Flush();
+#endif
+			try
+			{
+				if (_compression)
+				{
+					if (_deflate == null) _deflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Compress);
+					if (_compressionBuffer == null) _compressionBuffer = new byte[1024*1024];
+
+					_deflate.OutputBuffer = _compressionBuffer;
+					_deflate.AvailableBytesOut = _compressionBuffer.Length;
+					_deflate.NextOut = 0;
+					_deflate.InputBuffer = buffer.Array;
+					_deflate.AvailableBytesIn = buffer.Count;
+					_deflate.NextIn = 0;
+					var rc = _deflate.Deflate(Ionic.Zlib.FlushType.Sync);
+					if (rc != Ionic.Zlib.ZlibConstants.Z_OK)
+						throw new IOException($"Error '{rc}' while compressing the data.");
+					if (_deflate.AvailableBytesIn != 0)
+						throw new IOException("Compression buffer too small.");
+					buffer = new ArraySegment<byte>(_compressionBuffer, 0, _deflate.NextOut);
+				}
+				_innerStream.Write(buffer.Array, buffer.Offset, buffer.Count);
+				_innerStream.Flush();
+				_inputReader.BaseStream.Flush();
+			}
+			finally
+			{
+				_outputWriter.BaseStream.SetLength(0);
+			}
 		}
 
 		public override void SetLength(long length)
@@ -249,14 +258,14 @@ namespace FirebirdSql.Data.Client.Managed
 			CheckDisposed();
 			EnsureWritable();
 
-			_outputBuffer.Add(value);
+			_outputWriter.Write(value);
 		}
 
 		public override void Write(byte[] buffer, int offset, int count)
 		{
 			CheckDisposed();
 			EnsureWritable();
-			_outputBuffer.AddRange(buffer.Skip(offset).Take(count));
+			_outputWriter.Write(buffer, offset, count);
 		}
 
 		public byte[] ToArray()
@@ -580,12 +589,12 @@ namespace FirebirdSql.Data.Client.Managed
 
 		public void Write(int value)
 		{
-			Write(BitConverter.GetBytes(IPAddress.NetworkToHostOrder(value)), 0, 4);
+			_outputWriter.Write(IPAddress.NetworkToHostOrder(value));
 		}
 
 		public void Write(long value)
 		{
-			Write(BitConverter.GetBytes(IPAddress.NetworkToHostOrder(value)), 0, 8);
+			_outputWriter.Write(IPAddress.NetworkToHostOrder(value));
 		}
 
 		public void Write(float value)
