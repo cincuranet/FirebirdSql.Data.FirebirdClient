@@ -26,6 +26,7 @@ using System.Globalization;
 using System.Linq;
 using FirebirdSql.Data.Common;
 using System.Collections.Generic;
+using Ionic.Zlib;
 
 namespace FirebirdSql.Data.Client.Managed
 {
@@ -77,15 +78,12 @@ namespace FirebirdSql.Data.Client.Managed
 		private readonly bool _compression;
 		private bool _ownsStream;
 
-		private long _position;
 		private List<byte> _outputBuffer;
-		private List<byte> _inputBuffer;
-		private InputBufferNoCompress _inputBufferNoCompress;
+		// do not dispose reader to prevent unconditional dispose of _innerStream
+		private BinaryReader _inputReader;
 
 		private Ionic.Zlib.ZlibCodec _deflate;
-		private Ionic.Zlib.ZlibCodec _inflate;
 		private byte[] _compressionBuffer;
-		private byte[] _smallBuffer = new byte[8];
 
 		private int _operation;
 
@@ -110,7 +108,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 		public override long Position
 		{
-			get { return _position; }
+			get { return _inputReader.BaseStream.Position; }
 			set { throw new NotSupportedException(); }
 		}
 
@@ -135,30 +133,6 @@ namespace FirebirdSql.Data.Client.Managed
 			: this(new MemoryStream(buffer), charset, false, true)
 		{ }
 
-		// dont use MemoryStream because one is zeroing data on SetLength
-		struct InputBufferNoCompress
-		{
-			public InputBufferNoCompress(byte[] buffer)
-			{
-				Buffer = buffer;
-				Length = 0;
-				Position = 0;
-			}
-			public byte[] Buffer { get; }
-			public int Position { get; set; }
-			public int Length { get; set; }
-
-			public int Read(byte[] buffer, int offset, int count)
-			{
-				var n = Length - Position;
-				if (n > count) n = count;
-				if (n == 0) return 0;
-				Array.Copy(Buffer, Position, buffer, offset, n);
-				Position += n;
-				return n;
-			}
-		}
-
 		public XdrStream(Stream innerStream, Charset charset, bool compression, bool ownsStream)
 			: base()
 		{
@@ -167,20 +141,19 @@ namespace FirebirdSql.Data.Client.Managed
 			_compression = compression;
 			_ownsStream = ownsStream;
 
-			_position = 0;
 			_outputBuffer = new List<byte>(PreferredBufferSize);
-			if (_compression)
-			{
-				_inputBuffer = new List<byte>(PreferredBufferSize);
-			}
-			else
-			{
-				_inputBufferNoCompress = new InputBufferNoCompress(new byte[PreferredBufferSize]);
-			}
+
+			var streamWrapper = _innerStream;
+			if (compression)
+				streamWrapper = new DecompressionStream(_innerStream, PreferredBufferSize, 1024 * 1024);
+			else if (!(_innerStream is MemoryStream))
+				streamWrapper = new BufferedStream(_innerStream, PreferredBufferSize);
+
+			_inputReader = new BinaryReader(streamWrapper, Encoding.Unicode); // do not use Encoding really
+
 			if (_compression)
 			{
 				_deflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Compress);
-				_inflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Decompress);
 				_compressionBuffer = new byte[1024 * 1024];
 			}
 
@@ -237,6 +210,7 @@ namespace FirebirdSql.Data.Client.Managed
 			}
 			_innerStream.Write(buffer, 0, count);
 			_innerStream.Flush();
+			_inputReader.BaseStream.Flush();
 		}
 
 		public override void SetLength(long length)
@@ -266,52 +240,8 @@ namespace FirebirdSql.Data.Client.Managed
 			CheckDisposed();
 			EnsureReadable();
 			if (count == 0) return 0;
-			
-			if (!_compression)
-			{
-				var toRead = count;
-				toRead -= _inputBufferNoCompress.Read(buffer, offset, count);
-				
-				if (toRead > 0)
-				{
-					_inputBufferNoCompress.Length = _innerStream.Read(_inputBufferNoCompress.Buffer, 0, PreferredBufferSize);
-					_inputBufferNoCompress.Position = 0;
-					toRead -= _inputBufferNoCompress.Read(buffer, offset + count - toRead, toRead);
-				}
-				
-				_position += count - toRead;
-				return count - toRead;
-			} 
-			
 
-			if (_inputBuffer.Count < count)
-			{
-				var readBuffer = new byte[PreferredBufferSize];
-				var read = _innerStream.Read(readBuffer, 0, readBuffer.Length);
-				if (read != 0)
-				{
-					_inflate.OutputBuffer = _compressionBuffer;
-					_inflate.AvailableBytesOut = _compressionBuffer.Length;
-					_inflate.NextOut = 0;
-					_inflate.InputBuffer = readBuffer;
-					_inflate.AvailableBytesIn = read;
-					_inflate.NextIn = 0;
-					var rc = _inflate.Inflate(Ionic.Zlib.FlushType.None);
-					if (rc != Ionic.Zlib.ZlibConstants.Z_OK)
-						throw new IOException($"Error '{rc}' while decompressing the data.");
-					if (_inflate.AvailableBytesIn != 0)
-						throw new IOException("Decompression buffer too small.");
-					readBuffer = _compressionBuffer;
-					read = _inflate.NextOut;
-					_inputBuffer.AddRange(readBuffer.Take(read));
-				}
-			}
-
-			var readed = _inputBuffer.Count >= count ? count : _inputBuffer.Count;
-			_inputBuffer.CopyTo(0, buffer, offset, readed);
-			_inputBuffer.RemoveRange(0, readed);
-			_position += readed;
-			return readed;
+			return _inputReader.Read(buffer, offset, count);
 		}
 
 		public override void WriteByte(byte value)
@@ -326,7 +256,6 @@ namespace FirebirdSql.Data.Client.Managed
 		{
 			CheckDisposed();
 			EnsureWritable();
-
 			_outputBuffer.AddRange(buffer.Skip(offset).Take(count));
 		}
 
@@ -401,6 +330,7 @@ namespace FirebirdSql.Data.Client.Managed
 			}
 			return 0;
 		}
+
 		public byte[] ReadBytes(int count)
 		{
 			var buffer = new byte[count];
@@ -450,27 +380,14 @@ namespace FirebirdSql.Data.Client.Managed
 			return Convert.ToInt16(ReadInt32());
 		}
 
-		private void Clear4Bytes(byte[] buffer, int offset)
-		{
-			buffer[offset] = 0;
-			buffer[offset + 1] = 0;
-			buffer[offset + 2] = 0;
-			buffer[offset + 3] = 0;
-		}
 		public int ReadInt32()
 		{
-			Clear4Bytes(_smallBuffer, 0);
-			ReadBytes(_smallBuffer, 4);
-			return IPAddress.HostToNetworkOrder(BitConverter.ToInt32(_smallBuffer, 0));
+			return IPAddress.HostToNetworkOrder(_inputReader.ReadInt32());
 		}
 
 		public long ReadInt64()
 		{
-			Clear4Bytes(_smallBuffer, 0);
-			Clear4Bytes(_smallBuffer, 4);
-			ReadBytes(_smallBuffer, 8);
-
-			return IPAddress.HostToNetworkOrder(BitConverter.ToInt64(_smallBuffer, 0));
+			return IPAddress.HostToNetworkOrder(_inputReader.ReadInt64());
 		}
 
 		public Guid ReadGuid(int length)
@@ -679,8 +596,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 		public void Write(double value)
 		{
-			var buffer = BitConverter.GetBytes(value);
-			Write(BitConverter.ToInt64(buffer, 0));
+			Write(BitConverter.DoubleToInt64Bits(value));
 		}
 
 		public void Write(decimal value, int type, int scale)
@@ -762,4 +678,109 @@ namespace FirebirdSql.Data.Client.Managed
 
 		#endregion
 	}
+
+
+	internal class DecompressionStream: Stream
+	{
+		// dont use MemoryStream because one is zeroing data on SetLength
+		struct InputBuffer
+		{
+			public InputBuffer(byte[] buffer)
+			{
+				Buffer = buffer;
+				Length = 0;
+				Position = 0;
+			}
+			public byte[] Buffer { get; }
+			public int Position { get; set; }
+			public int Length { get; set; }
+			public int Capacity => Buffer.Length;
+
+			public int Read(byte[] buffer, int offset, int count)
+			{
+				var n = Length - Position;
+				if (n > count) n = count;
+				if (n == 0) return 0;
+				Array.Copy(Buffer, Position, buffer, offset, n);
+				Position += n;
+				return n;
+			}
+		}
+
+		private readonly Stream _stream;
+		private readonly byte[] _streamBuffer;
+		private InputBuffer _decompressedBuffer;
+		private readonly ZlibCodec _inflate;
+
+		public DecompressionStream(Stream stream, int inputBufferSize, int decompressedBufferSize)
+		{
+			_stream = stream;
+			_streamBuffer = new byte[inputBufferSize];
+			_decompressedBuffer = new InputBuffer(new byte[decompressedBufferSize]);
+			_inflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Decompress);
+		}
+
+		public override void Flush()
+		{
+			_decompressedBuffer.Length = 0;
+			_decompressedBuffer.Position = 0;
+		}
+
+		public override long Seek(long offset, SeekOrigin origin)
+		{
+			throw new InvalidOperationException("DecompressionStream.Seek");
+		}
+
+		public override void SetLength(long value)
+		{
+			throw new InvalidOperationException("DecompressionStream.SetLength");
+		}
+
+		public override int Read(byte[] buffer, int offset, int count)
+		{
+			var n = _decompressedBuffer.Read(buffer, offset, count);
+			if (n == count) return n;
+
+			var readed = _stream.Read(_streamBuffer, 0, _streamBuffer.Length);
+
+			_inflate.OutputBuffer = _decompressedBuffer.Buffer;
+			_inflate.AvailableBytesOut = _decompressedBuffer.Capacity;
+			_inflate.NextOut = 0;
+			_inflate.InputBuffer = _streamBuffer;
+			_inflate.AvailableBytesIn = readed;
+			_inflate.NextIn = 0;
+			var rc = _inflate.Inflate(Ionic.Zlib.FlushType.None);
+			if (rc != Ionic.Zlib.ZlibConstants.Z_OK)
+				throw new IOException($"Error '{rc}' while decompressing the data.");
+			if (_inflate.AvailableBytesIn != 0)
+				throw new IOException("Decompression buffer too small.");
+			_decompressedBuffer.Position = 0;
+			_decompressedBuffer.Length = _inflate.NextOut;
+
+			n += _decompressedBuffer.Read(buffer, offset + n, count - n);
+			return n;
+		}
+
+		public override void Write(byte[] buffer, int offset, int count)
+		{
+			_stream.Write(buffer, offset, count);
+		}
+
+		public override bool CanRead => _stream.CanRead;
+		public override bool CanSeek => false;
+		public override bool CanWrite => false;
+
+		public override long Length
+		{
+			get { throw new InvalidOperationException("DecompressionStream.Length"); }
+		}
+
+		public override long Position
+		{
+			get { throw new InvalidOperationException("DecompressionStream.get_Position"); }
+			set { throw new InvalidOperationException("DecompressionStream.set_Position"); }
+		}
+
+	}
+
 }
