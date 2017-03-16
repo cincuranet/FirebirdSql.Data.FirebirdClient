@@ -79,7 +79,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 		private long _position;
 		private List<byte> _outputBuffer;
-		private List<byte> _inputBuffer;
+		private ReadBuffer<byte> _inputBuffer;
 		private Ionic.Zlib.ZlibCodec _deflate;
 		private Ionic.Zlib.ZlibCodec _inflate;
 		private byte[] _compressionBuffer;
@@ -142,7 +142,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 			_position = 0;
 			_outputBuffer = new List<byte>(PreferredBufferSize);
-			_inputBuffer = new List<byte>(PreferredBufferSize);
+			_inputBuffer = new ReadBuffer<byte>();
 			if (_compression)
 			{
 				_deflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Compress);
@@ -246,12 +246,10 @@ namespace FirebirdSql.Data.Client.Managed
 						readBuffer = _compressionBuffer;
 						read = _inflate.NextOut;
 					}
-					_inputBuffer.AddRange(readBuffer.Take(read));
+					_inputBuffer.AddRange(ref readBuffer,read);
 				}
 			}
-			var data = _inputBuffer.Take(count).ToArray();
-			_inputBuffer.RemoveRange(0, data.Length);
-			Array.Copy(data, 0, buffer, offset, data.Length);
+			var data = _inputBuffer.Take(count,offset,ref buffer);
 			_position += data.Length;
 			return data.Length;
 		}
@@ -683,4 +681,67 @@ namespace FirebirdSql.Data.Client.Managed
 
 		#endregion
 	}
+
+	public class ReadBuffer<T>
+	{
+        class OneBuffer
+        {
+            public T[] buffer;
+            public int length;
+        }
+
+        readonly List<OneBuffer> _queue;
+        int _count;
+		int _start;
+
+		public int Count { get {
+				return _count;
+			} }
+
+		public ReadBuffer()
+		{
+			_queue = new List<OneBuffer>();
+			_start = 0;
+		}
+
+		public void AddRange(ref T[] source,int length)
+		{
+			var ob = new OneBuffer();
+			ob.buffer = source;
+			ob.length = length;
+			_queue.Add(ob);
+			_count += length;
+		}
+
+		public T[] Take(int count, int offset,ref T[] result)
+		{
+			bool done = false;
+			int internalidx = this._start;
+			int resultidx = offset;
+
+			while (!done)
+			{
+				result[resultidx] = _queue[0].buffer[internalidx];
+				internalidx += 1;
+				resultidx += 1;
+
+				if (resultidx-offset >= count)
+				{
+					done = true;
+				}
+
+				if (internalidx > (_queue[0].length - 1))
+				{
+					_queue.RemoveAt(0);
+					internalidx = 0;
+				}
+			}
+
+			this._count -= count;
+			this._start = internalidx;
+			return result;
+		}
+
+	}
+	
 }
