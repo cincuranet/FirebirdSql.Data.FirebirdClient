@@ -249,9 +249,9 @@ namespace FirebirdSql.Data.Client.Managed
 					_inputBuffer.AddRange(ref readBuffer,read);
 				}
 			}
-			var data = _inputBuffer.Take(count,offset,ref buffer);
-			_position += data.Length;
-			return data.Length;
+			var dataLength = _inputBuffer.Take(count,offset,ref buffer);
+			_position += dataLength;
+			return dataLength;
 		}
 
 		public override void WriteByte(byte value)
@@ -682,6 +682,38 @@ namespace FirebirdSql.Data.Client.Managed
 		#endregion
 	}
 
+	public class ReadBuffer4<T>
+	{
+		public ReadBuffer4()
+		{
+			_inputBuffer = new List<T>();
+		}
+
+		public int Count
+		{
+			get
+			{
+				return _inputBuffer.Count;
+			}
+		}
+
+		List<T> _inputBuffer;
+
+		public void AddRange(ref T[] source, int length)
+		{
+			_inputBuffer.AddRange(source.Take(length));
+		}
+
+		public int Take(int count, int offset, ref T[] result)
+		{
+			var data = _inputBuffer.Take(count).ToArray();
+			_inputBuffer.RemoveRange(0, data.Length);
+			Array.Copy(data, 0, result, offset, data.Length);
+
+			return data.Length;
+		}
+	}
+
 	public class ReadBuffer<T>
 	{
         class OneBuffer
@@ -713,12 +745,17 @@ namespace FirebirdSql.Data.Client.Managed
 			_count += length;
 		}
 
-		public T[] Take(int count, int offset,ref T[] result)
+		public int Take(int count, int offset,ref T[] result)
 		{
 			bool done = false;
 			int internalidx = this._start;
 			int resultidx = offset;
 
+			if (count > _count)
+			{
+				count = _count;
+			}
+				
 			while (!done)
 			{
 				result[resultidx] = _queue[0].buffer[internalidx];
@@ -739,7 +776,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 			this._count -= count;
 			this._start = internalidx;
-			return result;
+			return count;
 		}
 
 	}
