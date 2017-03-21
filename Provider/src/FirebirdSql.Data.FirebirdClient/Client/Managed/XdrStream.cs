@@ -79,7 +79,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 		private long _position;
 		private List<byte> _outputBuffer;
-		private ReadBuffer<byte> _inputBuffer;
+		private ReadBuffer _inputBuffer;
 		private Ionic.Zlib.ZlibCodec _deflate;
 		private Ionic.Zlib.ZlibCodec _inflate;
 		private byte[] _compressionBuffer;
@@ -142,7 +142,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 			_position = 0;
 			_outputBuffer = new List<byte>(PreferredBufferSize);
-			_inputBuffer = new ReadBuffer<byte>();
+			_inputBuffer = new ReadBuffer();
 			if (_compression)
 			{
 				_deflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Compress);
@@ -246,11 +246,13 @@ namespace FirebirdSql.Data.Client.Managed
 						readBuffer = _compressionBuffer;
 						read = _inflate.NextOut;
 					}
-					_inputBuffer.AddRange(ref readBuffer,read);
+					_inputBuffer.AddRange(readBuffer,read);
 				}
 			}
-			var dataLength = _inputBuffer.Take(count,offset,ref buffer);
+			
+			var dataLength = _inputBuffer.TakeInto(count, offset,ref buffer);
 			_position += dataLength;
+
 			return dataLength;
 		}
 
@@ -682,103 +684,98 @@ namespace FirebirdSql.Data.Client.Managed
 		#endregion
 	}
 
-	public class ReadBuffer4<T>
+	class ReadBuffer
 	{
-		public ReadBuffer4()
+		private int _readpos;
+		private int _length;
+		public const int BufferSize = 2 * 32 * 1024;
+		private byte[] _array;
+
+		public ReadBuffer()
 		{
-			_inputBuffer = new List<T>();
+			_array = new byte[BufferSize];
+			_readpos = 0;
+			_length = 0;
 		}
 
 		public int Count
 		{
 			get
 			{
-				return _inputBuffer.Count;
+				return _length;
 			}
 		}
 
-		List<T> _inputBuffer;
-
-		public void AddRange(ref T[] source, int length)
+		bool Empty()
 		{
-			_inputBuffer.AddRange(source.Take(length));
+			return _length == 0;
 		}
 
-		public int Take(int count, int offset, ref T[] result)
-		{
-			var data = _inputBuffer.Take(count).ToArray();
-			_inputBuffer.RemoveRange(0, data.Length);
-			Array.Copy(data, 0, result, offset, data.Length);
-
-			return data.Length;
-		}
-	}
-
-	public class ReadBuffer<T>
-	{
-        class OneBuffer
-        {
-            public T[] buffer;
-            public int length;
-        }
-
-        readonly List<OneBuffer> _queue;
-        int _count;
-		int _start;
-
-		public int Count { get {
-				return _count;
-			} }
-
-		public ReadBuffer()
-		{
-			_queue = new List<OneBuffer>();
-			_start = 0;
+		bool Full() {
+			return _length == _array.Length;
 		}
 
-		public void AddRange(ref T[] source,int length)
+		int Mask(int index)
 		{
-			var ob = new OneBuffer();
-			ob.buffer = source;
-			ob.length = length;
-			_queue.Add(ob);
-			_count += length;
+			return index & (_array.Length - 1);
 		}
 
-		public int Take(int count, int offset,ref T[] result)
+		int Inc(int index)
 		{
-			bool done = false;
-			int internalidx = this._start;
-			int resultidx = offset;
+			return Mask(index + 1);
+		}
 
-			if (count > _count)
+		void Push(byte val)
+		{
+			if (Full())
 			{
-				count = _count;
+				throw new Exception("Buffer Full");
 			}
-				
-			while (!done)
+			_array[Mask(_readpos + _length)] = val;
+			_length += 1;
+		}
+
+		byte Shift()
+		{
+			if (Empty())
 			{
-				result[resultidx] = _queue[0].buffer[internalidx];
-				internalidx += 1;
-				resultidx += 1;
-
-				if (resultidx-offset >= count)
-				{
-					done = true;
-				}
-
-				if (internalidx > (_queue[0].length - 1))
-				{
-					_queue.RemoveAt(0);
-					internalidx = 0;
-				}
+				throw new Exception("Buffer Empty");
 			}
+			_length -= 1;
+			var ret = _array[_readpos];
+			_readpos = Inc(_readpos);
+			return ret;
+		}
 
-			this._count -= count;
-			this._start = internalidx;
+		public void AddRange(byte[] source, int length)
+		{
+			var dta = source.Take(length);
+			foreach (var item in dta)
+			{
+				this.Push(item);
+			}
+		}
+
+		public int TakeInto(int count,int offset,ref byte[] buffer)
+		{
+			count = Math.Min(count, _length);
+			for (int i = 0; i < count; i++)
+			{
+				buffer[offset+i] = this.Shift();
+			}
 			return count;
 		}
 
+		public byte[] Take(int count)
+		{
+			var res = new byte[count];
+			for (int i = 0; i < count; i++)
+			{
+				res[i] = this.Shift();
+			}
+			return res;
+		}
 	}
+
 	
 }
