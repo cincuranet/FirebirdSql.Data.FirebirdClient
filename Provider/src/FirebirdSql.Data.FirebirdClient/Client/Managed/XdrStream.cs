@@ -224,7 +224,7 @@ namespace FirebirdSql.Data.Client.Managed
 			CheckDisposed();
 			EnsureReadable();
 
-			if (_inputBuffer.Count < count)
+			if (_inputBuffer.Length < count)
 			{
 				var readBuffer = new byte[PreferredBufferSize];
 				var read = _innerStream.Read(readBuffer, 0, readBuffer.Length);
@@ -684,98 +684,67 @@ namespace FirebirdSql.Data.Client.Managed
 		#endregion
 	}
 
-	class ReadBuffer
+	public class ReadBuffer
 	{
-		private int _readpos;
-		private int _length;
-		public const int BufferSize = 2 * 32 * 1024;
-		private byte[] _array;
+		public const int BufferSize = 32 * 1024;
 
+		private int _readpos;
+		private int _writepos;
+		private byte[] _buffer;
+
+		public int Length;
+		
 		public ReadBuffer()
 		{
-			_array = new byte[BufferSize];
+			_buffer = new byte[BufferSize];
 			_readpos = 0;
-			_length = 0;
+			_writepos = 0;
+			Length = 0;
 		}
-
-		public int Count
+				
+		public void AddRange(byte[] source, int count)
 		{
-			get
+			if ((Length + count) >= _buffer.Length)
 			{
-				return _length;
+				//resize
+				var newbuffer = new byte[_buffer.Length * 2];
+				Array.Copy(_buffer, newbuffer, _buffer.Length);
+				this._buffer = newbuffer;
 			}
-		}
-
-		bool Empty()
-		{
-			return _length == 0;
-		}
-
-		bool Full() {
-			return _length == _array.Length;
-		}
-
-		int Mask(int index)
-		{
-			return index & (_array.Length - 1);
-		}
-
-		int Inc(int index)
-		{
-			return Mask(index + 1);
-		}
-
-		void Push(byte val)
-		{
-			if (Full())
-			{
-				throw new Exception("Buffer Full");
-			}
-			_array[Mask(_readpos + _length)] = val;
-			_length += 1;
-		}
-
-		byte Shift()
-		{
-			if (Empty())
-			{
-				throw new Exception("Buffer Empty");
-			}
-			_length -= 1;
-			var ret = _array[_readpos];
-			_readpos = Inc(_readpos);
-			return ret;
-		}
-
-		public void AddRange(byte[] source, int length)
-		{
-			var dta = source.Take(length);
-			foreach (var item in dta)
-			{
-				this.Push(item);
-			}
-		}
-
-		public int TakeInto(int count,int offset,ref byte[] buffer)
-		{
-			count = Math.Min(count, _length);
+			int sourceIndex = 0;
 			for (int i = 0; i < count; i++)
 			{
-				buffer[offset+i] = this.Shift();
+				if (_writepos == _buffer.Length)
+					_writepos = 0;
+				_buffer[_writepos] = source[sourceIndex];
+
+				sourceIndex += 1;
+				_writepos += 1;
 			}
+
+			this.Length += count;
+
+		}
+
+		public int TakeInto(int count, int offset, ref byte[] destination)
+		{
+			count = Math.Min(count, this.Length);
+
+			int dstIndex = offset;
+			for (int i = 0; i < count; i++)
+			{
+				if (_readpos == _buffer.Length)
+					_readpos = 0;
+				destination[dstIndex] = _buffer[_readpos];
+
+				dstIndex += 1;
+				_readpos += 1;
+			}
+			this.Length -= count;
 			return count;
 		}
 
-		public byte[] Take(int count)
-		{
-			var res = new byte[count];
-			for (int i = 0; i < count; i++)
-			{
-				res[i] = this.Shift();
-			}
-			return res;
-		}
+
 	}
 
-	
 }
