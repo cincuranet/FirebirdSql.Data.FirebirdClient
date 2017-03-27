@@ -79,7 +79,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 		private long _position;
 		private List<byte> _outputBuffer;
-		private List<byte> _inputBuffer;
+		private ReadBuffer _inputBuffer;
 		private Ionic.Zlib.ZlibCodec _deflate;
 		private Ionic.Zlib.ZlibCodec _inflate;
 		private byte[] _compressionBuffer;
@@ -142,7 +142,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 			_position = 0;
 			_outputBuffer = new List<byte>(PreferredBufferSize);
-			_inputBuffer = new List<byte>(PreferredBufferSize);
+			_inputBuffer = new ReadBuffer();
 			if (_compression)
 			{
 				_deflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Compress);
@@ -224,7 +224,7 @@ namespace FirebirdSql.Data.Client.Managed
 			CheckDisposed();
 			EnsureReadable();
 
-			if (_inputBuffer.Count < count)
+			if (_inputBuffer.Length < count)
 			{
 				var readBuffer = new byte[PreferredBufferSize];
 				var read = _innerStream.Read(readBuffer, 0, readBuffer.Length);
@@ -246,14 +246,14 @@ namespace FirebirdSql.Data.Client.Managed
 						readBuffer = _compressionBuffer;
 						read = _inflate.NextOut;
 					}
-					_inputBuffer.AddRange(readBuffer.Take(read));
+					_inputBuffer.AddRange(readBuffer,read);
 				}
 			}
-			var data = _inputBuffer.Take(count).ToArray();
-			_inputBuffer.RemoveRange(0, data.Length);
-			Array.Copy(data, 0, buffer, offset, data.Length);
-			_position += data.Length;
-			return data.Length;
+			
+			var dataLength = _inputBuffer.TakeInto(count, offset,ref buffer);
+			_position += dataLength;
+
+			return dataLength;
 		}
 
 		public override void WriteByte(byte value)
@@ -683,4 +683,68 @@ namespace FirebirdSql.Data.Client.Managed
 
 		#endregion
 	}
+
+	public class ReadBuffer
+	{
+		public const int BufferSize = 32 * 1024;
+
+		private int _readpos;
+		private int _writepos;
+		private byte[] _buffer;
+
+		public int Length;
+		
+		public ReadBuffer()
+		{
+			_buffer = new byte[BufferSize];
+			_readpos = 0;
+			_writepos = 0;
+			Length = 0;
+		}
+				
+		public void AddRange(byte[] source, int count)
+		{
+			if ((Length + count) >= _buffer.Length)
+			{
+				//resize
+				var newbuffer = new byte[_buffer.Length * 2];
+				Array.Copy(_buffer, newbuffer, _buffer.Length);
+				this._buffer = newbuffer;
+			}
+			int sourceIndex = 0;
+			for (int i = 0; i < count; i++)
+			{
+				if (_writepos == _buffer.Length)
+					_writepos = 0;
+				_buffer[_writepos] = source[sourceIndex];
+
+				sourceIndex += 1;
+				_writepos += 1;
+			}
+
+			this.Length += count;
+
+		}
+
+		public int TakeInto(int count, int offset, ref byte[] destination)
+		{
+			count = Math.Min(count, this.Length);
+
+			int dstIndex = offset;
+			for (int i = 0; i < count; i++)
+			{
+				if (_readpos == _buffer.Length)
+					_readpos = 0;
+				destination[dstIndex] = _buffer[_readpos];
+
+				dstIndex += 1;
+				_readpos += 1;
+			}
+			this.Length -= count;
+			return count;
+		}
+
+
+	}
+
 }
