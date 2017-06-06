@@ -720,6 +720,12 @@ namespace FirebirdSql.Data.FirebirdClient
 			{
 				try
 				{
+					if (_statement != null)
+					{
+						_statement.Dispose();
+						_statement = null;
+					}
+
 					_transaction.Commit();
 				}
 				catch
