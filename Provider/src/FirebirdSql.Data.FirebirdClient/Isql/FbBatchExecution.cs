@@ -79,11 +79,24 @@ namespace FirebirdSql.Data.Isql
 			}
 		}
 
-		/// <summary>
-		/// Appends SQL statements from <see cref="FbScript"/> instance. <see cref="FbScript.Parse"/> should be already called.
-		/// </summary>
-		/// <param name="isqlScript">A <see cref="FbScript"/> object.</param>
-		public void AppendSqlStatements(FbScript isqlScript)
+        /// <summary>
+        /// Creates an instance of FbBatchExecution engine with the given
+        /// connection.
+        /// </summary>
+        /// <param name="sqlConnection">A <see cref="FbConnection"/> object.</param>
+        /// <param name="isqlScript">A <see cref="FbScript"/> object.</param>
+        public FbBatchExecution(FbConnection sqlConnection = null, FbScript isqlScript = null) : this(sqlConnection)
+        {
+            if (isqlScript != null)
+                this.AppendSqlStatements(isqlScript);
+        }
+
+
+        /// <summary>
+        /// Appends SQL statements from <see cref="FbScript"/> instance. <see cref="FbScript.Parse"/> should be already called.
+        /// </summary>
+        /// <param name="isqlScript">A <see cref="FbScript"/> object.</param>
+        public void AppendSqlStatements(FbScript isqlScript)
 		{
 			_statements.AddRange(isqlScript.Results);
 		}
