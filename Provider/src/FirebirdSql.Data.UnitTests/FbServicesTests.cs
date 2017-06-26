@@ -66,39 +66,39 @@ namespace FirebirdSql.Data.UnitTests
 		[Test]
 		public void BackupRestoreTest()
 		{
-			var id = Guid.NewGuid();
-			BackupRestoreTest_BackupPart(id);
-			BackupRestoreTest_RestorePart(id);
+			var backupName = $"{Guid.NewGuid().ToString()}.bak";
+			void BackupPart()
+			{
+				FbBackup backupSvc = new FbBackup();
+
+				backupSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
+				backupSvc.Options = FbBackupFlags.IgnoreLimbo;
+				backupSvc.BackupFiles.Add(new FbBackupFile(backupName, 2048));
+				backupSvc.Verbose = true;
+
+				backupSvc.ServiceOutput += new EventHandler<ServiceOutputEventArgs>(ServiceOutput);
+
+				backupSvc.Execute();
+			}
+			void RestorePart()
+			{
+				FbRestore restoreSvc = new FbRestore();
+
+				restoreSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
+				restoreSvc.Options = FbRestoreFlags.Create | FbRestoreFlags.Replace;
+				restoreSvc.PageSize = TestsSetup.PageSize;
+				restoreSvc.Verbose = true;
+				restoreSvc.BackupFiles.Add(new FbBackupFile(backupName, 2048));
+
+				restoreSvc.ServiceOutput += new EventHandler<ServiceOutputEventArgs>(ServiceOutput);
+
+				restoreSvc.Execute();
+			}
+			BackupPart();
+			RestorePart();
 			// test the database was actually restored fine
 			Connection.Open();
 			Connection.Close();
-		}
-		void BackupRestoreTest_BackupPart(Guid id)
-		{
-			FbBackup backupSvc = new FbBackup();
-
-			backupSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
-			backupSvc.Options = FbBackupFlags.IgnoreLimbo;
-			backupSvc.BackupFiles.Add(new FbBackupFile(CreateBackupFilename(id), 2048));
-			backupSvc.Verbose = true;
-
-			backupSvc.ServiceOutput += new EventHandler<ServiceOutputEventArgs>(ServiceOutput);
-
-			backupSvc.Execute();
-		}
-		void BackupRestoreTest_RestorePart(Guid id)
-		{
-			FbRestore restoreSvc = new FbRestore();
-
-			restoreSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
-			restoreSvc.Options = FbRestoreFlags.Create | FbRestoreFlags.Replace;
-			restoreSvc.PageSize = TestsSetup.PageSize;
-			restoreSvc.Verbose = true;
-			restoreSvc.BackupFiles.Add(new FbBackupFile(CreateBackupFilename(id), 2048));
-
-			restoreSvc.ServiceOutput += new EventHandler<ServiceOutputEventArgs>(ServiceOutput);
-
-			restoreSvc.Execute();
 		}
 
 		[TestCase(true)]
@@ -153,7 +153,7 @@ end";
 		{
 			FbStreamingBackup backupSvc = new FbStreamingBackup();
 
-			backupSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			backupSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
 			backupSvc.Options = FbBackupFlags.IgnoreLimbo;
 			backupSvc.OutputStream = buffer;
 
@@ -165,7 +165,7 @@ end";
 		{
 			FbStreamingRestore restoreSvc = new FbStreamingRestore();
 
-			restoreSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			restoreSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
 			restoreSvc.Options = FbRestoreFlags.Create | FbRestoreFlags.Replace;
 			restoreSvc.PageSize = TestsSetup.PageSize;
 			restoreSvc.Verbose = verbose;
@@ -181,7 +181,7 @@ end";
 		{
 			FbValidation validationSvc = new FbValidation();
 
-			validationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			validationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
 			validationSvc.Options = FbValidationFlags.ValidateDatabase;
 
 			validationSvc.ServiceOutput += ServiceOutput;
@@ -194,7 +194,7 @@ end";
 		{
 			FbValidation validationSvc = new FbValidation();
 
-			validationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			validationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
 			validationSvc.Options = FbValidationFlags.SweepDatabase;
 
 			validationSvc.ServiceOutput += ServiceOutput;
@@ -207,7 +207,7 @@ end";
 		{
 			FbConfiguration configurationSvc = new FbConfiguration();
 
-			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
 
 			configurationSvc.SetSweepInterval(1000);
 			configurationSvc.SetReserveSpace(true);
@@ -215,19 +215,17 @@ end";
 		}
 
 		[Test]
-		[Category("Local")]
 		public void ShutdownOnlineTest()
 		{
 			FbConfiguration configurationSvc = new FbConfiguration();
 
-			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
 
 			configurationSvc.DatabaseShutdown(FbShutdownMode.Forced, 10);
 			configurationSvc.DatabaseOnline();
 		}
 
 		[Test]
-		[Category("Local")]
 		public void ShutdownOnline2Test()
 		{
 			if (!EnsureVersion(new Version("2.5.0.0")))
@@ -235,7 +233,7 @@ end";
 
 			FbConfiguration configurationSvc = new FbConfiguration();
 
-			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			configurationSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
 
 			configurationSvc.DatabaseShutdown2(FbShutdownOnlineMode.Full, FbShutdownType.ForceShutdown, 10);
 			configurationSvc.DatabaseOnline2(FbShutdownOnlineMode.Normal);
@@ -246,7 +244,7 @@ end";
 		{
 			FbStatistical statisticalSvc = new FbStatistical();
 
-			statisticalSvc.ConnectionString = BuildServicesConnectionString(FbServerType);
+			statisticalSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
 			statisticalSvc.Options = FbStatisticalFlags.SystemTablesRelations;
 
 			statisticalSvc.ServiceOutput += ServiceOutput;
@@ -259,7 +257,7 @@ end";
 		{
 			FbLog logSvc = new FbLog();
 
-			logSvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			logSvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, false);
 
 			logSvc.ServiceOutput += ServiceOutput;
 
@@ -271,7 +269,7 @@ end";
 		{
 			FbSecurity securitySvc = new FbSecurity();
 
-			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, false);
 
 			FbUserData user = new FbUserData();
 
@@ -286,7 +284,7 @@ end";
 		{
 			FbSecurity securitySvc = new FbSecurity();
 
-			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, false);
 
 			FbUserData user = new FbUserData();
 
@@ -300,7 +298,7 @@ end";
 		{
 			FbSecurity securitySvc = new FbSecurity();
 
-			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, false);
 
 			FbUserData user = securitySvc.DisplayUser("SYSDBA");
 
@@ -312,7 +310,7 @@ end";
 		{
 			FbSecurity securitySvc = new FbSecurity();
 
-			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			securitySvc.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, false);
 
 			FbUserData[] users = securitySvc.DisplayUsers();
 
@@ -329,7 +327,7 @@ end";
 		{
 			FbServerProperties serverProp = new FbServerProperties();
 
-			serverProp.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			serverProp.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, false);
 
 			FbServerConfig serverConfig = serverProp.GetServerConfig();
 			FbDatabasesInfo databasesInfo = serverProp.GetDatabasesInfo();
@@ -348,49 +346,52 @@ end";
 			if (!EnsureVersion(new Version("2.5.0.0")))
 				return;
 
-			var id = Guid.NewGuid();
-			NBackupBackupRestoreTest_BackupPart(id);
-			NBackupBackupRestoreTest_RestorePart(id);
-		}
-		void NBackupBackupRestoreTest_BackupPart(Guid id)
-		{
-			Action<int> doLevel = l =>
+			const int Levels = 2;
+			var backupName = $"{Guid.NewGuid().ToString()}.nbak";
+			void BackupPart()
 			{
-				var nbak = new FbNBackup();
+				void DoLevel(int level)
+				{
+					var nbak = new FbNBackup();
 
-				nbak.ConnectionString = BuildServicesConnectionString(FbServerType);
-				nbak.Level = l;
-				nbak.BackupFile = CreateBackupFilename(id) + l.ToString();
-				nbak.DirectIO = true;
-				nbak.Options = FbNBackupFlags.NoDatabaseTriggers;
+					nbak.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
+					nbak.Level = level;
+					nbak.BackupFile = backupName + level.ToString();
+					nbak.DirectIO = true;
+					nbak.Options = FbNBackupFlags.NoDatabaseTriggers;
 
-				nbak.ServiceOutput += ServiceOutput;
+					nbak.ServiceOutput += ServiceOutput;
 
-				nbak.Execute();
-			};
-			doLevel(0);
-			doLevel(1);
-		}
-		void NBackupBackupRestoreTest_RestorePart(Guid id)
-		{
-			FbConnection.DropDatabase(BuildConnectionString(FbServerType, Compression));
+					nbak.Execute();
+				}
+				for (int i = 0; i < Levels; i++)
+				{
+					DoLevel(i);
+				}
+			}
+			void RestorePart()
+			{
+				FbConnection.DropDatabase(BuildConnectionString(FbServerType, Compression));
 
-			var nrest = new FbNRestore();
+				var nrest = new FbNRestore();
 
-			nrest.ConnectionString = BuildServicesConnectionString(FbServerType);
-			nrest.BackupFiles = Enumerable.Range(0, 2).Select(l => CreateBackupFilename(id) + l.ToString());
-			nrest.DirectIO = true;
+				nrest.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, true);
+				nrest.BackupFiles = Enumerable.Range(0, Levels).Select(l => backupName + l.ToString());
+				nrest.DirectIO = true;
 
-			nrest.ServiceOutput += ServiceOutput;
+				nrest.ServiceOutput += ServiceOutput;
 
-			nrest.Execute();
+				nrest.Execute();
+			}
+			BackupPart();
+			RestorePart();
 		}
 
 		[Test]
 		public void TraceTest()
 		{
 			var trace = new FbTrace();
-			trace.ConnectionString = BuildServicesConnectionString(FbServerType, false);
+			trace.ConnectionString = BuildServicesConnectionString(FbServerType, Compression, false);
 			trace.DatabasesConfigurations.Add(new FbDatabaseTraceConfiguration()
 			{
 				Enabled = true,
@@ -415,7 +416,7 @@ end";
 			ThreadPool.QueueUserWorkItem(_ =>
 			{
 				Thread.Sleep(2000);
-				new FbTrace(BuildServicesConnectionString(FbServerType, false)).Stop(sessionId);
+				new FbTrace(BuildServicesConnectionString(FbServerType, Compression, false)).Stop(sessionId);
 			});
 			trace.Start("test");
 		}
@@ -427,11 +428,6 @@ end";
 		void ServiceOutput(object sender, ServiceOutputEventArgs e)
 		{
 			TestContext.WriteLine(e.Message);
-		}
-
-		static string CreateBackupFilename(Guid id)
-		{
-			return $"{TestsSetup.FilenameBase}_{id}.fbk";
 		}
 
 		#endregion

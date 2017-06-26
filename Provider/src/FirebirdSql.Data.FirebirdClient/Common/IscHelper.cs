@@ -14,6 +14,9 @@
  *
  *	Copyright (c) 2002, 2007 Carlos Guzman Alvarez
  *	All Rights Reserved.
+ *
+ *  Contributors:
+ *      Jiri Cincura (jiri@cincura.net)
  */
 
 using System;
@@ -26,8 +29,6 @@ namespace FirebirdSql.Data.Common
 {
 	internal static class IscHelper
 	{
-		#region Static Methods
-
 		public static ArrayList ParseDatabaseInfo(byte[] buffer)
 		{
 			ArrayList info = new ArrayList();
@@ -327,7 +328,5 @@ namespace FirebirdSql.Data.Common
 
 			return newValue;
 		}
-
-		#endregion
 	}
 }

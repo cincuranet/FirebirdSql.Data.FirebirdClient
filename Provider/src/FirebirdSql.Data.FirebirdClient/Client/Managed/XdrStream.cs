@@ -13,7 +13,7 @@
  *	   language governing rights and limitations under the License.
  *
  *	Copyright (c) 2002, 2007 Carlos Guzman Alvarez
- *	Copyright (c) 2014-2016 Jiri Cincura (jiri@cincura.net)
+ *	Copyright (c) 2014 - 2017 Jiri Cincura (jiri@cincura.net)
  *	All Rights Reserved.
  */
 
@@ -26,6 +26,8 @@ using System.Globalization;
 using System.Linq;
 using FirebirdSql.Data.Common;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace FirebirdSql.Data.Client.Managed
 {
@@ -79,7 +81,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 		private long _position;
 		private List<byte> _outputBuffer;
-		private List<byte> _inputBuffer;
+		private ReadBuffer _inputBuffer;
 		private Ionic.Zlib.ZlibCodec _deflate;
 		private Ionic.Zlib.ZlibCodec _inflate;
 		private byte[] _compressionBuffer;
@@ -142,7 +144,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 			_position = 0;
 			_outputBuffer = new List<byte>(PreferredBufferSize);
-			_inputBuffer = new List<byte>(PreferredBufferSize);
+			_inputBuffer = new ReadBuffer(PreferredBufferSize);
 			if (_compression)
 			{
 				_deflate = new Ionic.Zlib.ZlibCodec(Ionic.Zlib.CompressionMode.Compress);
@@ -161,20 +163,12 @@ namespace FirebirdSql.Data.Client.Managed
 		{
 			if (disposing)
 			{
-				try
+				if (_ownsStream)
 				{
-					if (_ownsStream)
-					{
-						_innerStream?.Dispose();
-					}
+					_innerStream?.Dispose();
 				}
-				catch
-				{ }
-				finally
-				{
-					_innerStream = null;
-					_charset = null;
-				}
+				_innerStream = null;
+				_charset = null;
 			}
 		}
 
@@ -232,7 +226,7 @@ namespace FirebirdSql.Data.Client.Managed
 			CheckDisposed();
 			EnsureReadable();
 
-			if (_inputBuffer.Count < count)
+			if (_inputBuffer.Length < count)
 			{
 				var readBuffer = new byte[PreferredBufferSize];
 				var read = _innerStream.Read(readBuffer, 0, readBuffer.Length);
@@ -254,14 +248,50 @@ namespace FirebirdSql.Data.Client.Managed
 						readBuffer = _compressionBuffer;
 						read = _inflate.NextOut;
 					}
-					_inputBuffer.AddRange(readBuffer.Take(read));
+					_inputBuffer.AddRange(readBuffer, read);
 				}
 			}
-			var data = _inputBuffer.Take(count).ToArray();
-			_inputBuffer.RemoveRange(0, data.Length);
-			Array.Copy(data, 0, buffer, offset, data.Length);
-			_position += data.Length;
-			return data.Length;
+			var dataLength = _inputBuffer.ReadInto(ref buffer, offset, count);
+			_position += dataLength;
+			return dataLength;
+		}
+#if NET40
+		public async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default(CancellationToken))
+#else
+		public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+#endif
+		{
+			CheckDisposed();
+			EnsureReadable();
+
+			if (_inputBuffer.Length < count)
+			{
+				var readBuffer = new byte[PreferredBufferSize];
+				var read = await _innerStream.ReadAsync(readBuffer, 0, readBuffer.Length).ConfigureAwait(false);
+				if (read != 0)
+				{
+					if (_compression)
+					{
+						_inflate.OutputBuffer = _compressionBuffer;
+						_inflate.AvailableBytesOut = _compressionBuffer.Length;
+						_inflate.NextOut = 0;
+						_inflate.InputBuffer = readBuffer;
+						_inflate.AvailableBytesIn = read;
+						_inflate.NextIn = 0;
+						var rc = _inflate.Inflate(Ionic.Zlib.FlushType.None);
+						if (rc != Ionic.Zlib.ZlibConstants.Z_OK)
+							throw new IOException($"Error '{rc}' while decompressing the data.");
+						if (_inflate.AvailableBytesIn != 0)
+							throw new IOException("Decompression buffer too small.");
+						readBuffer = _compressionBuffer;
+						read = _inflate.NextOut;
+					}
+					_inputBuffer.AddRange(readBuffer, read);
+				}
+			}
+			var dataLength = _inputBuffer.ReadInto(ref buffer, offset, count);
+			_position += dataLength;
+			return dataLength;
 		}
 
 		public override void WriteByte(byte value)
@@ -277,7 +307,15 @@ namespace FirebirdSql.Data.Client.Managed
 			CheckDisposed();
 			EnsureWritable();
 
-			_outputBuffer.AddRange(buffer.Skip(offset).Take(count));
+#if NET40
+			_outputBuffer.Capacity = Math.Max(_outputBuffer.Capacity, _outputBuffer.Count + count);
+			for (var i = offset; i < count; i++)
+			{
+				_outputBuffer.Add(buffer[i]);
+			}
+#else
+			_outputBuffer.AddRange(new ArraySegment<byte>(buffer, offset, count));
+#endif
 		}
 
 		public byte[] ToArray()
@@ -302,17 +340,26 @@ namespace FirebirdSql.Data.Client.Managed
 			return op;
 		}
 
+		/* loop	as long	as we are receiving	dummy packets, just
+		 * throwing	them away--note	that if	we are a server	we won't
+		 * be receiving	them, but it is	better to check	for	them at
+		 * this	level rather than try to catch them	in all places where
+		 * this	routine	is called
+		 */
 		public int ReadNextOperation()
 		{
 			do
 			{
-				/* loop	as long	as we are receiving	dummy packets, just
-				 * throwing	them away--note	that if	we are a server	we won't
-				 * be receiving	them, but it is	better to check	for	them at
-				 * this	level rather than try to catch them	in all places where
-				 * this	routine	is called
-				 */
 				_operation = ReadInt32();
+			} while (_operation == IscCodes.op_dummy);
+
+			return _operation;
+		}
+		public async Task<int> ReadNextOperationAsync()
+		{
+			do
+			{
+				_operation = await ReadInt32Async().ConfigureAwait(false);
 			} while (_operation == IscCodes.op_dummy);
 
 			return _operation;
@@ -342,6 +389,24 @@ namespace FirebirdSql.Data.Client.Managed
 				while (toRead > 0 && currentlyRead != 0)
 				{
 					toRead -= (currentlyRead = Read(buffer, count - toRead, toRead));
+				}
+				if (toRead == count)
+				{
+					throw new IOException();
+				}
+			}
+			return buffer;
+		}
+		public async Task<byte[]> ReadBytesAsync(int count)
+		{
+			var buffer = new byte[count];
+			if (count > 0)
+			{
+				var toRead = count;
+				var currentlyRead = -1;
+				while (toRead > 0 && currentlyRead != 0)
+				{
+					toRead -= (currentlyRead = await ReadAsync(buffer, count - toRead, toRead).ConfigureAwait(false));
 				}
 				if (toRead == count)
 				{
@@ -396,6 +461,10 @@ namespace FirebirdSql.Data.Client.Managed
 		public int ReadInt32()
 		{
 			return IPAddress.HostToNetworkOrder(BitConverter.ToInt32(ReadBytes(4), 0));
+		}
+		public async Task<int> ReadInt32Async()
+		{
+			return IPAddress.HostToNetworkOrder(BitConverter.ToInt32(await ReadBytesAsync(4).ConfigureAwait(false), 0));
 		}
 
 		public long ReadInt64()

@@ -30,10 +30,9 @@ namespace FirebirdSql.Data.UnitTests
 	[SetUpFixture]
 	public class TestsSetup
 	{
-		internal const string FilenameBase = "netprovider_tests";
+		private const string DatabaseBase = "netprovider_tests";
 		internal const string UserID = "SYSDBA";
 		internal const string Password = "masterkey";
-		internal const string Database = FilenameBase + ".fdb";
 		internal const string DataSource = "localhost";
 		internal const int Port = 3050;
 		internal const string Charset = "utf8";
@@ -48,9 +47,18 @@ namespace FirebirdSql.Data.UnitTests
 			var item = Tuple.Create(serverType, compression);
 			if (!_initalized.Contains(item))
 			{
-				Prepare(serverType, compression);
+				var cs = TestsBase.BuildConnectionString(serverType, compression);
+				FbConnection.CreateDatabase(cs, PageSize, ForcedWrite, true);
+				CreateTables(cs);
+				CreateProcedures(cs);
+				CreateTriggers(cs);
 				_initalized.Add(item);
 			}
+		}
+
+		public static string Database(FbServerType serverType, bool compression)
+		{
+			return $"{DatabaseBase}_{serverType}_{compression}.fdb";
 		}
 
 		[OneTimeTearDown]
@@ -59,34 +67,10 @@ namespace FirebirdSql.Data.UnitTests
 			FbConnection.ClearAllPools();
 			foreach (var item in _initalized)
 			{
-				Drop(item.Item1, item.Item2);
+				var cs = TestsBase.BuildConnectionString(item.Item1, item.Item2);
+				FbConnection.DropDatabase(cs);
 			}
 			_initalized.Clear();
-		}
-
-		private static void Drop(FbServerType serverType, bool compression)
-		{
-			string cs = TestsBase.BuildConnectionString(serverType, compression);
-			DropDatabase(cs);
-		}
-
-		private static void Prepare(FbServerType serverType, bool compression)
-		{
-			string cs = TestsBase.BuildConnectionString(serverType, compression);
-			CreateDatabase(cs);
-			CreateTables(cs);
-			CreateProcedures(cs);
-			CreateTriggers(cs);
-		}
-
-		private static void CreateDatabase(string connectionString)
-		{
-			FbConnection.CreateDatabase(connectionString, PageSize, ForcedWrite, true);
-		}
-
-		private static void DropDatabase(string connectionString)
-		{
-			FbConnection.DropDatabase(connectionString);
 		}
 
 		private static void CreateTables(string connectionString)

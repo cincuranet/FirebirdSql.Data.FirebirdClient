@@ -26,52 +26,25 @@ using System.Globalization;
 using System.Text;
 using System.Reflection;
 using System.Resources;
-#if !NETCORE10
+using System.Linq;
+#if !NETSTANDARD1_6
 using System.Runtime.Serialization;
 #endif
 
 namespace FirebirdSql.Data.Common
 {
-#if !NETCORE10
+#if !NETSTANDARD1_6
 	[Serializable]
 #endif
 	internal sealed class IscException : Exception
 	{
-#region Fields
 		private string _message;
-#endregion
-
-#region Properties
 
 		public List<IscError> Errors { get; private set; }
-
-		public override string Message
-		{
-			get { return _message; }
-		}
-
 		public int ErrorCode { get; private set; }
-
 		public string SQLSTATE { get; private set; }
-
-		public bool IsWarning
-		{
-			get
-			{
-				if (Errors.Count > 0)
-				{
-					return Errors[0].IsWarning;
-				}
-				else
-				{
-					return false;
-				}
-			}
-		}
-
-#endregion
-
-#region Constructors
+		public override string Message => _message;
+		public bool IsWarning => Errors.FirstOrDefault()?.IsWarning ?? false;
 
 		private IscException(Exception innerException = null)
 			: base(innerException?.Message, innerException)
@@ -147,18 +120,14 @@ namespace FirebirdSql.Data.Common
 			return result;
 		}
 
-#if !NETCORE10
+#if !NETSTANDARD1_6
 		private IscException(SerializationInfo info, StreamingContext context)
 				: base(info, context)
 		{
-			Errors = (List<IscError>)info.GetValue("errors", typeof(List<IscError>));
-			ErrorCode = info.GetInt32("errorCode");
+			Errors = (List<IscError>)info.GetValue(nameof(Errors), typeof(List<IscError>));
+			ErrorCode = info.GetInt32(nameof(ErrorCode));
 		}
 #endif
-
-#endregion
-
-#region Public Methods
 
 		public void BuildExceptionData()
 		{
@@ -167,24 +136,16 @@ namespace FirebirdSql.Data.Common
 			BuildExceptionMessage();
 		}
 
-#if !NETCORE10
+#if !NETSTANDARD1_6
 		public override void GetObjectData(SerializationInfo info, StreamingContext context)
 		{
 			base.GetObjectData(info, context);
-
-			info.AddValue("errors", Errors);
-			info.AddValue("errorCode", ErrorCode);
+			info.AddValue(nameof(Errors), Errors);
+			info.AddValue(nameof(ErrorCode), ErrorCode);
 		}
 #endif
 
-		public override string ToString()
-		{
-			return _message;
-		}
-
-#endregion
-
-#region Private Methods
+		public override string ToString() => _message;
 
 		private void BuildErrorCode()
 		{
@@ -270,14 +231,9 @@ namespace FirebirdSql.Data.Common
 			return string.Format(CultureInfo.CurrentCulture, "No message for error code {0} found.", code);
 		}
 
-#endregion
-
-#region Static Methods
-
 		private static string GetValueOrDefault(IDictionary<int, string> dictionary, int key, Func<int, string> defaultValueFactory)
 		{
-			string result;
-			if (!dictionary.TryGetValue(key, out result))
+			if (!dictionary.TryGetValue(key, out var result))
 			{
 				result = defaultValueFactory(key);
 			}
@@ -292,7 +248,5 @@ namespace FirebirdSql.Data.Common
 			}
 			builder.AppendFormat(CultureInfo.CurrentCulture, message, args.ToArray());
 		}
-
-#endregion
 	}
 }

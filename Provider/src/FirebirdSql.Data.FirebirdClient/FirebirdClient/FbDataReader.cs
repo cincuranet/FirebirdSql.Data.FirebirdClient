@@ -13,7 +13,7 @@
  *     language governing rights and limitations under the License.
  *
  *  Copyright (c) 2002, 2007 Carlos Guzman Alvarez
- *  Copyright (c) 2008, 2013 Jiri Cincura (jiri@cincura.net)
+ *  Copyright (c) 2008, 2013 - 2017 Jiri Cincura (jiri@cincura.net)
  *  All Rights Reserved.
  *
  */
@@ -35,13 +35,13 @@ namespace FirebirdSql.Data.FirebirdClient
 	{
 		#region Constants
 
-		private const int STARTPOS = -1;
+		private const int StartPosition = -1;
 
 		#endregion
 
 		#region Fields
 
-#if !NETCORE10
+#if !NETSTANDARD1_6
 		private DataTable _schemaTable;
 #endif
 		private FbCommand _command;
@@ -84,22 +84,13 @@ namespace FirebirdSql.Data.FirebirdClient
 			FbConnection connection,
 			CommandBehavior commandBehavior)
 		{
-			_position = STARTPOS;
+			_position = StartPosition;
 			_command = command;
 			_connection = connection;
 			_commandBehavior = commandBehavior;
 			_fields = _command.GetFieldsDescriptor();
 
 			UpdateRecordsAffected();
-		}
-
-		#endregion
-
-		#region Finalizer
-
-		~FbDataReader()
-		{
-			Dispose(false);
 		}
 
 		#endregion
@@ -155,7 +146,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		#region DbDataReader overriden methods
 
-#if !NETCORE10
+#if !NETSTANDARD1_6
 		public override void Close()
 		{
 			Dispose();
@@ -168,43 +159,31 @@ namespace FirebirdSql.Data.FirebirdClient
 			{
 				if (!IsClosed)
 				{
-					try
+					_isClosed = true;
+					if (_command != null && !_command.IsDisposed)
 					{
-						if (_command != null && !_command.IsDisposed)
+						if (_command.CommandType == CommandType.StoredProcedure)
 						{
-							if (_command.CommandType == CommandType.StoredProcedure)
-							{
-								// Set values of output parameters
-								_command.SetOutputParameters();
-							}
-
-							if (_command.HasImplicitTransaction)
-							{
-								// Commit implicit transaction if needed
-								_command.CommitImplicitTransaction();
-							}
-
-							// Set null the active reader of the command
-							_command.ActiveReader = null;
+							_command.SetOutputParameters();
 						}
+						if (_command.HasImplicitTransaction)
+						{
+							_command.CommitImplicitTransaction();
+						}
+						_command.ActiveReader = null;
 					}
-					finally
+					if (_connection != null && IsCommandBehavior(CommandBehavior.CloseConnection))
 					{
-						if (_connection != null && IsCommandBehavior(CommandBehavior.CloseConnection))
-						{
-							_connection.Close();
-						}
-
-						_isClosed = true;
-						_position = STARTPOS;
-						_command = null;
-						_connection = null;
-						_row = null;
-#if !NETCORE10
-						_schemaTable = null;
+						_connection.Close();
+					}
+					_position = StartPosition;
+					_command = null;
+					_connection = null;
+					_row = null;
+#if !NETSTANDARD1_6
+					_schemaTable = null;
 #endif
-						_fields = null;
-					}
+					_fields = null;
 				}
 			}
 		}
@@ -215,8 +194,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 			bool retValue = false;
 
-			if (IsCommandBehavior(CommandBehavior.SingleRow) &&
-				_position != STARTPOS)
+			if (IsCommandBehavior(CommandBehavior.SingleRow) && _position != StartPosition)
 			{
 			}
 			else
@@ -243,7 +221,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			return retValue;
 		}
 
-#if !NETCORE10
+#if !NETSTANDARD1_6
 		public override DataTable GetSchemaTable()
 		{
 			CheckState();
@@ -672,7 +650,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		private void CheckPosition()
 		{
-			if (_eof || _position == STARTPOS)
+			if (_eof || _position == StartPosition)
 			{
 				throw new InvalidOperationException("There are no data to read.");
 			}
@@ -736,8 +714,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			{
 				InitializeColumnsIndexes();
 			}
-			int index;
-			if (!_columnsIndexesOrdinal.TryGetValue(name, out index))
+			if (!_columnsIndexesOrdinal.TryGetValue(name, out var index))
 				if (!_columnsIndexesOrdinalCI.TryGetValue(name, out index))
 					throw new IndexOutOfRangeException($"Could not find specified column '{name}' in results.");
 			return index;
@@ -765,7 +742,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			return false;
 		}
 
-#if !NETCORE10
+#if !NETSTANDARD1_6
 		private static DataTable GetSchemaTableStructure()
 		{
 			DataTable schema = new DataTable("Schema");

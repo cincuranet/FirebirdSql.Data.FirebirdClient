@@ -13,7 +13,7 @@
  *	   language governing rights and limitations under the License.
  *
  *	Copyright (c) 2002 - 2007 Carlos Guzman Alvarez
- *	Copyright (c) 2007 - 2016 Jiri Cincura (jiri@cincura.net)
+ *	Copyright (c) 2007 - 2017 Jiri Cincura (jiri@cincura.net)
  *	All Rights Reserved.
  */
 
@@ -30,8 +30,8 @@ namespace FirebirdSql.Data.Client.Managed
 {
 	internal class GdsConnection
 	{
-		const ulong KeepAliveTime = 1800000; //30min
-		const ulong KeepAliveInterval = 1800000; //30min
+		const ulong KeepAliveTime = 1800000; // 30min
+		const ulong KeepAliveInterval = 1800000; // 30min
 
 		#region Fields
 
@@ -56,10 +56,11 @@ namespace FirebirdSql.Data.Client.Managed
 
 		#region Properties
 
-		public bool IsConnected
-		{
-			get { return _socket?.Connected ?? false; }
-		}
+#warning Events
+		//public bool IsConnected
+		//{
+		//	get { return _socket?.Connected ?? false; }
+		//}
 
 		public int ProtocolVersion
 		{
@@ -265,13 +266,13 @@ namespace FirebirdSql.Data.Client.Managed
 				return ipaddress;
 			}
 
-#if NETCORE10
+#if NETSTANDARD1_6
 			IPAddress[] addresses = Dns.GetHostEntryAsync(dataSource).GetAwaiter().GetResult().AddressList;
 #else
 			IPAddress[] addresses = Dns.GetHostEntry(dataSource).AddressList;
 #endif
 
-			// Try to avoid problems with IPV6 addresses
+			// try to avoid problems with IPv6 addresses
 			foreach (IPAddress address in addresses)
 			{
 				if (address.AddressFamily == addressFamily)
@@ -287,6 +288,20 @@ namespace FirebirdSql.Data.Client.Managed
 		{
 			using (var result = new MemoryStream())
 			{
+				var userString = Environment.GetEnvironmentVariable("USERNAME") ?? Environment.GetEnvironmentVariable("USER") ?? string.Empty;
+				var user = Encoding.UTF8.GetBytes(userString);
+				result.WriteByte(IscCodes.CNCT_user);
+				result.WriteByte((byte)user.Length);
+				result.Write(user, 0, user.Length);
+
+				var host = Encoding.UTF8.GetBytes(Dns.GetHostName());
+				result.WriteByte(IscCodes.CNCT_host);
+				result.WriteByte((byte)host.Length);
+				result.Write(host, 0, host.Length);
+
+				result.WriteByte(IscCodes.CNCT_user_verification);
+				result.WriteByte(0);
+
 				if (!string.IsNullOrEmpty(_userID))
 				{
 					_srp = new SrpClient();
@@ -323,23 +338,9 @@ namespace FirebirdSql.Data.Client.Managed
 					WriteMultiPartHelper(result, IscCodes.CNCT_specific_data, specificData);
 				}
 
-				var userString = Environment.GetEnvironmentVariable("USERNAME") ?? Environment.GetEnvironmentVariable("USER") ?? string.Empty;
-				var user = Encoding.UTF8.GetBytes(userString);
-				result.WriteByte(IscCodes.CNCT_user);
-				result.WriteByte((byte)user.Length);
-				result.Write(user, 0, user.Length);
-
-				var host = Encoding.UTF8.GetBytes(Dns.GetHostName());
-				result.WriteByte(IscCodes.CNCT_host);
-				result.WriteByte((byte)host.Length);
-				result.Write(host, 0, host.Length);
-
 				result.WriteByte(IscCodes.CNCT_client_crypt);
 				result.WriteByte(4);
 				result.Write(new byte[] { 0, 0, 0, 0 }, 0, 4);
-
-				result.WriteByte(IscCodes.CNCT_user_verification);
-				result.WriteByte(0);
 
 				return result.ToArray();
 			}

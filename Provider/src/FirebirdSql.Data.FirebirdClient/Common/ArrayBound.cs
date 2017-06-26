@@ -14,6 +14,9 @@
  *
  *  Copyright (c) 2002, 2007 Carlos Guzman Alvarez
  *  All Rights Reserved.
+ *
+ *  Contributors:
+ *      Jiri Cincura (jiri@cincura.net)
  */
 
 using System;
@@ -22,27 +25,7 @@ namespace FirebirdSql.Data.Common
 {
 	internal struct ArrayBound
 	{
-		#region Fields
-
-		private int lowerBound;
-		private int upperBound;
-
-		#endregion
-
-		#region Properties
-
-		public int LowerBound
-		{
-			get { return lowerBound; }
-			set { lowerBound = value; }
-		}
-
-		public int UpperBound
-		{
-			get { return upperBound; }
-			set { upperBound = value; }
-		}
-
-		#endregion
+		public int LowerBound { get; set; }
+		public int UpperBound { get; set; }
 	}
 }

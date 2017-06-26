@@ -12,7 +12,7 @@
  *	   express or implied. See the License for the specific
  *	   language governing rights and limitations under the License.
  *
- *	Copyright (c) 2016 Jiri Cincura (jiri@cincura.net)
+ *	Copyright (c) 2016 - 2017 Jiri Cincura (jiri@cincura.net)
  *	All Rights Reserved.
  */
 
@@ -89,31 +89,28 @@ namespace FirebirdSql.Data.Client.Managed.Version13
 		protected override DbValue[] ReadRow()
 		{
 			DbValue[] row = new DbValue[_fields.Count];
-			lock (_database.SyncObject)
+			try
 			{
-				try
+				var nullBytes = _database.XdrStream.ReadOpaque((int)Math.Ceiling(_fields.Count / 8d));
+				var nullBits = new BitArray(nullBytes);
+				for (int i = 0; i < _fields.Count; i++)
 				{
-					var nullBytes = _database.XdrStream.ReadOpaque((int)Math.Ceiling(_fields.Count / 8d));
-					var nullBits = new BitArray(nullBytes);
-					for (int i = 0; i < _fields.Count; i++)
+					if (nullBits.Get(i))
 					{
-						if (nullBits.Get(i))
-						{
-							row[i] = new DbValue(this, _fields[i], null);
-						}
-						else
-						{
-							var value = ReadRawValue(_fields[i]);
-							row[i] = new DbValue(this, _fields[i], value);
-						}
+						row[i] = new DbValue(this, _fields[i], null);
 					}
+					else
+					{
+						var value = ReadRawValue(_fields[i]);
+						row[i] = new DbValue(this, _fields[i], value);
+					}
+				}
 
-					return row;
-				}
-				catch (IOException ex)
-				{
-					throw IscException.ForErrorCode(IscCodes.isc_net_read_err, ex);
-				}
+				return row;
+			}
+			catch (IOException ex)
+			{
+				throw IscException.ForErrorCode(IscCodes.isc_net_read_err, ex);
 			}
 		}
 

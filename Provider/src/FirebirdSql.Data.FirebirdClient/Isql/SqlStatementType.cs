@@ -27,7 +27,7 @@ namespace FirebirdSql.Data.Isql
 	/// <summary>
 	/// DSQL and ISQL statement types.
 	/// </summary>
-#if !NETCORE10
+#if !NETSTANDARD1_6
 	[Serializable]
 #endif
 	public enum SqlStatementType
@@ -51,6 +51,11 @@ namespace FirebirdSql.Data.Isql
 		/// Represents the SQL statement: <b>ALTER EXCEPTION</b>
 		/// </summary>
 		AlterException,
+
+		/// <summary>
+		/// Represents the SQL statement: <b>ALTER FUNCTION</b>
+		/// </summary>
+		AlterFunction,
 
 		/// <summary>
 		/// Represents the SQL statement: <b>ALTER INDEX</b>
@@ -126,6 +131,11 @@ namespace FirebirdSql.Data.Isql
 		/// Represents the SQL statement: <b>CREATE EXCEPTION</b>
 		/// </summary>
 		CreateException,
+
+		/// <summary>
+		/// Represents the SQL statement: <b>CREATE FUNCTION</b>
+		/// </summary>
+		CreateFunction,
 
 		/// <summary>
 		/// Represents the SQL statement: <b>CREATE GENERATOR</b>
@@ -236,6 +246,11 @@ namespace FirebirdSql.Data.Isql
 		/// Represents the SQL statement: <b>DROP EXTERNAL FUNCTION</b>
 		/// </summary>
 		DropExternalFunction,
+
+		/// <summary>
+		/// Represents the SQL statement: <b>DROP FUNCTION</b>
+		/// </summary>
+		DropFunction,
 
 		/// <summary>
 		/// Represents the SQL statement: <b>DROP FILTER</b>
@@ -351,6 +366,11 @@ namespace FirebirdSql.Data.Isql
 		/// Represents the SQL statement: <b>PREPARE</b>
 		/// </summary>
 		Prepare,
+
+		/// <summary>
+		/// Represents the SQL statement: <b>RECREATE FUNCTION</b>
+		/// </summary>
+		RecreateFunction,
 
 		/// <summary>
 		/// Represents the SQL statement: <b>RECREATE PROCEDURE</b>

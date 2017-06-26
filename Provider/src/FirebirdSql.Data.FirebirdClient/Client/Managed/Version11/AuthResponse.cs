@@ -12,7 +12,8 @@
  *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
- *  Copyright (c) 2008 Vladimir Bodecek, Jiri Cincura (jiri@cincura.net)
+ *  Copyright (c) 2008 Vladimir Bodecek
+ *  Copyright (c) 2008, 2017 Jiri Cincura (jiri@cincura.net)
  *  All Rights Reserved.
  *
  */
@@ -24,19 +25,11 @@ namespace FirebirdSql.Data.Client.Managed.Version11
 {
 	internal class AuthResponse : IResponse
 	{
-		#region Properties
-
-		public byte[] Data { get; private set; }
-
-		#endregion
-
-		#region Constructors
+		public byte[] Data { get; }
 
 		public AuthResponse(byte[] data)
 		{
 			Data = data;
 		}
-
-		#endregion
 	}
 }

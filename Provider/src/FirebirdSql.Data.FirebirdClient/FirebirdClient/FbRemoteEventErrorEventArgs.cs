@@ -12,50 +12,22 @@
  *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
- *  Copyright (c) 2002, 2007 Carlos Guzman Alvarez
+ *  Copyright (c) 2017 Jiri Cincura (jiri@cincura.net)
  *  All Rights Reserved.
  */
 
 using System;
+using System.ComponentModel;
 
 namespace FirebirdSql.Data.FirebirdClient
 {
-	public sealed class FbRemoteEventEventArgs : System.ComponentModel.CancelEventArgs
+	public sealed class FbRemoteEventErrorEventArgs : EventArgs
 	{
-		#region Fields
+		public Exception Error { get; }
 
-		private string _name;
-		private int _counts;
-
-		#endregion
-
-		#region Properties
-
-		public string Name
+		public FbRemoteEventErrorEventArgs(Exception error)
 		{
-			get { return _name; }
+			Error = error;
 		}
-
-		public int Counts
-		{
-			get { return _counts; }
-		}
-
-		#endregion
-
-		#region Constructors
-
-		public FbRemoteEventEventArgs(string name, int counts)
-			: this(name, counts, false)
-		{ }
-
-		public FbRemoteEventEventArgs(string name, int counts, bool cancel)
-			: base(cancel)
-		{
-			_name = name;
-			_counts = counts;
-		}
-
-		#endregion
 	}
 }

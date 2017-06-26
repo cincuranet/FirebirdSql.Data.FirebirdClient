@@ -14,15 +14,19 @@
  *
  *	Copyright (c) 2007 Dean Harding
  *	All Rights Reserved.
+ *
+ *  Contributors:
+ *      Jiri Cincura (jiri@cincura.net)
  */
 
-using FirebirdSql.Data.Client.Native.Handle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
+using System.Collections.Concurrent;
+using FirebirdSql.Data.Client.Native.Handle;
 
 namespace FirebirdSql.Data.Client.Native
 {
@@ -38,7 +42,7 @@ namespace FirebirdSql.Data.Client.Native
 		/// Because generating the class at runtime is expensive, we cache it here based on the name
 		/// specified.
 		/// </summary>
-		private static IDictionary<string, IFbClient> cache;
+		private static ConcurrentDictionary<string, IFbClient> cache;
 		private static HashSet<Type> injectionTypes;
 
 		/// <summary>
@@ -46,8 +50,8 @@ namespace FirebirdSql.Data.Client.Native
 		/// </summary>
 		static FbClientFactory()
 		{
-			cache = new SortedDictionary<string, IFbClient>();
-#if NETCORE10
+			cache = new ConcurrentDictionary<string, IFbClient>();
+#if NETSTANDARD1_6
 			injectionTypes = new HashSet<Type>(typeof(FbClientFactory).GetTypeInfo().Assembly.GetTypes()
 				.Where(x => !x.GetTypeInfo().IsAbstract && !x.GetTypeInfo().IsInterface)
 				.Where(x => typeof(IFirebirdHandle).IsAssignableFrom(x))
@@ -72,41 +76,7 @@ namespace FirebirdSql.Data.Client.Native
 			{
 				dllName = DefaultDllName;
 			}
-
-			IFbClient fbClient;
-
-			// First, try to get the IFbClient from the cache.
-			lock (cache)
-			{
-				if (cache.TryGetValue(dllName, out fbClient))
-				{
-					// We got one!
-					return fbClient;
-				}
-			}
-
-			// If we didn't get one, then generate a new one (note: because we're outside the lock, we
-			// may end up generating two different classes for the same DLL if we're called multiple times
-			// initially, but that's OK - only one is added to the cache and it only happens on startup)
-			fbClient = GenerateFbClient(dllName);
-
-			// Add it into the cache for next time
-			lock (cache)
-			{
-				if (cache.ContainsKey(dllName))
-				{
-					// If there's one in there now, it means somebody else already generated one while
-					// we were generating ours. Just use theirs... oh well
-					fbClient = cache[dllName];
-				}
-				else
-				{
-					// Nothing in there yet, we must've been the first. Add it now.
-					cache.Add(dllName, fbClient);
-				}
-			}
-
-			return fbClient;
+			return cache.GetOrAdd(dllName, GenerateFbClient);
 		}
 
 		/// <summary>
@@ -274,7 +244,7 @@ namespace FirebirdSql.Data.Client.Native
 #endif
 
 #if DEBUG
-#if !NETCORE10
+#if !NETSTANDARD1_6
 			AssemblyBuilder ab = (AssemblyBuilder)tb.Assembly;
 			ab.Save("DynamicAssembly.dll");
 #endif
@@ -303,14 +273,14 @@ namespace FirebirdSql.Data.Client.Native
 			assemblyName.Name = baseName + "_Assembly";
 
 			// We create the dynamic assembly in our current AppDomain
-#if NETCORE10
+#if NETSTANDARD1_6
 			AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
 #else
 			AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 #endif
 
 			// Generate the actual module (which is the DLL itself)
-#if NETCORE10
+#if NETSTANDARD1_6
 			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(baseName + "_Module");
 #else
 			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(baseName + "_Module", baseName + ".dll");

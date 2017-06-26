@@ -12,7 +12,7 @@
  *	   express or implied. See the License for the specific
  *	   language governing rights and limitations under the License.
  *
- *	Copyright (c) 2015 Jiri Cincura (jiri@cincura.net)
+ *	Copyright (c) 2015-2017 Jiri Cincura (jiri@cincura.net)
  *	All Rights Reserved.
  */
 
@@ -44,18 +44,7 @@ namespace FirebirdSql.Data.Common
 		public abstract void Prepare();
 		public abstract void Prepare(byte[] buffer);
 
-		~TransactionBase()
-		{
-			Dispose(false);
-		}
-
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		protected virtual void Dispose(bool disposing)
+		public virtual void Dispose()
 		{ }
 	}
 }

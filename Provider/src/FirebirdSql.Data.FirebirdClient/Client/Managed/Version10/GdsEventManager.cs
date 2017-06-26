@@ -14,10 +14,14 @@
  *
  *	Copyright (c) 2002, 2007 Carlos Guzman Alvarez
  *	All Rights Reserved.
+ *
+ *  Contributors:
+ *      Jiri Cincura (jiri@cincura.net)
  */
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -28,132 +32,60 @@ using FirebirdSql.Data.Common;
 
 namespace FirebirdSql.Data.Client.Managed.Version10
 {
-	internal class GdsEventManager
+	internal class GdsEventManager : IDisposable
 	{
-		#region Fields
-
-		private GdsDatabase _database;
-		private Thread _eventsThread;
-		private ConcurrentDictionary<int, RemoteEvent> _events;
-		private int _handle;
-
-		#endregion
-
-		#region Constructors
+		int _handle;
+		GdsDatabase _database;
 
 		public GdsEventManager(int handle, string ipAddress, int portNumber)
 		{
-			_events = new ConcurrentDictionary<int, RemoteEvent>();
 			_handle = handle;
-
-			if (_database == null)
-			{
-				GdsConnection connection = new GdsConnection(ipAddress, portNumber);
-				connection.Connect();
-				_database = new GdsDatabase(connection);
-			}
+			var connection = new GdsConnection(ipAddress, portNumber);
+			connection.Connect();
+			_database = new GdsDatabase(connection);
 		}
 
-		#endregion
-
-		#region Methods
-
-		public void QueueEvents(RemoteEvent remoteEvent)
+		public async Task WaitForEventsAsync(RemoteEvent remoteEvent)
 		{
-			lock (this)
+			while (true)
 			{
-				_events[remoteEvent.LocalId] = remoteEvent;
-
-#warning Jiri Cincura: I'm pretty sure this is a race condition.
-				if (_eventsThread == null || _eventsThread.ThreadState.HasFlag(ThreadState.Stopped | ThreadState.Unstarted))
+				try
 				{
-					_eventsThread = new Thread(ThreadHandler);
-					_eventsThread.IsBackground = true;
-					_eventsThread.Name = "FirebirdClient - Events Thread";
-					_eventsThread.Start();
-				}
-			}
-		}
-
-		public void CancelEvents(RemoteEvent remoteEvent)
-		{
-			RemoteEvent dummy;
-			_events.TryRemove(remoteEvent.LocalId, out dummy);
-		}
-
-		public void Close()
-		{
-			lock (_database.SyncObject)
-			{
-				if (_database != null)
-				{
-					_database.CloseConnection();
-				}
-
-				if (_eventsThread != null)
-				{
-					// we don't have here clue about disposing vs. finalizer
-					if (!Environment.HasShutdownStarted)
-					{
-						_eventsThread.Join();
-					}
-
-					_eventsThread = null;
-				}
-			}
-		}
-
-		#endregion
-
-		#region Private Methods
-
-		private void ThreadHandler(object _)
-		{
-			try
-			{
-				while (_events.Any())
-				{
-					var operation = _database.NextOperation();
+					var operation = await _database.NextOperationAsync().ConfigureAwait(false);
 
 					switch (operation)
 					{
-						case IscCodes.op_response:
-							_database.ReadResponse();
-							continue;
-
-						case IscCodes.op_exit:
-						case IscCodes.op_disconnect:
-							Close();
-							return;
-
 						case IscCodes.op_event:
 							var dbHandle = _database.XdrStream.ReadInt32();
 							var buffer = _database.XdrStream.ReadBuffer();
 							var ast = _database.XdrStream.ReadBytes(8);
 							var eventId = _database.XdrStream.ReadInt32();
 
-							RemoteEvent currentEvent;
-							if (_events.TryRemove(eventId, out currentEvent))
-							{
-								currentEvent.EventCounts(buffer);
-							}
-							continue;
+							remoteEvent.EventCounts(buffer);
+
+							break;
+
+						default:
+							Debug.Assert(false);
+							break;
 					}
 				}
-			}
-			catch (IOException ex) when (IsEventsReturnSocketError((ex.InnerException as SocketException)?.SocketErrorCode))
-			{
-				return;
+				// happens as the connection is closed
+				catch (ObjectDisposedException)
+				{
+					return;
+				}
+				catch (Exception ex)
+				{
+					remoteEvent.EventError(ex);
+					break;
+				}
 			}
 		}
 
-		private bool IsEventsReturnSocketError(SocketError? error)
+		public void Dispose()
 		{
-			return error == SocketError.Interrupted
-				|| error == SocketError.ConnectionReset
-				|| error == SocketError.ConnectionAborted;
+			_database.CloseConnection();
 		}
-
-		#endregion
 	}
 }

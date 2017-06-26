@@ -26,12 +26,11 @@ using System.Text;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-#if NETCORE10
+#if NETSTANDARD1_6
 using Microsoft.Extensions.PlatformAbstractions;
 #endif
-
 using FirebirdSql.Data.Common;
-#if !NETCORE10
+#if !NETSTANDARD1_6
 using FirebirdSql.Data.Schema;
 #endif
 
@@ -47,8 +46,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		private FbConnectionString _options;
 		private FbConnection _owningConnection;
 		private bool _disposed;
-		private object _preparedCommandsCleanupSyncRoot;
-#if !NETCORE10
+#if !NETSTANDARD1_6
 		private FbEnlistmentNotification _enlistmentNotification;
 #endif
 
@@ -83,7 +81,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			get
 			{
-#if NETCORE10
+#if NETSTANDARD1_6
 				return false;
 #else
 				return _enlistmentNotification != null && !_enlistmentNotification.IsCompleted;
@@ -105,18 +103,8 @@ namespace FirebirdSql.Data.FirebirdClient
 		public FbConnectionInternal(FbConnectionString options)
 		{
 			_preparedCommands = new List<WeakReference>();
-			_preparedCommandsCleanupSyncRoot = new object();
 
 			_options = options;
-		}
-
-		#endregion
-
-		#region Finalizer
-
-		~FbConnectionInternal()
-		{
-			Dispose(false);
 		}
 
 		#endregion
@@ -125,23 +113,10 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void Dispose()
 		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		protected void Dispose(bool disposing)
-		{
-			lock (this)
+			if (!_disposed)
 			{
-				if (!_disposed)
-				{
-					Disconnect();
-
-					if (disposing)
-					{ }
-
-					_disposed = true;
-				}
+				_disposed = true;
+				Disconnect();
 			}
 		}
 
@@ -222,27 +197,24 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public FbTransaction BeginTransaction(IsolationLevel level, string transactionName)
 		{
-			lock (this)
+			if (HasActiveTransaction)
 			{
-				if (HasActiveTransaction)
-				{
-					throw new InvalidOperationException("A transaction is currently active. Parallel transactions are not supported.");
-				}
+				throw new InvalidOperationException("A transaction is currently active. Parallel transactions are not supported.");
+			}
 
-				try
-				{
-					_activeTransaction = new FbTransaction(_owningConnection, level);
-					_activeTransaction.BeginTransaction();
+			try
+			{
+				_activeTransaction = new FbTransaction(_owningConnection, level);
+				_activeTransaction.BeginTransaction();
 
-					if (transactionName != null)
-					{
-						_activeTransaction.Save(transactionName);
-					}
-				}
-				catch (IscException ex)
+				if (transactionName != null)
 				{
-					throw new FbException(ex.Message, ex);
+					_activeTransaction.Save(transactionName);
 				}
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 
 			return _activeTransaction;
@@ -250,29 +222,26 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public FbTransaction BeginTransaction(FbTransactionOptions options, string transactionName)
 		{
-			lock (this)
+			if (HasActiveTransaction)
 			{
-				if (HasActiveTransaction)
-				{
-					throw new InvalidOperationException("A transaction is currently active. Parallel transactions are not supported.");
-				}
+				throw new InvalidOperationException("A transaction is currently active. Parallel transactions are not supported.");
+			}
 
-				try
-				{
-					_activeTransaction = new FbTransaction(
-						_owningConnection, IsolationLevel.Unspecified);
+			try
+			{
+				_activeTransaction = new FbTransaction(
+					_owningConnection, IsolationLevel.Unspecified);
 
-					_activeTransaction.BeginTransaction(options);
+				_activeTransaction.BeginTransaction(options);
 
-					if (transactionName != null)
-					{
-						_activeTransaction.Save(transactionName);
-					}
-				}
-				catch (IscException ex)
+				if (transactionName != null)
 				{
-					throw new FbException(ex.Message, ex);
+					_activeTransaction.Save(transactionName);
 				}
+			}
+			catch (IscException ex)
+			{
+				throw new FbException(ex.Message, ex);
 			}
 
 			return _activeTransaction;
@@ -292,7 +261,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			for (int i = 0; i < _preparedCommands.Count; i++)
 			{
 				FbCommand command;
-				if (!_preparedCommands[i].TryGetTarget<FbCommand>(out command))
+				if (!_preparedCommands[i].TryGetTarget(out command))
 					continue;
 
 				if (command.Transaction != null)
@@ -307,7 +276,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		#region Transaction Enlistement
 
-#if !NETCORE10
+#if !NETSTANDARD1_6
 		public void EnlistTransaction(System.Transactions.Transaction transaction)
 		{
 			if (_owningConnection != null && _options.Enlist)
@@ -367,7 +336,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		#region Schema Methods
 
-#if !NETCORE10
+#if !NETSTANDARD1_6
 		public DataTable GetSchema(string collectionName, string[] restrictions)
 		{
 			return FbSchemaFactory.GetSchema(_owningConnection, collectionName, restrictions);
@@ -402,34 +371,27 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		public void RemovePreparedCommand(FbCommand command)
 		{
-			lock (_preparedCommandsCleanupSyncRoot)
+			for (int i = _preparedCommands.Count - 1; i >= 0; i--)
 			{
-				for (int i = _preparedCommands.Count - 1; i >= 0; i--)
+				var item = _preparedCommands[i];
+				if (item.TryGetTarget<FbCommand>(out var current) && current == command)
 				{
-					var item = _preparedCommands[i];
-					FbCommand current;
-					if (item.TryGetTarget(out current) && current == command)
-					{
-						_preparedCommands.RemoveAt(i);
-						return;
-					}
+					_preparedCommands.RemoveAt(i);
+					return;
 				}
 			}
 		}
 
 		public void ReleasePreparedCommands()
 		{
-			WeakReference[] toProcess = new WeakReference[_preparedCommands.Count];
-			_preparedCommands.CopyTo(toProcess);
-			for (int i = 0; i < toProcess.Length; i++)
+			for (int i = 0; i < _preparedCommands.Count; i++)
 			{
 				FbCommand current;
-				if (!toProcess[i].TryGetTarget(out current))
+				if (!_preparedCommands[i].TryGetTarget(out current))
 					continue;
 
 				try
 				{
-					// Release statement handle
 					current.Release();
 				}
 				catch (System.IO.IOException)
@@ -448,11 +410,7 @@ namespace FirebirdSql.Data.FirebirdClient
 					}
 				}
 			}
-
-			lock (_preparedCommandsCleanupSyncRoot)
-			{
-				_preparedCommands.Clear();
-			}
+			_preparedCommands.Clear();
 		}
 
 		#endregion
@@ -463,10 +421,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			if (_db != null && _db.HasRemoteEventSupport)
 			{
-				lock (_db)
-				{
-					_db.CloseEventManager();
-				}
+				_db.CloseEventManager();
 			}
 		}
 
@@ -543,7 +498,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		private string GetHostingPath()
 		{
-#if NETCORE10
+#if NETSTANDARD1_6
 			return PlatformServices.Default.Application.ApplicationBasePath;
 #else
 			Assembly assembly;
@@ -577,7 +532,7 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		private int GetProcessId()
 		{
-#if !NETCORE10
+#if !NETSTANDARD1_6
 			Assembly assembly = Assembly.GetEntryAssembly();
 			if (!(assembly?.IsFullyTrusted) ?? false)
 				return -1;

@@ -14,6 +14,9 @@
  *
  *  Copyright (c) 2002, 2007 Carlos Guzman Alvarez
  *  All Rights Reserved.
+ *
+ *  Contributors:
+ *      Jiri Cincura (jiri@cincura.net)
  */
 
 using System;
@@ -26,70 +29,27 @@ namespace FirebirdSql.Data.Common
 {
 	internal abstract class BlobBase
 	{
-		#region Fields
-
-		private int		_rblFlags;
+		private int _rblFlags;
 		private Charset _charset;
-		private int		_segmentSize;
+		private int _segmentSize;
 
-		#endregion
+		protected long _blobId;
+		protected int _position;
+		protected TransactionBase _transaction;
 
-		#region Properties
+		public abstract int Handle { get; }
+		public long Id => _blobId;
+		public bool EOF => (_rblFlags & IscCodes.RBL_eof_pending) != 0;
 
-		public abstract int Handle
-		{
-			get;
-		}
+		protected int SegmentSize => _segmentSize;
 
-		public long Id
-		{
-			get { return _blobId; }
-		}
-
-		public bool EOF
-		{
-			get { return (_rblFlags & IscCodes.RBL_eof_pending) != 0; }
-		}
-
-		#endregion
-
-		#region Protected Fields
-
-		protected long          _blobId;
-		protected int           _position;
-		protected TransactionBase  _transaction;
-
-		#endregion
-
-		#region Protected Properties
-
-		protected int SegmentSize
-		{
-			get { return _segmentSize; }
-		}
-
-		#endregion
-
-		#region Abstract Properties
-
-		public abstract IDatabase Database
-		{
-			get;
-		}
-
-		#endregion
-
-		#region Constructors
+		public abstract IDatabase Database { get; }
 
 		protected BlobBase(IDatabase db)
 		{
 			_segmentSize = db.PacketSize;
 			_charset = db.Charset;
 		}
-
-		#endregion
-
-		#region Methods
 
 		public string ReadString()
 		{
@@ -141,13 +101,11 @@ namespace FirebirdSql.Data.Common
 			{
 				Create();
 
-				byte[] tmpBuffer = null;
+				int length = count;
+				int offset = index;
+				int chunk = length >= _segmentSize ? _segmentSize : length;
 
-				int length	= count;
-				int offset	= index;
-				int chunk	= length >= _segmentSize ? _segmentSize : length;
-
-				tmpBuffer = new byte[chunk];
+				byte[] tmpBuffer = new byte[chunk];
 
 				while (length > 0)
 				{
@@ -175,10 +133,6 @@ namespace FirebirdSql.Data.Common
 			}
 		}
 
-		#endregion
-
-		#region Protected Abstract Methods
-
 		protected abstract void Create();
 		protected abstract void Open();
 		protected abstract byte[] GetSegment();
@@ -187,10 +141,6 @@ namespace FirebirdSql.Data.Common
 		protected abstract void GetBlobInfo();
 		protected abstract void Close();
 		protected abstract void Cancel();
-
-		#endregion
-
-		#region Protected Methods
 
 		protected void RblAddValue(int rblValue)
 		{
@@ -201,7 +151,5 @@ namespace FirebirdSql.Data.Common
 		{
 			_rblFlags &= ~rblValue;
 		}
-
-		#endregion
 	}
 }

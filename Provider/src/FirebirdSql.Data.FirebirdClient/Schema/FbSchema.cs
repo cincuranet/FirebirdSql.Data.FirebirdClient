@@ -14,9 +14,12 @@
  *
  *  Copyright (c) 2002, 2007 Carlos Guzman Alvarez
  *  All Rights Reserved.
+ *
+ *  Contributors:
+ *      Jiri Cincura (jiri@cincura.net)
  */
 
-#if !NETCORE10
+#if !NETSTANDARD1_6
 using System;
 using System.Data;
 using System.Data.Common;
@@ -51,25 +54,21 @@ namespace FirebirdSql.Data.Schema
 		public DataTable GetSchema(FbConnection connection, string collectionName, string[] restrictions)
 		{
 			DataTable dataTable = new DataTable(collectionName);
-			FbCommand command = BuildCommand(connection, collectionName, ParseRestrictions(restrictions));
-			FbDataAdapter adapter = new FbDataAdapter(command);
-
-			try
+			using (FbCommand command = BuildCommand(connection, collectionName, ParseRestrictions(restrictions)))
 			{
-				adapter.Fill(dataTable);
+				using (FbDataAdapter adapter = new FbDataAdapter(command))
+				{
+					try
+					{
+						adapter.Fill(dataTable);
+					}
+					catch (Exception ex)
+					{
+						throw new FbException(ex.Message);
+					}
+				}
 			}
-			catch (Exception ex)
-			{
-				throw new FbException(ex.Message);
-			}
-			finally
-			{
-				adapter.Dispose();
-				command.Dispose();
-			}
-
 			TrimStringFields(dataTable);
-
 			return ProcessResult(dataTable);
 		}
 
@@ -79,11 +78,11 @@ namespace FirebirdSql.Data.Schema
 
 		protected FbCommand BuildCommand(FbConnection connection, string collectionName, string[] restrictions)
 		{
-			string          filter = String.Format("CollectionName='{0}'", collectionName);
-			StringBuilder	builder = GetCommandText(restrictions);
-			DataRow[]       restriction = connection.GetSchema(DbMetaDataCollectionNames.Restrictions).Select(filter);
-			FbTransaction	transaction = connection.InnerConnection.ActiveTransaction;
-			FbCommand		command	= new FbCommand(builder.ToString(), connection, transaction);
+			string filter = String.Format("CollectionName='{0}'", collectionName);
+			StringBuilder builder = GetCommandText(restrictions);
+			DataRow[] restriction = connection.GetSchema(DbMetaDataCollectionNames.Restrictions).Select(filter);
+			FbTransaction transaction = connection.InnerConnection.ActiveTransaction;
+			FbCommand command = new FbCommand(builder.ToString(), connection, transaction);
 
 			if (restrictions != null && restrictions.Length > 0)
 			{

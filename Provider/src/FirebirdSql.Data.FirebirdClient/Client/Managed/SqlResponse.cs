@@ -14,6 +14,9 @@
  *
  *	Copyright (c) 2002, 2007 Carlos Guzman Alvarez
  *	All Rights Reserved.
+ *
+ *  Contributors:
+ *      Jiri Cincura (jiri@cincura.net)
  */
 
 using System;
@@ -23,28 +26,11 @@ namespace FirebirdSql.Data.Client.Managed
 {
 	internal class SqlResponse : IResponse
 	{
-		#region Fields
-
-		private int _count;
-
-		#endregion
-
-		#region Properties
-
-		public int Count
-		{
-			get { return _count; }
-		}
-
-		#endregion
-
-		#region Constructors
+		public int Count { get; }
 
 		public SqlResponse(int count)
 		{
-			_count = count;
+			Count = count;
 		}
-
-		#endregion
 	}
 }

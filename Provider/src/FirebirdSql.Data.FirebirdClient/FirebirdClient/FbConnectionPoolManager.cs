@@ -12,7 +12,7 @@
  *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
- *  Copyright (c) 2013-2015 Jiri Cincura (jiri@cincura.net)
+ *  Copyright (c) 2013-2017 Jiri Cincura (jiri@cincura.net)
  *  All Rights Reserved.
  */
 
@@ -45,13 +45,7 @@ namespace FirebirdSql.Data.FirebirdClient
 				public DateTimeOffset Created { get; private set; }
 				public FbConnectionInternal Connection { get; private set; }
 
-				public Item()
-				{
-					_disposed = false;
-				}
-
 				public Item(DateTimeOffset created, FbConnectionInternal connection)
-					: this()
 				{
 					Created = created;
 					Connection = connection;
@@ -76,7 +70,6 @@ namespace FirebirdSql.Data.FirebirdClient
 
 			public Pool(FbConnectionString connectionString)
 			{
-				_disposed = false;
 				_syncRoot = new object();
 				_connectionString = connectionString;
 				_available = new Stack<Item>();
@@ -239,8 +232,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			CheckDisposed();
 
-			var pool = default(Pool);
-			if (_pools.TryGetValue(connectionString.NormalizedConnectionString, out pool))
+			if (_pools.TryGetValue(connectionString.NormalizedConnectionString, out var pool))
 			{
 				pool.ClearPool();
 			}
