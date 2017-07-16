@@ -12,11 +12,14 @@
  *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
- *  Copyright (c) 2014-2017 Jiri Cincura (jiri@cincura.net)
+ *  Copyright (c) 2008-2017 Jiri Cincura (jiri@cincura.net)
  *  All Rights Reserved.
  */
 
-static class _VersionInfo
+namespace FirebirdSql.Data.EntityFramework6.SqlGen
 {
-		internal const string Version = "5.11.0.0";
+	internal interface ISqlFragment
+	{
+		void WriteSql(SqlWriter writer, SqlGenerator sqlGenerator);
+	}
 }
