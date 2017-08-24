@@ -160,6 +160,7 @@ namespace FirebirdSql.Data.FirebirdClient
 				if (!IsClosed)
 				{
 					_isClosed = true;
+
 					if (_command != null && !_command.IsDisposed)
 					{
 						if (_command.CommandType == CommandType.StoredProcedure)
@@ -172,10 +173,12 @@ namespace FirebirdSql.Data.FirebirdClient
 						}
 						_command.ActiveReader = null;
 					}
+					
 					if (_connection != null && IsCommandBehavior(CommandBehavior.CloseConnection))
 					{
 						_connection.Close();
 					}
+
 					_position = StartPosition;
 					_command = null;
 					_connection = null;
