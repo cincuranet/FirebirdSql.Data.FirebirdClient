@@ -51,7 +51,7 @@ namespace FirebirdSql.Data.Client.Native
 		static FbClientFactory()
 		{
 			cache = new ConcurrentDictionary<string, IFbClient>();
-#if NETSTANDARD1_6
+#if NETSTANDARD1_6 || NETSTANDARD2_0
 			injectionTypes = new HashSet<Type>(typeof(FbClientFactory).GetTypeInfo().Assembly.GetTypes()
 				.Where(x => !x.GetTypeInfo().IsAbstract && !x.GetTypeInfo().IsInterface)
 				.Where(x => typeof(IFirebirdHandle).IsAssignableFrom(x))
