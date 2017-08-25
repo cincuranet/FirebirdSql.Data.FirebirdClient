@@ -517,7 +517,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		private string ExpandDataDirectory(string s)
 		{
 			const string DataDirectoryKeyword = "|DataDirectory|";
-#if NETSTANDARD1_6
+#if NETSTANDARD1_6 || NETSTANDARD2_0
 			if (s.IndexOf(DataDirectoryKeyword, StringComparison.OrdinalIgnoreCase) != -1)
 				throw new NotSupportedException();
 

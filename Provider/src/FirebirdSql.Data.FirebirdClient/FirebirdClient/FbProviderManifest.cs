@@ -16,7 +16,7 @@
  *  All Rights Reserved.
  */
 
-#if !NETSTANDARD1_6
+#if !NETSTANDARD1_6 && !NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,7 +45,7 @@ namespace FirebirdSql.Data.EntityFramework6
 {
 	public class FbProviderManifest : DbXmlEnabledProviderManifest
 	{
-		#region Private Fields
+#region Private Fields
 
 		internal const int BinaryMaxSize = Int32.MaxValue;
 		internal const int AsciiVarcharMaxSize = 32765;
@@ -55,9 +55,9 @@ namespace FirebirdSql.Data.EntityFramework6
 		private System.Collections.ObjectModel.ReadOnlyCollection<PrimitiveType> _primitiveTypes = null;
 		private System.Collections.ObjectModel.ReadOnlyCollection<EdmFunction> _functions = null;
 
-		#endregion
+#endregion
 
-		#region Constructors
+#region Constructors
 
 		/// <summary>
 		/// Constructor
@@ -67,10 +67,10 @@ namespace FirebirdSql.Data.EntityFramework6
 			: base(FbProviderManifest.GetProviderManifest())
 		{ }
 
-		#endregion
+#endregion
 
-		#region Properties
-		#endregion
+#region Properties
+#endregion
 
 		internal static XmlReader GetProviderManifest()
 		{

@@ -31,7 +31,7 @@ namespace FirebirdSql.Data.FirebirdClient
 {
 	[ParenthesizePropertyName(true)]
 	public sealed class FbParameter : DbParameter
-#if !NETSTANDARD1_6
+#if !NETSTANDARD1_6 && !NETSTANDARD2_0
 		, ICloneable
 #endif
 	{
@@ -122,7 +122,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			set { _sourceColumn = value; }
 		}
 
-#if !NETSTANDARD1_6
+#if !NETSTANDARD1_6 && !NETSTANDARD2_0
 		[Category("Data")]
 		[DefaultValue(DataRowVersion.Current)]
 		public override DataRowVersion SourceVersion
@@ -355,7 +355,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		#endregion
 
 		#region ICloneable Methods
-#if NETSTANDARD1_6
+#if NETSTANDARD1_6 || NETSTANDARD2_0
 		internal object Clone()
 #else
 		object ICloneable.Clone()

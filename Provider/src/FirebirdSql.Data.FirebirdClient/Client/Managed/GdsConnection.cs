@@ -266,7 +266,7 @@ namespace FirebirdSql.Data.Client.Managed
 				return ipaddress;
 			}
 
-#if NETSTANDARD1_6
+#if NETSTANDARD1_6 || NETSTANDARD2_0 
 			IPAddress[] addresses = Dns.GetHostEntryAsync(dataSource).GetAwaiter().GetResult().AddressList;
 #else
 			IPAddress[] addresses = Dns.GetHostEntry(dataSource).AddressList;
