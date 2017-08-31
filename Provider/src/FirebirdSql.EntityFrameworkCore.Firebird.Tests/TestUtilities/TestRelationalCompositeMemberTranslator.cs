@@ -3,7 +3,7 @@
 
 using Microsoft.EntityFrameworkCore.Query.ExpressionTranslators;
 
-namespace Microsoft.EntityFrameworkCore.TestUtilities
+namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.TestUtilities
 {
     public class TestRelationalCompositeMemberTranslator : RelationalCompositeMemberTranslator
     {

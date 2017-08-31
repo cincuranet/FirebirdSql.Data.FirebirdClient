@@ -3,7 +3,7 @@
 
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Microsoft.EntityFrameworkCore.TestUtilities
+namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.TestUtilities
 {
     public static class TestRelationalMetadataExtensions
     {

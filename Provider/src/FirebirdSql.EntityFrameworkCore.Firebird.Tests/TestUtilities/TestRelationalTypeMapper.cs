@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.Data;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.TestUtilities;
 
-namespace Microsoft.EntityFrameworkCore.TestUtilities
+namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.TestUtilities
 {
     public class TestRelationalTypeMapper : RelationalTypeMapper
     {

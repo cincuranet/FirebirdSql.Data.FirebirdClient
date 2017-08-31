@@ -1,7 +1,7 @@
-using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Microsoft.EntityFrameworkCore
+namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.TestUtilities
 {
     public class FbTestHelpers : TestHelpers
     {

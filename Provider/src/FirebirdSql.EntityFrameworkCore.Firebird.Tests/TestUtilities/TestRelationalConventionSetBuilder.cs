@@ -4,9 +4,8 @@
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.EntityFrameworkCore.Storage.Internal;
 
-namespace Microsoft.EntityFrameworkCore.TestUtilities
+namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.TestUtilities
 {
     public class TestRelationalConventionSetBuilder : RelationalConventionSetBuilder
     {

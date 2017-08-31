@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using FirebirdSql.Data.FirebirdClient;
+using FirebirdSql.EntityFrameworkCore.Firebird.Tests.TestUtilities;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Metadata;

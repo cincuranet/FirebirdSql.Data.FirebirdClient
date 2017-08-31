@@ -1,8 +1,7 @@
 using System;
-using Microsoft.EntityFrameworkCore.Storage.Internal;
 using Xunit;
 
-namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.Migrations
+namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests
 {
     public class ServerVersionTest
     {
