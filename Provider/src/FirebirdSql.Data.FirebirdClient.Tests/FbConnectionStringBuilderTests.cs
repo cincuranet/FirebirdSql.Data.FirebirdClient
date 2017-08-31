@@ -12,21 +12,30 @@
  *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
- *  Copyright (c) 2017 Jiri Cincura (jiri@cincura.net)
+ *  Copyright (c) 2016 Jiri Cincura (jiri@cincura.net)
  *  All Rights Reserved.
  */
 
-using System;
-using System.Reflection;
-using System.Runtime.InteropServices;
+using FirebirdSql.Data.FirebirdClient;
+using NUnit.Framework;
 
-[assembly: CLSCompliant(true)]
-[assembly: ComVisible(false)]
-[assembly: AssemblyCompany("FirebirdSQL")]
-[assembly: AssemblyProduct("FirebirdClient")]
-[assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyCopyright("(c) 2017")]
-[assembly: AssemblyTitle("FirebirdClient - Entity Framework Core Provider")]
-[assembly: AssemblyDescription("FirebirdClient - Entity Framework Core Provider")]
-[assembly: AssemblyVersion(_VersionInfo.Version)]
-[assembly: AssemblyFileVersion(_VersionInfo.Version)]
+namespace FirebirdSql.Data.FirebirdClient.Tests
+{
+	[TestFixture]
+	public class FbConnectionStringBuilderTests
+	{
+		[Test]
+		public void EmptyCtorGeneratesEmptyString()
+		{
+			var b = new FbConnectionStringBuilder();
+			Assert.IsEmpty(b.ToString());
+		}
+
+		[Test]
+		public void NoValueProvidedReturnsDefault()
+		{
+			var b = new FbConnectionStringBuilder();
+			Assert.AreEqual(b.MaxPoolSize, FbConnectionString.DefaultValueMaxPoolSize);
+		}
+	}
+}
