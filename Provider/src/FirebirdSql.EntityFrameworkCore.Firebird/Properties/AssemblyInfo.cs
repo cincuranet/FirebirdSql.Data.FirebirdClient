@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Firebird ADO.NET Data provider for .NET and Mono
  *
  *     The contents of this file are subject to the Initial
@@ -19,6 +19,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Microsoft.EntityFrameworkCore.Design;
 
 [assembly: CLSCompliant(true)]
 [assembly: ComVisible(false)]
@@ -30,3 +31,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("FirebirdClient - Entity Framework Core Provider")]
 [assembly: AssemblyVersion(_VersionInfo.Version)]
 [assembly: AssemblyFileVersion(_VersionInfo.Version)]
+[assembly: DesignTimeProviderServices("Microsoft.EntityFrameworkCore.Design.Internal.FbDesignTimeServices")]

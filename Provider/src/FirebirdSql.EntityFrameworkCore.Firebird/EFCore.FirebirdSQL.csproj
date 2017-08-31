@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>EntityFrameworkCore.FirebirdSQL</AssemblyName>
+    <RootNamespace>FirebirdSql.EntityFrameworkCore.Firebird</RootNamespace>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>EntityFramework.FIrebirdSQL.snk</AssemblyOriginatorKeyFile>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <Copyright>Copyright © Rafael Almeida</Copyright>
+    <Company>Rafael Almeida</Company>
+    <Authors>Rafael Almeida</Authors>
+    <Version>2.0.7-preview7</Version>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>EntityFrameworkCore.FirebirdSQL; FirebirdSQL;Entity Framework Core;entity-framework-core;EF;Data;O/RM</PackageTags>
+    <Description>FirebirdSQL database provider for Entity Framework Core.</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>EntityFrameworkCore.FirebirdSQL</PackageId>
+    <Product>EntityFrameworkCore.FirebirdSQL</Product>
+    <PackageProjectUrl>https://github.com/ralmsdeveloper/EntityFrameworkCore.FirebirdSQL</PackageProjectUrl>
+    <PackageIconUrl>https://firebirdsql.org/img/site/fb.jpg</PackageIconUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/cincuranet/FirebirdSql.Data.FirebirdClient/master/license.txt</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/ralmsdeveloper/EntityFrameworkCore.FirebirdSQL</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Utilities\JetBrain\JetBrains.Annotations.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="5.11.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.0.0" />
+  </ItemGroup>
+
+</Project>
