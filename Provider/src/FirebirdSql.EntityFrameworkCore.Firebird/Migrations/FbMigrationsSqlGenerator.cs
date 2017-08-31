@@ -115,7 +115,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
                             var nameGenerator = $"{column.Table}_{column.Name}";
                             builder.Append("CREATE GENERATOR ")
                                    .Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(nameGenerator))
-                                   .Append(Dependencies.SqlGenerationHelper.StatementTerminator);
+                                   .AppendLine(Dependencies.SqlGenerationHelper.StatementTerminator);
                             EndStatement(builder);
 
                             builder.Append($"CREATE OR ALTER TRIGGER ")
@@ -125,7 +125,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
                                    .AppendLine("ACTIVE BEFORE INSERT POSITION 0 AS BEGIN")
                                    .Append($"    IF(new.{Dependencies.SqlGenerationHelper.DelimitIdentifier(column.Name)} IS NULL) THEN")
                                    .Append($"       new.{Dependencies.SqlGenerationHelper.DelimitIdentifier(column.Name)} ")
-                                   .AppendLine($"=GEN_ID({Dependencies.SqlGenerationHelper.DelimitIdentifier(nameGenerator)},1);")
+                                   .AppendLine($"= GEN_ID({Dependencies.SqlGenerationHelper.DelimitIdentifier(nameGenerator)},1);")
                                    .AppendLine("END;");
 
                             EndStatement(builder);
@@ -170,12 +170,12 @@ namespace Microsoft.EntityFrameworkCore.Migrations
 
             builder.Append(" TYPE ")
                    .Append(type)
-                   .Append(operation.IsNullable ? " " : " NOT NULL")
+                   .Append(operation.IsNullable ? "" : " NOT NULL")
                    .AppendLine(Dependencies.SqlGenerationHelper.StatementTerminator);
 
             if (!type.StartsWith("BLOB", StringComparison.Ordinal))
             {
-                builder.Append($"ALTER TABLE {identifier} ALTER COLUMN");
+                builder.Append($"ALTER TABLE {identifier} ALTER COLUMN ");
                 builder.Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Name));
 
                 if (operation.DefaultValue != null)

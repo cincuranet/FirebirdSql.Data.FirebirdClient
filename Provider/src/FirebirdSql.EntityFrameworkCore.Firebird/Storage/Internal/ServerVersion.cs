@@ -25,7 +25,6 @@
 using System;
 using System.Text.RegularExpressions;
 
-
 namespace Microsoft.EntityFrameworkCore.Storage.Internal
 {
     public class ServerVersion
@@ -33,21 +32,25 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
        
         public ServerVersion(string versionStr)
         {
-            var _version = ReVersion.Matches(versionStr);
-            if (_version.Count > 0)
-                Version = Version.Parse(_version[0].Value);
-            else
-                Version = new Version(0, 0, 0);
+            var version = ReVersion.Matches(versionStr);
+            if (version.Count > 0)
+                Version = Version.Parse(version[0].Value);
+			else
+			{
+				throw new InvalidOperationException($"Unable to determine server version from version string '{versionStr}'." +
+					$"Supported versions:{string.Join(", ", SupportedVersions)} ");
+			}
         }
-        /// <summary>
-        /// Navegation
-        /// </summary>
-        internal Regex ReVersion = new Regex(@"\d+\.\d+\.?(?:\d+)?");
-        public readonly Version Version; 
-        public bool SupportIdentityIncrement => Version.Major >= 3;
-        public int ObjectLengthName => Version.Major != 3 ? 64 : 31;
-        
 
+	    private static readonly string[] SupportedVersions = { "2.1", "2.5", "3.0", "4.0" };
+
+		internal Regex ReVersion = new Regex(@"\d+\.\d+\.?(?:\d+)?");
+
+		public readonly Version Version;
+
+        public bool SupportIdentityIncrement => Version.Major >= 3;
+
+		public int ObjectLengthName => Version.Major >= 3 ? 64 : 31;
     }
 
 }
