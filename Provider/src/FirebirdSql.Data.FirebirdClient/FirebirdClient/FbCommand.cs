@@ -287,7 +287,11 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		internal bool IsSelectCommand
 		{
-			get { return _statement != null && (_statement.StatementType == DbStatementType.Select || _statement.StatementType == DbStatementType.SelectForUpdate); }
+			get
+			{
+				return _statement != null && (_statement.StatementType == DbStatementType.Select || _statement.StatementType == DbStatementType.SelectForUpdate
+											 || (_statement.StatementType == DbStatementType.StoredProcedure && _statement.Fields.Count > 0));
+			}
 		}
 
 		internal bool IsDDLCommand
