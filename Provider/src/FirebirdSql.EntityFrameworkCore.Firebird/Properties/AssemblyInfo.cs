@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCompany("FirebirdSQL")]
 [assembly: AssemblyProduct("FirebirdClient")]
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyCopyright("(c) 2017")]
+[assembly: AssemblyCopyright("Copyright © 2017")]
 [assembly: AssemblyTitle("FirebirdClient - Entity Framework Core Provider")]
 [assembly: AssemblyDescription("FirebirdClient - Entity Framework Core Provider")]
 [assembly: AssemblyVersion(_VersionInfo.Version)]

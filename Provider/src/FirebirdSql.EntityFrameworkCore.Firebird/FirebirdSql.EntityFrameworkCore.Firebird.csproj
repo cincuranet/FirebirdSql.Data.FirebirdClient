@@ -7,6 +7,12 @@
 		<AssemblyOriginatorKeyFile>Properties\FirebirdSql.EntityFrameworkCore.Firebird.snk</AssemblyOriginatorKeyFile>
 		<DelaySign>False</DelaySign>
 		<GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+		<PackageLicenseUrl>https://raw.githubusercontent.com/cincuranet/FirebirdSql.Data.FirebirdClient/master/license.txt</PackageLicenseUrl>
+		<PackageIconUrl>https://www.firebirdsql.org/file/about/ds-firebird-logo-64.png</PackageIconUrl>
+		<RepositoryUrl>https://github.com/cincuranet/FirebirdSql.Data.FirebirdClient</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/FirebirdSQL</PackageProjectUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>FirebirdSql.EntityFrameworkCore.Firebird; FirebirdSQL;Entity Framework Core;entity-framework-core;EF;Data;O/RM</PackageTags>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
 		<DefineConstants>TRACE</DefineConstants>
@@ -18,6 +24,10 @@
 		<Compile Include="..\FirebirdSql.Data.FirebirdClient\Properties\VersionInfo.cs" Link="Properties\VersionInfo.cs" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\FirebirdSql.Data.FirebirdClient\FirebirdSql.Data.FirebirdClient.csproj" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.0" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.0.0" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\FirebirdSql.Data.FirebirdClient\FirebirdSql.Data.FirebirdClient.csproj" />
 	</ItemGroup>
 </Project>
