@@ -27,7 +27,6 @@
  *                  All Rights Reserved.
  */
 
-
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
 

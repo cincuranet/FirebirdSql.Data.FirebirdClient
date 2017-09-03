@@ -27,7 +27,6 @@
  *                  All Rights Reserved.
  */
 
-
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;

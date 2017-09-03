@@ -27,7 +27,6 @@
  *                  All Rights Reserved.
  */
 
-
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Utilities;  

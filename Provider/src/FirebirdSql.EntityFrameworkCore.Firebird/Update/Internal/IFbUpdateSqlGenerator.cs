@@ -31,7 +31,6 @@ using System.Collections.Generic;
 using System.Text;
 using JetBrains.Annotations;
 
-
 namespace Microsoft.EntityFrameworkCore.Update.Internal
 {
     public interface IFbUpdateSqlGenerator : IUpdateSqlGenerator

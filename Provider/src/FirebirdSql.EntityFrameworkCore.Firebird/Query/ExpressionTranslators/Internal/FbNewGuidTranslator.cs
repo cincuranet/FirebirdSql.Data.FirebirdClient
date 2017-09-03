@@ -21,8 +21,7 @@
  *                              Sergipe-Brazil
  *                  All Rights Reserved.
  */
-
-
+ 
 using System;
 
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionTranslators.Internal

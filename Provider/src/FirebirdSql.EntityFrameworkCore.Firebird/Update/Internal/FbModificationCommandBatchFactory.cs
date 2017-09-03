@@ -34,7 +34,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
 
-
 namespace Microsoft.EntityFrameworkCore.Update.Internal
 {
     public class FbModificationCommandBatchFactory : IModificationCommandBatchFactory

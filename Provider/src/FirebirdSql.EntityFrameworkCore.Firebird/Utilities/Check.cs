@@ -35,7 +35,6 @@ using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Internal;
 
-
 namespace Microsoft.EntityFrameworkCore.Utilities
 {
     [DebuggerStepThrough]

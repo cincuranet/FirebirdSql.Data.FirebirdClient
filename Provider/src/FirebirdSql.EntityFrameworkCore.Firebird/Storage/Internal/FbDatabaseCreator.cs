@@ -31,7 +31,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using FirebirdSql.Data.FirebirdClient;
 
-
 namespace Microsoft.EntityFrameworkCore.Storage.Internal
 {
     /// <summary>

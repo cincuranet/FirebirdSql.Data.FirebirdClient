@@ -22,6 +22,7 @@
  *                              Sergipe-Brazil
  *                  All Rights Reserved.
  */
+
  namespace Microsoft.Extensions.Logging
 {
     internal static class LoggingExtensions

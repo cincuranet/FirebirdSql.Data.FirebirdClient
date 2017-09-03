@@ -27,7 +27,6 @@
  *                  All Rights Reserved.
  */
 
-
 namespace Microsoft.EntityFrameworkCore.Metadata
 {
     public interface IFbModelAnnotations : IRelationalModelAnnotations

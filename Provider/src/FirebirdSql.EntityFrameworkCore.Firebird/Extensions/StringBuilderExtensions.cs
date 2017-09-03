@@ -24,7 +24,6 @@
 
 using System.Collections.Generic;
 
-
 namespace System.Text
 {
     internal static class StringBuilderExtensions

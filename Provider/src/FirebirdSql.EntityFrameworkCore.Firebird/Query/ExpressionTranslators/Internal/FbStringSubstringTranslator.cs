@@ -22,7 +22,6 @@
  *                  All Rights Reserved.
  */
 
-
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore.Query.Expressions;

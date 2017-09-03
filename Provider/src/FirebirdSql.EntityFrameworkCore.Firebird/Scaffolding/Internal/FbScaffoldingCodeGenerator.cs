@@ -24,7 +24,6 @@
  *                  All Rights Reserved.
  */
 
-
 namespace Microsoft.EntityFrameworkCore.Scaffolding.Internal
 {
     public class FbScaffoldingCodeGenerator : IScaffoldingProviderCodeGenerator

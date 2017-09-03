@@ -22,12 +22,10 @@
  *                  All Rights Reserved.
  */
 
-
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore.Query.Expressions.Internal;
-
 
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionTranslators.Internal
 {

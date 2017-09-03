@@ -36,7 +36,6 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-
 namespace Microsoft.EntityFrameworkCore.Migrations.Internal
 {
     public class FbHistoryRepository : HistoryRepository

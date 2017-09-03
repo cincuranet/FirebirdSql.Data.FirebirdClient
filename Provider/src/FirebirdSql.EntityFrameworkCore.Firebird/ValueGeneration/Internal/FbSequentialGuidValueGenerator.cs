@@ -32,7 +32,6 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 
-
 namespace Microsoft.EntityFrameworkCore.ValueGeneration.Internal
 {
     public class FbSequentialGuidValueGenerator  : ValueGenerator<Guid>

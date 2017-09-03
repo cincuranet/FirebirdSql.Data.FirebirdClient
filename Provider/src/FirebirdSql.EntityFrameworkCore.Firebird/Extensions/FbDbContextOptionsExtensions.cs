@@ -27,7 +27,6 @@
  *                  All Rights Reserved.
  */
 
-
 using System;
 using System.Data.Common;
 using JetBrains.Annotations;
@@ -36,7 +35,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
 using FirebirdSql.Data.FirebirdClient;
-
 
 namespace Microsoft.EntityFrameworkCore
 {

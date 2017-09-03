@@ -34,7 +34,6 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
 
-
 namespace Microsoft.EntityFrameworkCore.ValueGeneration.Internal
 {
     public class FbValueGeneratorSelector : RelationalValueGeneratorSelector

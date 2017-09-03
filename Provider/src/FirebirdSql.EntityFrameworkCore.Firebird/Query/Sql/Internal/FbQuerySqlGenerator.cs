@@ -22,7 +22,6 @@
  *                  All Rights Reserved.
  */
 
-
 using System;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
@@ -30,7 +29,6 @@ using Microsoft.EntityFrameworkCore.Query.Expressions;
 using Microsoft.EntityFrameworkCore.Query.Expressions.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
-
 
 namespace Microsoft.EntityFrameworkCore.Query.Sql.Internal
 {

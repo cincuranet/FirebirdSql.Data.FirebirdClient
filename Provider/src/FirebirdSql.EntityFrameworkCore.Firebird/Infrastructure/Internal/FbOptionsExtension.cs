@@ -28,7 +28,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 
-
 namespace Microsoft.EntityFrameworkCore.Infrastructure.Internal
 {
     public sealed class FbOptionsExtension : RelationalOptionsExtension

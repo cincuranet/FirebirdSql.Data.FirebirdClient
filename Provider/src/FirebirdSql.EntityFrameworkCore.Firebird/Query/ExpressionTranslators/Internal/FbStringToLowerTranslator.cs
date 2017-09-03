@@ -22,7 +22,6 @@
  *                  All Rights Reserved.
  */
 
-
 namespace Microsoft.EntityFrameworkCore.Query.ExpressionTranslators.Internal
 {
     /// <summary>

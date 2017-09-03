@@ -61,8 +61,8 @@
 //
 // -----------------------------------------------------------------------
 
-
 using System;
+
 namespace Ionic.Zlib
 {
     sealed class InflateBlocks

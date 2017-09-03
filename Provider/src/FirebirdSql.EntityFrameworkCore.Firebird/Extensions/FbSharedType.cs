@@ -25,13 +25,13 @@
 
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-
-//Credit => https://github.com/ErikEJ/EntityFramework.SqlServerCompact/blob/master/src/Provider40/Utilities/SharedTypeExtensions.cs
+// Credit => https://github.com/ErikEJ/EntityFramework.SqlServerCompact/blob/master/src/Provider40/Utilities/SharedTypeExtensions.cs
 
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection; 
+using System.Reflection;
+
 namespace System
 {
     [DebuggerStepThrough]

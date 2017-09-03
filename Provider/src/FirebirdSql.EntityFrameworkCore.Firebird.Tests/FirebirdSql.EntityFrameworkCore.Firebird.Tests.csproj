@@ -1,34 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFramework>netcoreapp2.0</TargetFramework>
-		<GenerateAssemblyInfo>False</GenerateAssemblyInfo>
-		<AssemblyName>FirebirdSql.EntityFrameworkCore.Firebird.Tests</AssemblyName>
-		<RootNamespace>FirebirdSql.EntityFrameworkCore.Firebird.Tests</RootNamespace>
-		<SignAssembly>True</SignAssembly>
-		<AssemblyOriginatorKeyFile>..\FirebirdSql.Data.TestsBase\FirebirdSql.Data.TestsBase.snk</AssemblyOriginatorKeyFile>
-	</PropertyGroup>	
-<ItemGroup>
-    <!--testing packages-->
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <AssemblyName>FirebirdSql.EntityFrameworkCore.Firebird.Tests</AssemblyName>
+    <RootNamespace>FirebirdSql.EntityFrameworkCore.Firebird.Tests</RootNamespace>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\FirebirdSql.Data.TestsBase\FirebirdSql.Data.TestsBase.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
     <PackageReference Include="NUnit" Version="3.7.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.8.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
-    <PackageReference Include="Microsoft.DotNet.InternalAbstractions" Version="1.0.0" />
-    <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="15.3.0" />
-    <PackageReference Include="xunit" Version="2.2.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
-    <!--app packages-->
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Specification.Tests" Version="2.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational.Specification.Tests" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0" />
-    <PackageReference Include="Moq" Version="4.7.99" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.8.0" />
   </ItemGroup>
-	
-	<ItemGroup>
-		<ProjectReference Include="..\FirebirdSql.Data.FirebirdClient\FirebirdSql.Data.FirebirdClient.csproj" />
-		<ProjectReference Include="..\FirebirdSql.EntityFrameworkCore.Firebird\FirebirdSql.EntityFrameworkCore.Firebird.csproj" />
-	</ItemGroup>
-	
-	<Import Project="..\FirebirdSql.Data.TestsBase\FirebirdSql.Data.TestsBase.projitems" Label="Shared" />
+  <ItemGroup>
+    <ProjectReference Include="..\FirebirdSql.Data.FirebirdClient\FirebirdSql.Data.FirebirdClient.csproj" />
+    <ProjectReference Include="..\FirebirdSql.EntityFrameworkCore.Firebird\FirebirdSql.EntityFrameworkCore.Firebird.csproj" />
+  </ItemGroup>
+  <Import Project="..\FirebirdSql.Data.TestsBase\FirebirdSql.Data.TestsBase.projitems" Label="Shared" />
 </Project>
