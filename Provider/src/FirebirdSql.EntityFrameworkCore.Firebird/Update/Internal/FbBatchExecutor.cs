@@ -42,7 +42,7 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
         public int Execute(IEnumerable<ModificationCommandBatch> commandBatches,
             IRelationalConnection connection)
         {
-            var RowsAffecteds = 0;
+            int recordAffecteds = 0;
             if(connection?.DbConnection?.State != System.Data.ConnectionState.Open)
                 connection.Open();
 
@@ -55,7 +55,7 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
                 foreach (var commandbatch in commandBatches)
                 {
                     commandbatch.Execute(connection);
-                    RowsAffecteds += commandbatch.ModificationCommands.Count;
+	                recordAffecteds += commandbatch.ModificationCommands.Count;
                 } 
                 currentTransaction?.Commit();
                 currentTransaction?.Dispose();
@@ -74,7 +74,7 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
             {
                 connection?.Close();
             } 
-            return RowsAffecteds;
+            return recordAffecteds;
         }
 
         public async Task<int> ExecuteAsync(
