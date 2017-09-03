@@ -14,6 +14,9 @@
 	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
 		<DefineConstants>DEBUG;TRACE</DefineConstants>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <NoWarn>1701;1702;1705;3001</NoWarn>
+	</PropertyGroup>
 	<ItemGroup>
 		<Compile Include="..\FirebirdSql.Data.FirebirdClient\Properties\VersionInfo.cs" Link="Properties\VersionInfo.cs" />
 	</ItemGroup>
