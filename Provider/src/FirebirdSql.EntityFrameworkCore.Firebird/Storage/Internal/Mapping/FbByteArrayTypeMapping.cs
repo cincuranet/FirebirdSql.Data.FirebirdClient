@@ -58,7 +58,6 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
         private static int CalculateSize(int? size)
             => size.HasValue && size < 8000 ? size.Value : 8000;
 
-
         public override RelationalTypeMapping Clone(string storeType, int? size)
 => new FbByteArrayTypeMapping(
     storeType,

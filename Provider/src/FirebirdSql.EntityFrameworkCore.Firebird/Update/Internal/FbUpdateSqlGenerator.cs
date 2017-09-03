@@ -175,13 +175,11 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
             int commandPosition)
         => AppendBlockUpdateOperation(commandStringBuilder, new[] { command }, commandPosition);
 
-
         public override ResultSetMapping AppendDeleteOperation(
            StringBuilder commandStringBuilder,
            ModificationCommand command,
            int commandPosition)
         => AppendBlockDeleteOperation(commandStringBuilder, new[] { command }, commandPosition);
-
 
         public ResultSetMapping AppendBlockUpdateOperation(StringBuilder commandStringBuilder, IReadOnlyList<ModificationCommand> modificationCommands,
             int commandPosition)
@@ -216,7 +214,6 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
                 commandStringBuilder.AppendLine("RETURNS (AffectedRows INT) AS BEGIN")
                                    .AppendLine("AffectedRows=0;");
             }
-
 
             for (var i = 0; i < modificationCommands.Count; i++)
             {
@@ -258,8 +255,6 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
                         .Append(item.Value);
                 }
             }
-
-
         }
 
         public ResultSetMapping AppendBlockDeleteOperation(StringBuilder commandStringBuilder, IReadOnlyList<ModificationCommand> modificationCommands,

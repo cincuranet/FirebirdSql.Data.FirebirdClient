@@ -43,7 +43,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionTranslators.Internal
         static readonly MethodInfo _concatCast
            = typeof(string).GetRuntimeMethod(nameof(string.Concat), new[] { typeof(string), typeof(string) });
 
-
         public virtual Expression Translate(MethodCallExpression methodStartCall)
         {
             if (!methodStartCall.Method.Equals(_methodStringOf) ||

@@ -34,8 +34,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionTranslators.Internal
     /// </summary>
     public class FbContainsOptimizedTranslator : IMethodCallTranslator
     {
-
-
         static readonly MethodInfo _methodInfo
            = typeof(string).GetRuntimeMethod(nameof(string.Contains), new[] { typeof(string) });
 

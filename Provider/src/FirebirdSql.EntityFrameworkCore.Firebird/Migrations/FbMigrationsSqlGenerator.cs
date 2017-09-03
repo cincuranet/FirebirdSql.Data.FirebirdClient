@@ -652,6 +652,4 @@ namespace Microsoft.EntityFrameworkCore.Migrations
 
         protected override string ColumnList(string[] columns) => string.Join(", ", columns.Select(Dependencies.SqlGenerationHelper.DelimitIdentifier));
     }
-
-
 }

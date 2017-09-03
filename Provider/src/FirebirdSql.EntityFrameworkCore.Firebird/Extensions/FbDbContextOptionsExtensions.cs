@@ -89,8 +89,7 @@ namespace Microsoft.EntityFrameworkCore
             return existsExtension != null
                 ? new FbOptionsExtension(existsExtension)
                 : new FbOptionsExtension();
-        }  
-
+        }
     
     }
 }

@@ -84,12 +84,10 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
         protected override bool HasTables()
             => (long)CreateHasTablesCommand().ExecuteScalar(Dependencies.Connection) != 0;
 
-
         protected override Task<bool> HasTablesAsync(CancellationToken cancellationToken = default(CancellationToken))
             => Dependencies.ExecutionStrategyFactory.Create().ExecuteAsync(_connection,
                 async (connection, ct) => (long)await CreateHasTablesCommand().ExecuteScalarAsync(connection, cancellationToken: ct).ConfigureAwait(false) != 0, cancellationToken);
-
-
+		
         private IRelationalCommand CreateHasTablesCommand()
             => _rawSqlCommandBuilder
                 .Build(@"select count(*) from rdb$relations where rdb$view_blr is null and (rdb$system_flag is null or rdb$system_flag = 0);");

@@ -54,5 +54,3 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage
 
     }
 }
-
-

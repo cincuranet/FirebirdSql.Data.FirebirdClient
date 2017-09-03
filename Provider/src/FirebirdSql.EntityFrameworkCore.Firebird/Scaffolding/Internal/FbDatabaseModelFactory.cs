@@ -185,7 +185,6 @@ GROUP BY CONST.RDB$CONSTRAINT_NAME, RELCONST.RDB$RELATION_NAME,REF.RDB$DELETE_RU
             if (_connection.State != ConnectionState.Open)
                 _connection.Open();
 
-
             try
             {
                 _tableSelectionSet = tableSelectionSet;

@@ -49,9 +49,6 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionTranslators.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         ///  
-
-
-
         public virtual Expression Translate(MethodCallExpression methodCallExpression)
         {
             if (methodCallExpression.Method.Equals(_methodInfo))

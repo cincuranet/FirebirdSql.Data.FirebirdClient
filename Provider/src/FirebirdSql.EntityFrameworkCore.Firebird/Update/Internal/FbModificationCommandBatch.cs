@@ -159,7 +159,6 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
             if (_BlockDeleteCommands.Count == 0)
                 return string.Empty;
 
-
             var stringBuilder = new StringBuilder();
             var resultSetMapping = UpdateSqlGenerator.AppendBlockDeleteOperation(stringBuilder, _BlockDeleteCommands, lastIndex - _BlockDeleteCommands.Count);
             for (var i = lastIndex - _BlockDeleteCommands.Count; i < lastIndex; i++)
@@ -260,8 +259,6 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
                 base.UpdateCachedCommandText(commandPosition);
             }
         }
-         
-
 
         private static bool CanBeDeleteInSameStatement(ModificationCommand firstCommand, ModificationCommand secondCommand)
           => string.Equals(firstCommand.TableName, secondCommand.TableName, StringComparison.Ordinal)
