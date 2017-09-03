@@ -46,8 +46,8 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionTranslators.Internal
             [nameof(Convert.ToInt16)] = "SMALLINT",
             [nameof(Convert.ToInt32)] = "INTEGER",
             [nameof(Convert.ToInt64)] = "BIGINT",
-            [nameof(Convert.ToString)] = "VARCHAR(4000)"
-        };
+            [nameof(Convert.ToString)] = "VARCHAR(32765)"
+		};
 
         private static readonly List<Type> _supportedTypes = new List<Type>
         {

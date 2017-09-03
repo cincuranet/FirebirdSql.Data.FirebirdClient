@@ -72,7 +72,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
         private FbStringTypeMapping _varchar127 
                                             => new FbStringTypeMapping("VARCHAR(127)", FbDbType.VarChar, true, 127);
         private FbStringTypeMapping _varcharMax 
-                                            => new FbStringTypeMapping("VARCHAR(4000)", FbDbType.VarChar);
+                                            => new FbStringTypeMapping("VARCHAR(32765)", FbDbType.VarChar);
         private FbStringTypeMapping _text        
                                             => new FbStringTypeMapping("BLOB SUB_TYPE TEXT", FbDbType.Text);
         // DateTime
@@ -169,7 +169,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
 
             StringMapper
                 = new StringRelationalTypeMapper(
-                    maxBoundedAnsiLength: 4000,
+                    maxBoundedAnsiLength: 32765,
                     defaultAnsiMapping: _varcharMax,
                     unboundedAnsiMapping: _varcharMax,
                     keyAnsiMapping: _varchar127,
@@ -178,7 +178,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
                         FbDbType.VarChar,
                         unicode: false,
                         size: size),
-                    maxBoundedUnicodeLength: 4000,
+                    maxBoundedUnicodeLength: 32765,
                     defaultUnicodeMapping: _varcharMax,
                     unboundedUnicodeMapping: _varcharMax,
                     keyUnicodeMapping: _varchar127,
