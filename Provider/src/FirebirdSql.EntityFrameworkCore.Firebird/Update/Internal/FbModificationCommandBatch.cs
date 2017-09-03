@@ -30,7 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text; 
+using System.Text;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -39,30 +39,28 @@ using System.Threading.Tasks;
 using System.Threading;
 
 namespace Microsoft.EntityFrameworkCore.Update.Internal
-{ 
+{
+	public class FbModificationCommandBatch : AffectedCountModificationCommandBatch
+	{
+		private const int MaxParameterCount = 1000;
+		private const int MaxRowCount = 256;
+		private int _countParameter = 1;
+		private readonly int _maxBatchSize;
+		private readonly IRelationalCommandBuilderFactory _commandBuilderFactory;
+		private readonly IRelationalValueBufferFactoryFactory _valueBufferFactory;
+		private readonly List<ModificationCommand> _blockInsertCommands;
+		private readonly List<ModificationCommand> _blockUpdateCommands;
+		private readonly List<ModificationCommand> _blockDeleteCommands; 
+		private readonly StringBuilder _executeParameters;
+		private string _seperator;
 
-    public class FbModificationCommandBatch : AffectedCountModificationCommandBatch
-    {
-	    private const int MaxParameterCount = 1000;
-	    private const int MaxRowCount = 256;
-	    private int CountParameter = 1;
-	    private readonly int _maxBatchSize;
-	    private readonly IRelationalCommandBuilderFactory _commandBuilderFactory = null;
-	    private readonly IRelationalValueBufferFactoryFactory _valueBufferFactory = null; 
-	    private readonly List<ModificationCommand> _blockInsertCommands = null;
-	    private readonly List<ModificationCommand> _blockUpdateCommands = null;
-	    private readonly List<ModificationCommand> _blockDeleteCommands = null;
-
-	    private readonly StringBuilder _ExecuteParameters = null;
-		private string _Seperator = null;
 		/// <summary>
 		///     This API supports the Entity Framework Core infrastructure and is not intended to be used
 		///     directly from your code. This API may change or be removed in future releases.
 		/// </summary>
 		public FbModificationCommandBatch(
 			[NotNull] IRelationalCommandBuilderFactory commandBuilderFactory,
-			[NotNull] ISqlGenerationHelper sqlGenerationHelper,
-			// ReSharper disable once SuggestBaseTypeForParameter
+			[NotNull] ISqlGenerationHelper sqlGenerationHelper, 
 			[NotNull] IFbUpdateSqlGenerator updateSqlGenerator,
 			[NotNull] IRelationalValueBufferFactoryFactory valueBufferFactoryFactory,
 			[CanBeNull] int? maxBatchSize)
@@ -74,21 +72,21 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 			_maxBatchSize = Math.Min(maxBatchSize ?? int.MaxValue, MaxRowCount);
 			_commandBuilderFactory = commandBuilderFactory;
 			_valueBufferFactory = valueBufferFactoryFactory;
-			_ExecuteParameters = new StringBuilder();
-			_Seperator = string.Empty;
+			_executeParameters = new StringBuilder();
+			_seperator = string.Empty;
 			_blockInsertCommands = new List<ModificationCommand>();
 			_blockUpdateCommands = new List<ModificationCommand>();
 			_blockDeleteCommands = new List<ModificationCommand>();
 		}
 
-	    /// <summary>
-	    ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-	    ///     directly from your code. This API may change or be removed in future releases.
-	    /// </summary>
-	    protected new virtual IFbUpdateSqlGenerator UpdateSqlGenerator()
-	    {
-		 return (IFbUpdateSqlGenerator)base.UpdateSqlGenerator;   
-	    }
+		/// <summary>
+		///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+		///     directly from your code. This API may change or be removed in future releases.
+		/// </summary>
+		protected new virtual IFbUpdateSqlGenerator UpdateSqlGenerator()
+		{
+			return (IFbUpdateSqlGenerator) base.UpdateSqlGenerator;
+		}
 
 		/// <summary>
 		///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -101,11 +99,11 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 
 
 			var additionalParameterCount = CountParameters(modificationCommand);
-			if (CountParameter + additionalParameterCount >= MaxParameterCount)
+			if (_countParameter + additionalParameterCount >= MaxParameterCount)
 				return false;
 
 
-			CountParameter += additionalParameterCount;
+			_countParameter += additionalParameterCount;
 			return true;
 		}
 
@@ -114,7 +112,9 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 		///     directly from your code. This API may change or be removed in future releases.
 		/// </summary>
 		protected override bool IsCommandTextValid()
-			=> true;
+		{
+			return true;
+		}
 
 
 		/// <summary>
@@ -122,7 +122,9 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 		///     directly from your code. This API may change or be removed in future releases.
 		/// </summary>
 		protected override int GetParameterCount()
-			=> CountParameter;
+		{
+			return _countParameter;
+		}
 
 		private static int CountParameters(ModificationCommand modificationCommand)
 		{
@@ -134,7 +136,6 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 
 				if (columnModification.UseOriginalValueParameter)
 					parameterCount++;
-
 			}
 			return parameterCount;
 		}
@@ -157,30 +158,30 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 		/// </summary>
 		protected override string GetCommandText()
 		{
-			var SbCommands = new StringBuilder();
-			var SbExecuteBlock = new StringBuilder();
-			_ExecuteParameters.Clear();
+			var sbCommands = new StringBuilder();
+			var sbExecuteBlock = new StringBuilder();
+			_executeParameters.Clear();
 
 			//Commands Insert/Update/Delete
-			SbCommands.AppendLine(base.GetCommandText());
-			SbCommands.Append(GetBlockInsertCommandText(ModificationCommands.Count));
-			SbCommands.Append(GetBlockUpdateCommandText(ModificationCommands.Count));
-			SbCommands.Append(GetBlockDeleteCommandText(ModificationCommands.Count));
+			sbCommands.AppendLine(base.GetCommandText());
+			sbCommands.Append(GetBlockInsertCommandText(ModificationCommands.Count));
+			sbCommands.Append(GetBlockUpdateCommandText(ModificationCommands.Count));
+			sbCommands.Append(GetBlockDeleteCommandText(ModificationCommands.Count));
 
 			//Execute Block
-			var parameters = _ExecuteParameters.ToString();
-			SbExecuteBlock.Append("EXECUTE BLOCK ");
+			var parameters = _executeParameters.ToString();
+			sbExecuteBlock.Append("EXECUTE BLOCK ");
 			if (parameters.Length > 0)
 			{
-				SbExecuteBlock.Append("( ");
-				SbExecuteBlock.Append(parameters);
-				SbExecuteBlock.Append(") ");
+				sbExecuteBlock.Append("( ");
+				sbExecuteBlock.Append(parameters);
+				sbExecuteBlock.Append(") ");
 			}
-			SbExecuteBlock.AppendLine($"RETURNS (AffectedRows BIGINT) AS BEGIN");
-			SbExecuteBlock.Append("AffectedRows=0;");
-			SbExecuteBlock.Append(SbCommands);
-			SbExecuteBlock.AppendLine("END;");
-			return SbExecuteBlock.ToString().Trim();
+			sbExecuteBlock.AppendLine($"RETURNS (AffectedRows BIGINT) AS BEGIN");
+			sbExecuteBlock.Append("AffectedRows=0;");
+			sbExecuteBlock.Append(sbCommands);
+			sbExecuteBlock.AppendLine("END;");
+			return sbExecuteBlock.ToString().Trim();
 		}
 
 		private string GetBlockDeleteCommandText(int lastIndex)
@@ -190,7 +191,8 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 
 
 			var stringBuilder = new StringBuilder();
-			var resultSetMapping = UpdateSqlGenerator().AppendBlockDeleteOperation(stringBuilder, _blockDeleteCommands, lastIndex - _blockDeleteCommands.Count);
+			var resultSetMapping = UpdateSqlGenerator()
+				.AppendBlockDeleteOperation(stringBuilder, _blockDeleteCommands, lastIndex - _blockDeleteCommands.Count);
 			for (var i = lastIndex - _blockDeleteCommands.Count; i < lastIndex; i++)
 				CommandResultSet[i] = resultSetMapping;
 
@@ -208,19 +210,20 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 
 			var stringBuilder = new StringBuilder();
 			var headStringBuilder = new StringBuilder();
-			var resultSetMapping = UpdateSqlGenerator().AppendBlockUpdateOperation(stringBuilder, headStringBuilder, _blockUpdateCommands, lastIndex - _blockUpdateCommands.Count);
+			var resultSetMapping = UpdateSqlGenerator().AppendBlockUpdateOperation(stringBuilder, headStringBuilder,
+				_blockUpdateCommands, lastIndex - _blockUpdateCommands.Count);
 			for (var i = lastIndex - _blockUpdateCommands.Count; i < lastIndex; i++)
 				CommandResultSet[i] = resultSetMapping;
 
 			if (resultSetMapping != ResultSetMapping.NoResultSet)
 				CommandResultSet[lastIndex - 1] = ResultSetMapping.LastInResultSet;
 
-			var ExecuteParameters = headStringBuilder.ToString();
-			if (ExecuteParameters.Length > 0)
+			var executeParameters = headStringBuilder.ToString();
+			if (executeParameters.Length > 0)
 			{
-				_ExecuteParameters.Append(_Seperator);
-				_ExecuteParameters.Append(ExecuteParameters);
-				_Seperator = ",";
+				_executeParameters.Append(_seperator);
+				_executeParameters.Append(executeParameters);
+				_seperator = ",";
 			}
 
 			return stringBuilder.ToString();
@@ -233,19 +236,20 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 
 			var stringBuilder = new StringBuilder();
 			var headStringBuilder = new StringBuilder();
-			var resultSetMapping = UpdateSqlGenerator().AppendBlockInsertOperation(stringBuilder, headStringBuilder, _blockInsertCommands, lastIndex - _blockInsertCommands.Count);
+			var resultSetMapping = UpdateSqlGenerator().AppendBlockInsertOperation(stringBuilder, headStringBuilder,
+				_blockInsertCommands, lastIndex - _blockInsertCommands.Count);
 			for (var i = lastIndex - _blockInsertCommands.Count; i < lastIndex; i++)
 				CommandResultSet[i] = resultSetMapping;
 
 			if (resultSetMapping != ResultSetMapping.NoResultSet)
 				CommandResultSet[lastIndex - 1] = ResultSetMapping.LastInResultSet;
 
-			var ExecuteParameters = headStringBuilder.ToString();
-			if (ExecuteParameters.Length > 0)
+			var executeParameters = headStringBuilder.ToString();
+			if (executeParameters.Length > 0)
 			{
-				_ExecuteParameters.Append(_Seperator);
-				_ExecuteParameters.Append(ExecuteParameters);
-				_Seperator = ",";
+				_executeParameters.Append(_seperator);
+				_executeParameters.Append(executeParameters);
+				_seperator = ",";
 			}
 
 			return stringBuilder.ToString();
@@ -262,20 +266,18 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 			if (newModificationCommand.EntityState == EntityState.Added)
 			{
 				if (_blockInsertCommands.Count > 0
-					&& !CanBeInsertedInSameStatement(_blockInsertCommands[0], newModificationCommand))
+				    && !CanBeInsertedInSameStatement(_blockInsertCommands[0], newModificationCommand))
 				{
 					CachedCommandText.Append(GetBlockInsertCommandText(commandPosition));
 					_blockInsertCommands.Clear();
 				}
 				_blockInsertCommands.Add(newModificationCommand);
 				LastCachedCommandIndex = commandPosition;
-
-
 			}
 			else if (newModificationCommand.EntityState == EntityState.Modified)
 			{
 				if (_blockUpdateCommands.Count > 0
-					&& !CanBeUpdateInSameStatement(_blockUpdateCommands[0], newModificationCommand))
+				    && !CanBeUpdateInSameStatement(_blockUpdateCommands[0], newModificationCommand))
 				{
 					CachedCommandText.Append(GetBlockUpdateCommandText(commandPosition));
 					_blockUpdateCommands.Clear();
@@ -286,7 +288,7 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 			else if (newModificationCommand.EntityState == EntityState.Deleted)
 			{
 				if (_blockDeleteCommands.Count > 0
-					&& !CanBeDeleteInSameStatement(_blockDeleteCommands[0], newModificationCommand))
+				    && !CanBeDeleteInSameStatement(_blockDeleteCommands[0], newModificationCommand))
 				{
 					CachedCommandText.Append(GetBlockDeleteCommandText(commandPosition));
 					_blockDeleteCommands.Clear();
@@ -304,39 +306,34 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 
 		private static bool CanBeDeleteInSameStatement(ModificationCommand firstCommand, ModificationCommand secondCommand)
 		{
-			return string.Equals(firstCommand.TableName, secondCommand.TableName, StringComparison.Ordinal)
-						&& string.Equals(firstCommand.Schema, secondCommand.Schema, StringComparison.Ordinal)
-						&& firstCommand.ColumnModifications.Where(o => o.IsWrite)
-									 .Select(o => o.ColumnName)
-									 .SequenceEqual(secondCommand.ColumnModifications.Where(o => o.IsWrite).Select(o => o.ColumnName))
-						&& firstCommand.ColumnModifications.Where(o => o.IsRead)
-									.Select(o => o.ColumnName)
-									.SequenceEqual(secondCommand.ColumnModifications.Where(o => o.IsRead).Select(o => o.ColumnName));
+			return string.Equals(firstCommand.TableName, secondCommand.TableName, StringComparison.Ordinal) 
+			       && firstCommand.ColumnModifications.Where(o => o.IsWrite)
+				       .Select(o => o.ColumnName)
+				       .SequenceEqual(secondCommand.ColumnModifications.Where(o => o.IsWrite).Select(o => o.ColumnName))
+			       && firstCommand.ColumnModifications.Where(o => o.IsRead)
+				       .Select(o => o.ColumnName)
+				       .SequenceEqual(secondCommand.ColumnModifications.Where(o => o.IsRead).Select(o => o.ColumnName));
 		}
 
 		private static bool CanBeUpdateInSameStatement(ModificationCommand firstCommand, ModificationCommand secondCommand)
 		{
-			return string.Equals(firstCommand.TableName, secondCommand.TableName, StringComparison.Ordinal)
-				  && string.Equals(firstCommand.Schema, secondCommand.Schema, StringComparison.Ordinal)
-				  && firstCommand.ColumnModifications.Where(o => o.IsWrite)
-								.Select(o => o.ColumnName)
-								.SequenceEqual(secondCommand.ColumnModifications.Where(o => o.IsWrite).Select(o => o.ColumnName))
-				  && firstCommand.ColumnModifications.Where(o => o.IsRead)
-								.Select(o => o.ColumnName).SequenceEqual(secondCommand.ColumnModifications.Where(o => o.IsRead).Select(o => o.ColumnName));
+			return string.Equals(firstCommand.TableName, secondCommand.TableName, StringComparison.Ordinal) 
+			       && firstCommand.ColumnModifications.Where(o => o.IsWrite)
+				       .Select(o => o.ColumnName)
+				       .SequenceEqual(secondCommand.ColumnModifications.Where(o => o.IsWrite).Select(o => o.ColumnName))
+			       && firstCommand.ColumnModifications.Where(o => o.IsRead)
+				       .Select(o => o.ColumnName)
+				       .SequenceEqual(secondCommand.ColumnModifications.Where(o => o.IsRead).Select(o => o.ColumnName));
 		}
 
 		private static bool CanBeInsertedInSameStatement(ModificationCommand firstCommand, ModificationCommand secondCommand)
 		{
-			return string.Equals(firstCommand.TableName, secondCommand.TableName, StringComparison.Ordinal)
-						  && string.Equals(firstCommand.Schema, secondCommand.Schema, StringComparison.Ordinal)
-						  && firstCommand.ColumnModifications.Where(o => o.IsWrite).Select(o => o.ColumnName).SequenceEqual(
-							  secondCommand.ColumnModifications.Where(o => o.IsWrite).Select(o => o.ColumnName))
-						  && firstCommand.ColumnModifications.Where(o => o.IsRead).Select(o => o.ColumnName).SequenceEqual(
-							  secondCommand.ColumnModifications.Where(o => o.IsRead).Select(o => o.ColumnName));
+			return string.Equals(firstCommand.TableName, secondCommand.TableName, StringComparison.Ordinal) 
+			       && firstCommand.ColumnModifications.Where(o => o.IsWrite).Select(o => o.ColumnName).SequenceEqual(
+				       secondCommand.ColumnModifications.Where(o => o.IsWrite).Select(o => o.ColumnName))
+			       && firstCommand.ColumnModifications.Where(o => o.IsRead).Select(o => o.ColumnName).SequenceEqual(
+				       secondCommand.ColumnModifications.Where(o => o.IsRead).Select(o => o.ColumnName));
 		}
-
-
-
 
 
 		///// <summary>
@@ -344,35 +341,34 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 		///// </summary>
 		///// <param name = "reader" ></ param >
 		protected override void Consume(RelationalDataReader relationalReader)
-		{ 
+		{
+			if (relationalReader == null)
+			{
+				throw new ArgumentNullException(nameof(relationalReader));
+			}
 			//Cast FbDataReader
-			var dataReader = (FbDataReader)relationalReader.DbDataReader;
+			var dataReader = (FbDataReader) relationalReader.DbDataReader;
 			var commandIndex = 0;
 			try
 			{
-
-				for (; ; )
+				for (;;)
 				{
 					while (commandIndex < CommandResultSet.Count
-						  && CommandResultSet[commandIndex] == ResultSetMapping.NoResultSet)
-					{
+					       && CommandResultSet[commandIndex] == ResultSetMapping.NoResultSet)
 						commandIndex++;
-					}
-					int propragation = commandIndex;
+					var propragation = commandIndex;
 					while (propragation < ModificationCommands.Count &&
-						!ModificationCommands[propragation].RequiresResultPropagation)
+					       !ModificationCommands[propragation].RequiresResultPropagation)
 						propragation++;
 
 					while (commandIndex < propragation)
 					{
 						commandIndex++;
 						if (!dataReader.Read())
-						{
 							throw new DbUpdateConcurrencyException(
 								RelationalStrings.UpdateConcurrencyException(1, 0),
 								ModificationCommands[commandIndex].Entries
 							);
-						}
 					}
 					//check if you've gone through all notifications
 					if (propragation == ModificationCommands.Count)
@@ -380,11 +376,9 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 
 					var modifications = ModificationCommands[commandIndex++];
 					if (!relationalReader.Read())
-					{
 						throw new DbUpdateConcurrencyException(
 							RelationalStrings.UpdateConcurrencyException(1, 0),
 							modifications.Entries);
-					}
 					var bufferFactory = CreateValueBufferFactory(modifications.ColumnModifications);
 					modifications.PropagateResults(bufferFactory.Create(dataReader));
 					dataReader.NextResult();
@@ -404,12 +398,15 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 		}
 
 		/// <summary>
-		/// Method Async for Propagation DataReader
+		///     Method Async for Propagation DataReader
 		/// </summary>
-		/// <param name = "reader" ></ param >
+		/// <param name="reader"></param>
 		/// < param name="cancellationToken"></param>
 		/// <returns></returns>
-		protected override Task ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken = default(CancellationToken))
-			=> Task.Run(() => Consume(reader));
+		protected override Task ConsumeAsync(RelationalDataReader reader,
+			CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return Task.Run(() => Consume(reader));
+		}
 	}
 }
