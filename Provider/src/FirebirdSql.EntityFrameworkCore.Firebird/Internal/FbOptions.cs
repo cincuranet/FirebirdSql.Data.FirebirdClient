@@ -176,15 +176,16 @@ namespace Microsoft.EntityFrameworkCore.Internal
 
                             sbFieds.AppendLine(");");
                         } 
-                } 
-                //List Primary Keys 
-                command.CommandText = $@"
-                    SELECT
-                        IDX.RDB$INDEX_NAME, IDX.RDB$RELATION_NAME  
-                    FROM RDB$INDICES IDX WHERE
-                        IDX.RDB$RELATION_NAME = '{sqlGenerationHelper.DelimitIdentifier(table, schema)}'
-                        AND LEFT(IDX.RDB$INDEX_NAME,3)='PK_'
-                    GROUP BY DX.RDB$INDEX_NAME, IDX.RDB$RELATION_NAME"; 
+                }
+				
+				//List Primary Keys
+				command.CommandText = $@"
+					SELECT I.RDB$INDEX_NAME, SG.RDB$FIELD_NAME
+					FROM RDB$INDICES IDX
+					LEFT JOIN RDB$INDEX_SEGMENTS SG ON IDX.RDB$INDEX_NAME = SG.RDB$INDEX_NAME
+					LEFT JOIN RDB$RELATION_CONSTRAINTS RC ON RC.RDB$INDEX_NAME = IDX.RDB$INDEX_NAME
+					WHERE RC.RDB$CONSTRAINT_TYPE = 'PRIMARY KEY'
+					AND IDX.RDB$RELATION_NAME = '{sqlGenerationHelper.DelimitIdentifier(table, schema)}'";
 
                 using (var rd = command.ExecuteReader())
                 {
@@ -193,21 +194,21 @@ namespace Microsoft.EntityFrameworkCore.Internal
                         {
                             sbFieds.Append($"ALTER TABLE {sqlGenerationHelper.DelimitIdentifier(table, schema)} ");
                             sbFieds.Append($"ADD CONSTRAINT {rd["RDB$INDEX_NAME"].ToString()} ");
-                            sbFieds.Append($"PRIMARY KEY ({rd["RDB$RELATION_NAME"].ToString()}) ");
+                            sbFieds.Append($"PRIMARY KEY ({rd["RDB$FIELD_NAME"].ToString()}) ");
                         }
-                } 
-                 
-                // List Indexes
-                command.CommandText = $@"
-                      SELECT IDX.RDB$INDEX_NAME,
-		                     IDX.RDB$UNIQUE_FLAG,
-		                     IDX.RDB$RELATION_NAME
-	                    FROM RDB$INDICES IDX WHERE
-	                       IDX.RDB$RELATION_NAME = '{sqlGenerationHelper.DelimitIdentifier(table, schema)}'
-	                       AND LEFT(IDX.RDB$INDEX_NAME,3)='PK_'
-	                       AND LEFT(IDX.RDB$INDEX_NAME,3)<>'FK_'
-	                    GROUP BY
-	                       IDX.RDB$INDEX_NAME, IDX.RDB$UNIQUE_FLAG, IDX.RDB$RELATION_NAME";
+                }
+
+				// List Indexes
+				command.CommandText = $@"
+					SELECT
+						I.RDB$INDEX_NAME,
+						COALESCE(I.RDB$UNIQUE_FLAG, 0) AS ISUNIQUE,
+						I.RDB$RELATION_NAME
+						FROM RDB$INDICES I
+						LEFT JOIN RDB$INDEX_SEGMENTS SG ON I.RDB$INDEX_NAME = SG.RDB$INDEX_NAME
+						LEFT JOIN RDB$RELATION_CONSTRAINTS RC ON RC.RDB$INDEX_NAME = I.RDB$INDEX_NAME AND RC.RDB$CONSTRAINT_TYPE = NULL
+					WHERE I.RDB$RELATION_NAME = '{sqlGenerationHelper.DelimitIdentifier(table, schema)}'
+					GROUP BY I.RDB$INDEX_NAME, ISUNIQUE, I.RDB$RELATION_NAME";
 
                 using (var rd = command.ExecuteReader())
                 {
