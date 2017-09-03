@@ -33,10 +33,10 @@ namespace Microsoft.EntityFrameworkCore.Scaffolding.Metadata
 {
     public static class FbDatabaseModelExtensions
     {
-        public static FbDatabaseColumnAnnotations Fb(/* [NotNull] */ this DatabaseColumn column)
+        public static FbDatabaseColumnAnnotations Firebird(/* [NotNull] */ this DatabaseColumn column)
             => new FbDatabaseColumnAnnotations(column);
 
-        public static FbIndexModelAnnotations Fb(/* [NotNull] */ this DatabaseIndex index)
+        public static FbIndexModelAnnotations Firebird(/* [NotNull] */ this DatabaseIndex index)
             => new FbIndexModelAnnotations(index);
     }
 }

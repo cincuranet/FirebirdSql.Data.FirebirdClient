@@ -50,7 +50,7 @@ namespace Microsoft.EntityFrameworkCore
         {
             Check.NotNull(modelBuilder, nameof(modelBuilder)); 
             var property = modelBuilder.Model; 
-            property.Fb().ValueGenerationStrategy = FbValueGenerationStrategy.IdentityColumn; 
+            property.Firebird().ValueGenerationStrategy = FbValueGenerationStrategy.IdentityColumn; 
             return modelBuilder;
         }
 
@@ -59,7 +59,7 @@ namespace Microsoft.EntityFrameworkCore
         {
             Check.NotNull(modelBuilder, nameof(modelBuilder)); 
             var property = modelBuilder.Model; 
-            property.Fb().ValueGenerationStrategy = FbValueGenerationStrategy.ComputedColumn; 
+            property.Firebird().ValueGenerationStrategy = FbValueGenerationStrategy.ComputedColumn; 
             return modelBuilder;
         }
     }

@@ -36,34 +36,34 @@ namespace Microsoft.EntityFrameworkCore
 
     public static class FbMetadataExtensions
     {
-        public static FbPropertyAnnotations Fb([NotNull] this IMutableProperty property)
-            => (FbPropertyAnnotations)Fb((IProperty)property);
+        public static FbPropertyAnnotations Firebird([NotNull] this IMutableProperty property)
+            => (FbPropertyAnnotations)Firebird((IProperty)property);
         
-        public static IFbPropertyAnnotations Fb([NotNull] this IProperty property)
+        public static IFbPropertyAnnotations Firebird([NotNull] this IProperty property)
             => new FbPropertyAnnotations(Check.NotNull(property, nameof(property)));
         
-        public static FbEntityTypeAnnotations Fb([NotNull] this IMutableEntityType entityType)
-            => (FbEntityTypeAnnotations)Fb((IEntityType)entityType);
+        public static FbEntityTypeAnnotations Firebird([NotNull] this IMutableEntityType entityType)
+            => (FbEntityTypeAnnotations)Firebird((IEntityType)entityType);
         
-        public static IFbEntityTypeAnnotations Fb([NotNull] this IEntityType entityType)
+        public static IFbEntityTypeAnnotations Firebird([NotNull] this IEntityType entityType)
             => new FbEntityTypeAnnotations(Check.NotNull(entityType, nameof(entityType)));
         
-        public static FbKeyAnnotations Fb([NotNull] this IMutableKey key)
-            => (FbKeyAnnotations)Fb((IKey)key);
+        public static FbKeyAnnotations Firebird([NotNull] this IMutableKey key)
+            => (FbKeyAnnotations)Firebird((IKey)key);
         
-        public static IFbKeyAnnotations Fb([NotNull] this IKey key)
+        public static IFbKeyAnnotations Firebird([NotNull] this IKey key)
             => new FbKeyAnnotations(Check.NotNull(key, nameof(key)));
         
-        public static FbIndexAnnotations Fb([NotNull] this IMutableIndex index)
-            => (FbIndexAnnotations)Fb((IIndex)index);
+        public static FbIndexAnnotations Firebird([NotNull] this IMutableIndex index)
+            => (FbIndexAnnotations)Firebird((IIndex)index);
         
-        public static IFbIndexAnnotations Fb([NotNull] this IIndex index)
+        public static IFbIndexAnnotations Firebird([NotNull] this IIndex index)
             => new FbIndexAnnotations(Check.NotNull(index, nameof(index)));
         
-        public static FbModelAnnotations Fb([NotNull] this IMutableModel model)
-            => (FbModelAnnotations)Fb((IModel)model);
+        public static FbModelAnnotations Firebird([NotNull] this IMutableModel model)
+            => (FbModelAnnotations)Firebird((IModel)model);
         
-        public static IFbModelAnnotations Fb([NotNull] this IModel model)
+        public static IFbModelAnnotations Firebird([NotNull] this IModel model)
             => new FbModelAnnotations(Check.NotNull(model, nameof(model)));
     }
 }

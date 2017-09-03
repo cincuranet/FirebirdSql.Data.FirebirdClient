@@ -69,6 +69,6 @@ namespace Microsoft.EntityFrameworkCore
             => (PropertyBuilder<TProperty>)UseFbIdentityColumn((PropertyBuilder)propertyBuilder);
 
         private static FbPropertyBuilderAnnotations GetFbInternalBuilder(PropertyBuilder propertyBuilder)
-            => propertyBuilder.GetInfrastructure<InternalPropertyBuilder>().Fb(ConfigurationSource.Explicit);
+            => propertyBuilder.GetInfrastructure<InternalPropertyBuilder>().Firebird(ConfigurationSource.Explicit);
     }
 }

@@ -53,7 +53,7 @@ namespace Microsoft.EntityFrameworkCore
         /// </summary>
         /// <param name="database"> The facade from <see cref="DbContext.Database" />. </param>
         /// <returns> True if FirebirdSQL is being used; false otherwise. </returns>
-        public static bool IsFb([NotNull] this DatabaseFacade database)
+        public static bool IsFirebird([NotNull] this DatabaseFacade database)
             => database.ProviderName.Equals(
                 typeof(FbOptionsExtension).GetTypeInfo().Assembly.GetName().Name,
                 StringComparison.Ordinal);

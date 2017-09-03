@@ -69,7 +69,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         /// </summary>
         public override IEnumerable<IAnnotation> For(IIndex index)
         {
-            var isFullText = index.Fb().IsFullText;
+            var isFullText = index.Firebird().IsFullText;
             if (isFullText.HasValue && isFullText.Value)
             {
                 yield return new Annotation(
@@ -97,11 +97,11 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         /// </summary>
         public override IEnumerable<IAnnotation> For(IProperty property)
         {
-            if (property.Fb().ValueGenerationStrategy.HasValue)
+            if (property.Firebird().ValueGenerationStrategy.HasValue)
             {
                 yield return new Annotation(
                     FbAnnotationNames.ValueGenerationStrategy,
-                    property.Fb().ValueGenerationStrategy.Value);
+                    property.Firebird().ValueGenerationStrategy.Value);
             }
 
             foreach (var annotation in ForRemove(property))

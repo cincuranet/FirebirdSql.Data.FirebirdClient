@@ -53,7 +53,7 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class FbServiceCollectionExtensions
     {
-        public static IServiceCollection AddEntityFrameworkFb([NotNull] this IServiceCollection serviceCollection)
+        public static IServiceCollection AddEntityFrameworkFirebird([NotNull] this IServiceCollection serviceCollection)
         {
             Check.NotNull(serviceCollection, nameof(serviceCollection));
 

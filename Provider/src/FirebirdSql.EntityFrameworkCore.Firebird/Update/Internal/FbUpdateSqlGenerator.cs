@@ -270,11 +270,11 @@ namespace Microsoft.EntityFrameworkCore.Update.Internal
 
 		private string GetDataType(IProperty property)
 		{
-			var typeName = property.Fb().ColumnType;
+			var typeName = property.Firebird().ColumnType;
 			if (typeName == null)
 			{
 				var propertyDefault = property.FindPrincipal();
-				typeName = propertyDefault?.Fb().ColumnType;
+				typeName = propertyDefault?.Firebird().ColumnType;
 				if (typeName == null)
 				{
 					if (property.ClrType == typeof(string))

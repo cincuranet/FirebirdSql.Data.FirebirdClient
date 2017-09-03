@@ -41,7 +41,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public static FbModelBuilderAnnotations Fb(
+        public static FbModelBuilderAnnotations Firebird(
             [NotNull] this InternalModelBuilder builder,
             ConfigurationSource configurationSource)
             => new FbModelBuilderAnnotations(builder, configurationSource);
@@ -50,7 +50,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public static FbPropertyBuilderAnnotations Fb(
+        public static FbPropertyBuilderAnnotations Firebird(
             [NotNull] this InternalPropertyBuilder builder,
             ConfigurationSource configurationSource)
             => new FbPropertyBuilderAnnotations(builder, configurationSource);
@@ -59,7 +59,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public static FbEntityTypeBuilderAnnotations Fb(
+        public static FbEntityTypeBuilderAnnotations Firebird(
             [NotNull] this InternalEntityTypeBuilder builder,
             ConfigurationSource configurationSource)
             => new FbEntityTypeBuilderAnnotations(builder, configurationSource);
@@ -68,7 +68,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public static FbKeyBuilderAnnotations Fb(
+        public static FbKeyBuilderAnnotations Firebird(
             [NotNull] this InternalKeyBuilder builder,
             ConfigurationSource configurationSource)
             => new FbKeyBuilderAnnotations(builder, configurationSource);
@@ -77,7 +77,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public static FbIndexBuilderAnnotations Fb(
+        public static FbIndexBuilderAnnotations Firebird(
             [NotNull] this InternalIndexBuilder builder,
             ConfigurationSource configurationSource)
             => new FbIndexBuilderAnnotations(builder, configurationSource);
@@ -86,7 +86,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public static RelationalForeignKeyBuilderAnnotations Fb(
+        public static RelationalForeignKeyBuilderAnnotations Firebird(
             [NotNull] this InternalRelationshipBuilder builder,
             ConfigurationSource configurationSource)
             => new RelationalForeignKeyBuilderAnnotations(builder, configurationSource);

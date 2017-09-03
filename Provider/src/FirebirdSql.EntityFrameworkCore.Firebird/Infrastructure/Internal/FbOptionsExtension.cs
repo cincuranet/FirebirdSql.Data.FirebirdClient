@@ -48,7 +48,7 @@ namespace Microsoft.EntityFrameworkCore.Infrastructure.Internal
         public override bool ApplyServices(IServiceCollection services)
         {
             Check.NotNull(services, nameof(services));
-            services.AddEntityFrameworkFb();
+            services.AddEntityFrameworkFirebird();
             return true;
         }
     }
