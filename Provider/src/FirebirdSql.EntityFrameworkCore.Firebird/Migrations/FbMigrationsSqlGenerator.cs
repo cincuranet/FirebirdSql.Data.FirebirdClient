@@ -52,6 +52,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
     {
         private static readonly Regex TypeRe = new Regex(@"([a-z0-9]+)\s*?(?:\(\s*(\d+)?\s*\))?", RegexOptions.IgnoreCase);
         private readonly IFbOptions _options;
+
         public FbMigrationsSqlGenerator(
             [NotNull] MigrationsSqlGeneratorDependencies dependencies,
             [NotNull] IFbOptions options)
@@ -202,7 +203,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
 
         protected override void Generate(CreateSequenceOperation operation, IModel model, MigrationCommandListBuilder builder)
         {
-            throw new NotSupportedException("Fb Not Implemented!");
+            throw new NotImplementedException("The create sequence feature is not yet implemented.");
         }
 
         protected override void Generate(RenameIndexOperation operation, IModel model, MigrationCommandListBuilder builder)
@@ -247,27 +248,37 @@ namespace Microsoft.EntityFrameworkCore.Migrations
 
         protected override void Generate(RenameSequenceOperation operation, IModel model, MigrationCommandListBuilder builder)
         {
-            throw new NotSupportedException("Fb Not Implemented!");
-        }
+			builder.AppendLine("EXECUTE BLOCK")
+			.AppendLine("AS")
+			.AppendLine("DECLARE val INT = 0;")
+			.AppendLine("BEGIN")
+			.AppendLine($"SELECT GEN_ID({operation.Name}, 0) FROM RDB$DATABASE INTO :val;");
 
-        protected override void Generate(RenameTableOperation operation, IModel model, MigrationCommandListBuilder builder)
+			if (_options.ConnectionSettings.ServerVersion.Version.Major >= 2)
+			{
+				builder
+				.AppendLine($"EXECUTE STATEMENT 'CREATE SEQUENCE {Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.NewName)}';")
+				.AppendLine($"EXECUTE STATEMENT 'ALTER SEQUENCE {Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.NewName)} RESTART WITH ' || :val;");
+			}
+			else
+			{
+				builder
+				.AppendLine($"EXECUTE STATEMENT 'CREATE GENERATOR {Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.NewName)}';")
+				.AppendLine($"EXECUTE STATEMENT 'SET GENERATOR {Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.NewName)} TO ' || :val;");
+			}
+
+			builder.AppendLine("END");
+		}
+
+		protected override void Generate(RenameTableOperation operation, IModel model, MigrationCommandListBuilder builder)
         {
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
 
-            //This is not a correct method, only for development
-            builder
-                .Append($"UPDATE RDB$RELATIONS SET RDB$RELATION_NAME='{Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.NewName, operation.NewSchema)}' where ")
-                .Append($"RDB$RELATION_NAME = '{Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Name, operation.Schema)}'")
+			throw new NotImplementedException("The rename table feature is not yet implemented.");
 
-                .Append("UPDATE RDB$RELATION_FIELDS")
-                .Append($"SET RDB$RELATION_NAME = '{Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.NewName, operation.NewSchema)}' where")
-                .Append($"  RDB$RELATION_NAME = '{Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Name, operation.Schema)}' and")
-                .Append("   RDB$SYSTEM_FLAG = 0;").AppendLine();
-            EndStatement(builder);
-
-            // Correct method imo, but require GetCreateTable to be improved (or the triggers will be missing)
-            /*
+			// Correct method imo, but require GetCreateTable to be improved (or the triggers will be missing)
+			/*
             var createTableSyntax = _options.GetCreateTable(Dependencies.SqlGenerationHelper, operation.Name, operation.Schema);
             
             createTableSyntax = createTableSyntax?.Replace(operation.Name, operation.NewName) ?? throw new InvalidOperationException($"Could not find the CREATE TABLE DDL for the table: '{Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Name, operation.Schema)}'");
@@ -282,7 +293,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
 
             EndStatement(builder);
              */
-        }
+		}
 
         protected override void Generate([NotNull] CreateIndexOperation operation, [CanBeNull] IModel model, [NotNull] MigrationCommandListBuilder builder, bool terminate)
         {
@@ -337,7 +348,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
 
-            throw new NotSupportedException("Fb Not Implemented!");
+            throw new NotImplementedException("This feature is not yet implemented.");
         }
 
         public virtual void Generate(FbCreateDatabaseOperation operation, IModel model, MigrationCommandListBuilder builder)
@@ -345,8 +356,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
             var stringConnection = operation.connectionStrBuilder.ToString();
-            FbConnection.CreateDatabase(stringConnection);
-            FbConnection.ClearAllPools();
+            FbConnection.CreateDatabase(stringConnection);            
         }
 
         public virtual void Generate(FbDropDatabaseOperation operation, IModel model, MigrationCommandListBuilder builder)
@@ -356,7 +366,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             FbConnection.ClearAllPools();
             var stringConnection = operation.connectionStrBuilder.ToString();
             FbConnection.DropDatabase(stringConnection);
-
         }
 
         protected override void Generate(DropIndexOperation operation, IModel model, MigrationCommandListBuilder builder)
@@ -538,12 +547,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations
                 .Append("ALTER TABLE ")
                 .Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Table, operation.Schema))
                 .Append(" ADD ");
+
             PrimaryKeyConstraint(operation, model, builder);
             builder.AppendLine(Dependencies.SqlGenerationHelper.StatementTerminator);
-
-            var annotations = model.GetAnnotations();
-
-            //future implementation
 
             EndStatement(builder);
         }
@@ -552,6 +558,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         {
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
+
             builder
                 .Append("ALTER TABLE ")
                 .Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Table, operation.Schema))
