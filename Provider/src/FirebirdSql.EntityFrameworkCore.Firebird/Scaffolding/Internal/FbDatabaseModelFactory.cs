@@ -64,9 +64,12 @@ namespace Microsoft.EntityFrameworkCore.Scaffolding.Internal
         static string ColumnKey(DatabaseTable table, string columnName) => $"{TableKey(table)}.{columnName}";
 
         #region Declaration Query
-        private readonly string GetTablesQuery = @"
-SELECT RDB$RELATION_NAME FROM  RDB$RELATIONS WHERE 
-    RDB$VIEW_BLR IS NULL AND (RDB$SYSTEM_FLAG IS NULL OR RDB$SYSTEM_FLAG = 0)";
+        private readonly string GetTablesQuery = @"SELECT
+	RDB$RELATION_NAME
+FROM
+	RDB$RELATIONS
+WHERE 
+	RDB$VIEW_BLR IS NULL AND (RDB$SYSTEM_FLAG IS NULL OR RDB$SYSTEM_FLAG = 0)";
 
         private readonly string Columns = @"SELECT
                     RF.RDB$RELATION_NAME,

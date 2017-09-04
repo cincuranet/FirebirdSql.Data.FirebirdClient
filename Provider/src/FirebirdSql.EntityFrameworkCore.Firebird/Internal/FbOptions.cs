@@ -116,41 +116,33 @@ namespace Microsoft.EntityFrameworkCore.Internal
                     RF.RDB$RELATION_NAME,
                     RF.RDB$FIELD_NAME FIELD_NAME,
                     RF.RDB$FIELD_POSITION FIELD_POSITION,
-                    CASE F.RDB$FIELD_TYPE
-                    WHEN 7 THEN
-                        CASE F.RDB$FIELD_SUB_TYPE
-                        WHEN 0 THEN 'SMALLINT'
-                        WHEN 1 THEN 'NUMERIC(' || F.RDB$FIELD_PRECISION || ', ' || (-F.RDB$FIELD_SCALE) || ')'
-                        WHEN 2 THEN 'DECIMAL'
-                        END
-                    WHEN 8 THEN
-                        CASE F.RDB$FIELD_SUB_TYPE
-                        WHEN 0 THEN 'INTEGER'
-                        WHEN 1 THEN 'NUMERIC('  || F.RDB$FIELD_PRECISION || ', ' || (-F.RDB$FIELD_SCALE) || ')'
-                        WHEN 2 THEN 'DECIMAL'
-                        END
-                    WHEN 9 THEN 'QUAD'
-                    WHEN 10 THEN 'FLOAT'
-                    WHEN 12 THEN 'DATE'
-                    WHEN 13 THEN 'TIME'
-                    WHEN 14 THEN 'CHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ') '
-                    WHEN 16 THEN
-                        CASE F.RDB$FIELD_SUB_TYPE
-                        WHEN 0 THEN 'BIGINT'
-                        WHEN 1 THEN 'NUMERIC(' || F.RDB$FIELD_PRECISION || ', ' || (-F.RDB$FIELD_SCALE) || ')'
-                        WHEN 2 THEN 'DECIMAL'
-                        END
-                    WHEN 27 THEN 'DOUBLE'
-                    WHEN 35 THEN 'TIMESTAMP'
-                    WHEN 37 THEN
-                        IIF (COALESCE(f.RDB$COMPUTED_SOURCE,'')<>'',
-                        'COMPUTED BY ' || CAST(f.RDB$COMPUTED_SOURCE AS VARCHAR(250)),
-                        'VARCHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')')
-                    WHEN 40 THEN 'CSTRING' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
-                    WHEN 45 THEN 'BLOB_ID'
-                    WHEN 261 THEN 'BLOB SUB_TYPE ' || F.RDB$FIELD_SUB_TYPE
-                    ELSE 'RDB$FIELD_TYPE: ' || F.RDB$FIELD_TYPE || '?'
-                    END FIELD_TYPE,
+
+					CASE F.RDB$FIELD_TYPE
+					WHEN 7 THEN CASE
+					WHEN ((F.RDB$FIELD_SUB_TYPE = 2) OR (F.RDB$FIELD_SUB_TYPE = 0 AND F.RDB$FIELD_SCALE > 0)) THEN 'DECIMAL'
+					WHEN F.RDB$FIELD_SUB_TYPE = 1 THEN 'NUMERIC'
+					ELSE 'SMALLINT'
+					END
+					WHEN 8 THEN CASE
+					WHEN ((F.RDB$FIELD_SUB_TYPE = 2) OR (F.RDB$FIELD_SUB_TYPE = 0 AND F.RDB$FIELD_SCALE > 0)) THEN 'DECIMAL'
+					WHEN F.RDB$FIELD_SUB_TYPE = 1 THEN 'NUMERIC'
+					ELSE 'INT'
+					END
+					WHEN 16 THEN CASE
+					WHEN ((F.RDB$FIELD_SUB_TYPE = 2) OR (F.RDB$FIELD_SUB_TYPE = 0 AND F.RDB$FIELD_SCALE > 0)) THEN 'DECIMAL'
+					WHEN F.RDB$FIELD_SUB_TYPE = 1 THEN 'NUMERIC'
+					ELSE 'BIGINT'
+					END
+					WHEN 10 THEN 'FLOAT'
+					WHEN 27 THEN 'DOUBLE'
+					WHEN 12 THEN 'DATE'
+					WHEN 13 THEN 'TIME'
+					WHEN 35 THEN 'TIMESTAMP'
+					WHEN 261 THEN 'BLOB SUB_TYPE ' || F.RDB$FIELD_SUB_TYPE
+					WHEN 37 THEN 'VARCHAR'
+					WHEN 14 THEN 'CHAR'
+					WHEN 40 THEN 'CSTRING'
+					END) AS FIELD_TYPE,
                     IIF(COALESCE(RF.RDB$NULL_FLAG, 0) = 0, NULL, 'NOT NULL') FIELD_NULL,
                     CH.RDB$CHARACTER_SET_NAME FIELD_CHARSET,
                     DCO.RDB$COLLATION_NAME FIELD_COLLATION,
@@ -164,18 +156,18 @@ namespace Microsoft.EntityFrameworkCore.Internal
                 WHERE (COALESCE(RF.RDB$SYSTEM_FLAG, 0) = 0) AND RF.RDB$RELATION_NAME='{sqlGenerationHelper.DelimitIdentifier(table, schema)}'
                 ORDER BY RF.RDB$FIELD_POSITION"; 
 
-                var sbFieds = new StringBuilder(); 
+                var builder = new StringBuilder(); 
                 using (var rd = command.ExecuteReader())
                 {
                     if (rd.HasRows)
-                        if (rd.HasRows)
-                        {
-                            sbFieds.AppendLine($"CREATE TABLE {sqlGenerationHelper.DelimitIdentifier(table, schema)} (");
-                            while (rd.Read())
-                                sbFieds.AppendLine($"{rd["FIELD_NAME"].ToString()}   {(rd["FIELD_TYPE"].ToString() + " " + rd["FIELD_NULL"]?.ToString())},");
+                    {
+						builder.AppendLine($"CREATE TABLE {sqlGenerationHelper.DelimitIdentifier(table, schema)} (");
 
-                            sbFieds.AppendLine(");");
-                        } 
+						while (rd.Read())
+							builder.AppendLine($"{rd["FIELD_NAME"]}   {($"{rd["FIELD_TYPE"].ToString() + (rd["FIELD_NULL"] == DBNull.Value? "": $" {rd["FIELD_NULL"]}") }")},");
+
+						builder.AppendLine(");");
+                    } 
                 }
 				
 				//List Primary Keys
@@ -189,13 +181,12 @@ namespace Microsoft.EntityFrameworkCore.Internal
 
                 using (var rd = command.ExecuteReader())
                 {
-                    if (rd.HasRows)
-                        while (rd.Read())
-                        {
-                            sbFieds.Append($"ALTER TABLE {sqlGenerationHelper.DelimitIdentifier(table, schema)} ");
-                            sbFieds.Append($"ADD CONSTRAINT {rd["RDB$INDEX_NAME"].ToString()} ");
-                            sbFieds.Append($"PRIMARY KEY ({rd["RDB$FIELD_NAME"].ToString()}) ");
-                        }
+                    while (rd.Read())
+                    {
+						builder.Append($"ALTER TABLE {sqlGenerationHelper.DelimitIdentifier(table, schema)} ");
+						builder.Append($"ADD CONSTRAINT {rd["RDB$INDEX_NAME"]} ");
+						builder.Append($"PRIMARY KEY ({rd["RDB$FIELD_NAME"]}) ");
+                    }
                 }
 
 				// List Indexes
@@ -212,19 +203,15 @@ namespace Microsoft.EntityFrameworkCore.Internal
 
                 using (var rd = command.ExecuteReader())
                 {
-                    if(rd.HasRows)
-                        while (rd.Read())
-                        {
-                            sbFieds.Append($"CREATE INDEX {rd["RDB$INDEX_NAME"].ToString()} ");
-                            sbFieds.Append($"ON {sqlGenerationHelper.DelimitIdentifier(table, schema)} ");
-                            sbFieds.Append($"({rd["RDB$RELATION_NAME"].ToString()})");
-                        }
+                    while (rd.Read())
+                    {
+						builder.Append($"CREATE INDEX {rd["RDB$INDEX_NAME"]} ");
+						builder.Append($"ON {sqlGenerationHelper.DelimitIdentifier(table, schema)} ");
+						builder.Append($"({rd["RDB$RELATION_NAME"]})");
+                    }
                 } 
-                return sbFieds.ToString(); 
+                return builder.ToString(); 
             }
-#pragma warning disable CS0162 
-            return null;
-#pragma warning restore CS0162 
         }
 
     }
