@@ -45,7 +45,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
         private static readonly ConcurrentDictionary<string, FbConnectionSettings> Settings
             = new ConcurrentDictionary<string, FbConnectionSettings>();
 
-        private static FbConnectionStringBuilder _settingsCsb(FbConnectionStringBuilder csb)
+        private static FbConnectionStringBuilder SettingConnectionStringBuilder(FbConnectionStringBuilder csb)
         {
            
             return new FbConnectionStringBuilder
@@ -59,7 +59,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
         public static FbConnectionSettings GetSettings(string connectionString)
         {
             var csb = new FbConnectionStringBuilder(connectionString);
-            var settingsCsb = _settingsCsb(csb);
+            var settingsCsb = SettingConnectionStringBuilder(csb);
             return Settings.GetOrAdd(settingsCsb.ConnectionString, key =>
             {
                 csb.Pooling = false;
@@ -83,7 +83,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
         public static FbConnectionSettings GetSettings(DbConnection connection)
         {
             var csb = new FbConnectionStringBuilder(connection.ConnectionString);
-            var settingsCsb = _settingsCsb(csb);
+            var settingsCsb = SettingConnectionStringBuilder(csb);
             return Settings.GetOrAdd(settingsCsb.ConnectionString, key =>
             {
                 var open = false;
@@ -106,7 +106,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
             });
         }
 
-        public FbConnectionSettings(FbConnectionStringBuilder settingsCsb, ServerVersion serverVersion)
+        public FbConnectionSettings(FbConnectionStringBuilder settingConnectionStringBuilder, ServerVersion serverVersion)
         => ServerVersion = serverVersion;  
 
         public readonly ServerVersion ServerVersion;
