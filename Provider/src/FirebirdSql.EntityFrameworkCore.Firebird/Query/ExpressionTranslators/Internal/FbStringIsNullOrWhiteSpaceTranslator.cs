@@ -58,17 +58,10 @@ namespace Microsoft.EntityFrameworkCore.Query.ExpressionTranslators.Internal
                 return Expression.MakeBinary(
                     ExpressionType.OrElse,
                     new IsNullExpression(argument),
-                    Expression.Equal(
-                        new SqlFunctionExpression(
-                            "LTRIM",
-                            typeof(string),
-                            new[]
-                            {
-                                new SqlFunctionExpression(
-                                    "RTRIM",
+                    Expression.Equal(new SqlFunctionExpression(
+                                    "TRIM",
                                     typeof(string),
-                                    new[] { argument })
-                            }),
+                                    new[] { argument }),
                         Expression.Constant("", typeof(string))));
             }
 
