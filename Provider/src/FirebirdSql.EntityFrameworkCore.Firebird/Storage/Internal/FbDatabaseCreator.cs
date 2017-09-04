@@ -30,6 +30,8 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using FirebirdSql.Data.FirebirdClient;
+using FirebirdSql.Data.Services;
+using FirebirdSql.EntityFrameworkCore.Firebird.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Storage.Internal
 {
@@ -104,7 +106,20 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
             };
             return Dependencies.MigrationsSqlGenerator.Generate(operations);
         }
-        public override bool Exists()
+
+	    private IReadOnlyList<MigrationCommand> CreateDropOperations()
+	    {
+		    var operations = new MigrationOperation[]
+		    {
+			    new FbDropDatabaseOperation
+			    {
+				    ConnectionStringBuilder = new FbConnectionStringBuilder(_connection.DbConnection.ConnectionString)
+			    }
+		    };
+		    return Dependencies.MigrationsSqlGenerator.Generate(operations);
+	    }
+
+		public override bool Exists()
             => Exists(retryOnNotExists: false);
 
         private bool Exists(bool retryOnNotExists)
@@ -160,11 +175,11 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
                     }
                 }, cancellationToken);
 
-        private static bool DatabaseNotExist(FbException exception) => exception.ErrorCode == 335544344;
+        private static bool DatabaseNotExist(FbException exception) => exception.ErrorCode == (int)FbErrorCode.FbErrorAccessFile;
 
         private bool RetryOnExistsFailure(FbException exception)
         {
-            if (exception.ErrorCode == 335544721)
+            if (exception.ErrorCode == (int)FbErrorCode.FbErrorNetworkConnection)
             {
                 ClearPool();
                 return true;
@@ -188,7 +203,8 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
         /// </summary>
         public override async Task DeleteAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            await Task.Run(() => Delete());
+	        await Dependencies.MigrationCommandExecutor
+			        .ExecuteNonQueryAsync(CreateDropOperations(), _connection, cancellationToken); 
         }
 
         private IReadOnlyList<MigrationCommand> CreateDropCommands()
