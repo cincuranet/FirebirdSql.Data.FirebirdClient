@@ -54,12 +54,6 @@ namespace Microsoft.EntityFrameworkCore
         public static IFbKeyAnnotations Firebird([NotNull] this IKey key)
             => new FbKeyAnnotations(Check.NotNull(key, nameof(key)));
         
-        public static FbIndexAnnotations Firebird([NotNull] this IMutableIndex index)
-            => (FbIndexAnnotations)Firebird((IIndex)index);
-        
-        public static IFbIndexAnnotations Firebird([NotNull] this IIndex index)
-            => new FbIndexAnnotations(Check.NotNull(index, nameof(index)));
-        
         public static FbModelAnnotations Firebird([NotNull] this IMutableModel model)
             => (FbModelAnnotations)Firebird((IModel)model);
         

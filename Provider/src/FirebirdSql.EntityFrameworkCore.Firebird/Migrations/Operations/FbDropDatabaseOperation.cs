@@ -34,6 +34,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Operations
 {
     public class FbDropDatabaseOperation : MigrationOperation
     { 
-        public virtual FbConnectionStringBuilder connectionStrBuilder { get; [param: NotNull] set; }
+        public virtual FbConnectionStringBuilder ConnectionStringBuilder { get; [param: NotNull] set; }
     }
 }

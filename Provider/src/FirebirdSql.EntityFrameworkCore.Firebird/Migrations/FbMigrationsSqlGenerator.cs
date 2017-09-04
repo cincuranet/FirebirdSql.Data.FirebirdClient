@@ -362,9 +362,8 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         {
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
-            FbConnection.ClearAllPools();
-            var stringConnection = operation.connectionStrBuilder.ToString();
-            FbConnection.DropDatabase(stringConnection);
+            FbConnection.ClearAllPools(); 
+            FbConnection.DropDatabase(operation.ConnectionStringBuilder.ToString());
         }
 
         protected override void Generate(DropIndexOperation operation, IModel model, MigrationCommandListBuilder builder)

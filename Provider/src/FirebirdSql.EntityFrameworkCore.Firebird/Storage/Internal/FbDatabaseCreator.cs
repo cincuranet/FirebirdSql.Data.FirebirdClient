@@ -195,7 +195,7 @@ namespace Microsoft.EntityFrameworkCore.Storage.Internal
         {
             var operations = new MigrationOperation[]
             {
-                new FbDropDatabaseOperation { connectionStrBuilder = new FbConnectionStringBuilder(_connection.DbConnection.ConnectionString)}
+                new FbDropDatabaseOperation { ConnectionStringBuilder = new FbConnectionStringBuilder(_connection.DbConnection.ConnectionString)}
             };
             return Dependencies.MigrationsSqlGenerator.Generate(operations);
         }

@@ -36,33 +36,36 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Metadata.Conventions
 {
-    public class FbConventionSetBuilder : RelationalConventionSetBuilder
-    {
-        private readonly ISqlGenerationHelper _sqlGenerationHelper;
-        private static IFbOptions _options;
-        public FbConventionSetBuilder(
-            [NotNull] RelationalConventionSetBuilderDependencies dependencies,
-           [NotNull]  IFbOptions options,
-            [NotNull] ISqlGenerationHelper sqlGenerationHelper)
-            : base(dependencies)
-        {
-            _sqlGenerationHelper = sqlGenerationHelper;
-            _options = options;
-        }
+	public class FbConventionSetBuilder : RelationalConventionSetBuilder
+	{
+		private readonly ISqlGenerationHelper _sqlGenerationHelper;
+		private static IFbOptions _options;
 
-        public override ConventionSet AddConventions(ConventionSet conventionSet)
-        {
-            Check.NotNull(conventionSet, nameof(conventionSet));
+		public FbConventionSetBuilder(
+			[NotNull] RelationalConventionSetBuilderDependencies dependencies,
+			[NotNull] IFbOptions options,
+			[NotNull] ISqlGenerationHelper sqlGenerationHelper)
+			: base(dependencies)
+		{
+			_sqlGenerationHelper = sqlGenerationHelper;
+			_options = options;
+		}
 
-            base.AddConventions(conventionSet);
+		public override ConventionSet AddConventions(ConventionSet conventionSet)
+		{
+			Check.NotNull(conventionSet, nameof(conventionSet));
 
-            var valueGenerationStrategyConvention = new FbValueGenerationStrategyConvention();
-            conventionSet.ModelInitializedConventions.Add(valueGenerationStrategyConvention);
-            
-            ReplaceConvention(conventionSet.PropertyAddedConventions, (DatabaseGeneratedAttributeConvention)valueGenerationStrategyConvention);
-            ReplaceConvention(conventionSet.PropertyFieldChangedConventions, (DatabaseGeneratedAttributeConvention)valueGenerationStrategyConvention);
+			base.AddConventions(conventionSet);
 
-            return conventionSet;
-        } 
-    }
+			var valueGenerationStrategyConvention = new FbValueGenerationStrategyConvention();
+			conventionSet.ModelInitializedConventions.Add(valueGenerationStrategyConvention);
+
+			ReplaceConvention(conventionSet.PropertyAddedConventions,
+				(DatabaseGeneratedAttributeConvention) valueGenerationStrategyConvention);
+			ReplaceConvention(conventionSet.PropertyFieldChangedConventions,
+				(DatabaseGeneratedAttributeConvention) valueGenerationStrategyConvention);
+
+			return conventionSet;
+		}
+	}
 }
