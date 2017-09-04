@@ -69,16 +69,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         /// </summary>
         public override IEnumerable<IAnnotation> For(IIndex index)
         {
-            var isFullText = index.Firebird().IsFullText;
-            if (isFullText.HasValue && isFullText.Value)
-            {
-                yield return new Annotation(
-                    FbAnnotationNames.FullTextIndex,
-                    "FULLTEXT");
-            }
-
-            
-
             foreach (var annotation in ForRemove(index))
             {
                 yield return annotation;

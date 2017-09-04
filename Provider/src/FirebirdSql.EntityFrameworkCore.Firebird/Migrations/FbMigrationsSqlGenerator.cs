@@ -287,7 +287,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         protected override void Generate([NotNull] CreateIndexOperation operation, [CanBeNull] IModel model, [NotNull] MigrationCommandListBuilder builder, bool terminate)
         {
             var method = (string)operation[FbAnnotationNames.Prefix];
-            var isFullText = !string.IsNullOrEmpty((string)operation[FbAnnotationNames.FullTextIndex]);
 
             builder.Append("CREATE ");
 
