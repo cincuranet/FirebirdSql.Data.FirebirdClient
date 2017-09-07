@@ -16,7 +16,16 @@
  *  All Rights Reserved.
  */
 
-static class _VersionInfo
+#if EF6
+namespace EntityFramework.Firebird
+#elif EFCORE
+namespace FirebirdSql.EntityFrameworkCore.Firebird
+#else
+namespace FirebirdSql.Data.FirebirdClient
+#endif
 {
+	static class _VersionInfo
+	{
 		internal const string Version = "5.11.0.0";
+	}
 }
