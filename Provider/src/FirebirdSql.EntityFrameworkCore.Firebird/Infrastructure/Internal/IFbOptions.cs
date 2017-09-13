@@ -15,10 +15,13 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net), Jean Ressouche, Rafael Almeida (ralms@ralms.net)
 
+using FirebirdSql.EntityFrameworkCore.Firebird.Utilities;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Infrastructure.Internal
 {
 	public interface IFbOptions : ISingletonOptions
-	{ }
+	{
+		FbSettings Settings { get; }
+	}
 }
