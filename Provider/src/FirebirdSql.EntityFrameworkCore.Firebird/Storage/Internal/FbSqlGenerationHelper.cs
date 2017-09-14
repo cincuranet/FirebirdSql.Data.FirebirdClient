@@ -50,7 +50,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 		public override void DelimitIdentifier(StringBuilder builder, string identifier)
 		{
 			builder.Append('"');
-			EscapeIdentifier(builder, identifier.Substring(0, Math.Min(identifier.Length, _options.Settings.ObjectLengthName));
+			EscapeIdentifier(builder, identifier.Substring(0, Math.Min(identifier.Length, _options.Settings.ObjectLengthName)));
 			builder.Append('"');
 		}
 
