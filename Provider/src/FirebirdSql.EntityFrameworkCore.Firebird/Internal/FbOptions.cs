@@ -33,9 +33,9 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Internal
 		{
 			var fbOptions = GetOptions(options);
 
-			_fbSettings = new Lazy<FbSettings>(() => fbOptions.Connection != null ?
-				new FbSettings().GetSettings(fbOptions.Connection) :
-				new FbSettings().GetSettings(fbOptions.ConnectionString));
+			_fbSettings = new Lazy<FbSettings>(() => fbOptions.Connection != null
+														? new FbSettings().GetSettings(fbOptions.Connection)
+														: new FbSettings().GetSettings(fbOptions.ConnectionString));
 
 		}
 

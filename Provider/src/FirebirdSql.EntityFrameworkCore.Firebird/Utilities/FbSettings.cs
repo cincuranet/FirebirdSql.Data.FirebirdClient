@@ -29,7 +29,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Utilities
 
 		public Version ServerVersion;
 		public bool IsSupportIdentityIncrement => ServerVersion.Major >= 3;
-		public int ObjectLengthName => ServerVersion.Major == 3  ? 31 : 64;
+		public int ObjectLengthName => ServerVersion.Major == 3  ? 31 : 63;
 
 		private static readonly ConcurrentDictionary<string, FbSettings> Settings = new ConcurrentDictionary<string, FbSettings>();
 
