@@ -15,10 +15,9 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net), Jean Ressouche, Rafael Almeida (ralms@ralms.net)
 
-using FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal;
+using FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Conventions.Internal; 
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal;
-using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal; 
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Conventions
 {
@@ -28,12 +27,15 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Conventions
 			: base(dependencies)
 		{ }
 
-		public static ConventionSet Build()
+		public override ConventionSet AddConventions(ConventionSet conventionSet)
 		{
-			var typeMapper = new FbTypeMapper(new RelationalTypeMapperDependencies());
-			var dependencies = new RelationalConventionSetBuilderDependencies(typeMapper, null, null);
-			return new FbConventionSetBuilder(dependencies)
-				.AddConventions(new CoreConventionSetBuilder(new CoreConventionSetBuilderDependencies(typeMapper)).CreateConventionSet());
+			base.AddConventions(conventionSet);
+
+			var valueGenerationStrategyConvention = new FbValueGenerationStrategyConvention();
+			conventionSet.ModelInitializedConventions.Add(valueGenerationStrategyConvention);
+			ReplaceConvention(conventionSet.PropertyAddedConventions, (DatabaseGeneratedAttributeConvention)valueGenerationStrategyConvention);
+			ReplaceConvention(conventionSet.PropertyFieldChangedConventions, (DatabaseGeneratedAttributeConvention)valueGenerationStrategyConvention);
+			return conventionSet;
 		}
 	}
 }

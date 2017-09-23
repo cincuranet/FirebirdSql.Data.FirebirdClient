@@ -15,24 +15,32 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net), Jean Ressouche, Rafael Almeida (ralms@ralms.net)
 
+using System; 
 using FirebirdSql.EntityFrameworkCore.Firebird.Infrastructure.Internal;
+using FirebirdSql.EntityFrameworkCore.Firebird.Utilities;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Internal
 {
 	public class FbOptions : IFbOptions
-	{
-		public void Initialize(IDbContextOptions options)
+	{ 
+		private Lazy<FbSettings> _fbSettings;
+		public virtual FbSettings Settings => _fbSettings.Value;
+
+		public virtual void Initialize(IDbContextOptions options)
+		{
+			var fbOptions = GetOptions(options);
+			_fbSettings = new Lazy<FbSettings>(() => fbOptions.Connection != null
+				                                         ? new FbSettings().GetSettings(fbOptions.Connection)
+				                                         : new FbSettings().GetSettings(fbOptions.ConnectionString));
+		}
+
+		public virtual void Validate(IDbContextOptions options)
 		{
 			var fbOptions = GetOptions(options);
 		}
-
-		public void Validate(IDbContextOptions options)
-		{
-			var fbOptions = GetOptions(options);
-		}
-
-		static FbOptionsExtension GetOptions(IDbContextOptions options)
+		 
+		private FbOptionsExtension GetOptions(IDbContextOptions options)
 			=> options.FindExtension<FbOptionsExtension>() ?? new FbOptionsExtension();
 	}
 }

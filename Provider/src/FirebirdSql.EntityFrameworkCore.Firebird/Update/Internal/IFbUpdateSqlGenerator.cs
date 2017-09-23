@@ -13,12 +13,31 @@
  *    All Rights Reserved.
  */
 
-//$Authors = Jiri Cincura (jiri@cincura.net)
+//$Authors = Jiri Cincura (jiri@cincura.net), Rafael Almeida (ralms@ralms.net)
 
+using System.Collections.Generic;
+using System.Text;
 using Microsoft.EntityFrameworkCore.Update;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 {
 	public interface IFbUpdateSqlGenerator : IUpdateSqlGenerator
-	{ }
+	{
+		ResultSetMapping AppendBlockInsertOperation(
+			StringBuilder commandStringBuilder,
+			StringBuilder executeParameters,
+			IReadOnlyList<ModificationCommand> modificationCommands, int commandPosition);
+
+		ResultSetMapping AppendBlockUpdateOperation(
+			StringBuilder commandStringBuilder,
+			StringBuilder executeParameters,
+			IReadOnlyList<ModificationCommand> modificationCommands,
+			int commandPosition);
+
+		ResultSetMapping AppendBlockDeleteOperation(
+			StringBuilder commandStringBuilder,
+			StringBuilder executeParameters,
+			IReadOnlyList<ModificationCommand> modificationCommands,
+			int commandPosition);
+	}
 }

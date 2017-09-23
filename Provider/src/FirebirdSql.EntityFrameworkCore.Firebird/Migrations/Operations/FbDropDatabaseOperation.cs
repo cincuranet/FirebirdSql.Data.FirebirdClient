@@ -1,4 +1,4 @@
-﻿/*
+/*
  *    The contents of this file are subject to the Initial
  *    Developer's Public License Version 1.0 (the "License");
  *    you may not use this file except in compliance with the
@@ -13,15 +13,15 @@
  *    All Rights Reserved.
  */
 
-//$Authors = Jiri Cincura (jiri@cincura.net), Jean Ressouche, Rafael Almeida (ralms@ralms.net)
+//$Authors = Jiri Cincura (jiri@cincura.net), Rafael Almeida (ralms@ralms.net)
 
-using FirebirdSql.EntityFrameworkCore.Firebird.Utilities;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using FirebirdSql.Data.FirebirdClient;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
-namespace FirebirdSql.EntityFrameworkCore.Firebird.Infrastructure.Internal
+namespace FirebirdSql.EntityFrameworkCore.Firebird.Migrations.Operations
 {
-	public interface IFbOptions : ISingletonOptions
-	{
-		FbSettings Settings { get; }
-	}
+    public class FbDropDatabaseOperation : MigrationOperation
+    { 
+        public virtual FbConnectionStringBuilder ConnectionStringBuilder { get; set; }
+    }
 }

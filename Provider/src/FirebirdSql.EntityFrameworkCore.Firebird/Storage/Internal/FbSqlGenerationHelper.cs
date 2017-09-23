@@ -15,14 +15,53 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net), Jean Ressouche, Rafael Almeida (ralms@ralms.net)
 
+using System;
+using System.Text;  
+using FirebirdSql.EntityFrameworkCore.Firebird.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 {
 	public class FbSqlGenerationHelper : RelationalSqlGenerationHelper
 	{
-		public FbSqlGenerationHelper(RelationalSqlGenerationHelperDependencies dependencies)
+		private readonly IFbOptions _options;
+
+		public FbSqlGenerationHelper(RelationalSqlGenerationHelperDependencies dependencies, IFbOptions options)
 			: base(dependencies)
-		{ }
+		{
+			_options = options;
+		}
+
+		public override string EscapeIdentifier(string identifier)
+		{
+			return identifier.Substring(0,Math.Min(identifier.Length,_options.Settings.ObjectLengthName));
+		}
+
+		public override void EscapeIdentifier(StringBuilder builder, string identifier)
+		{
+			builder.Append(identifier.Substring(0, Math.Min(identifier.Length, _options.Settings.ObjectLengthName)));
+		}
+
+		public override string DelimitIdentifier(string identifier)
+		{
+			return $"\"{EscapeIdentifier(identifier)}\"";
+		}
+
+		public override void DelimitIdentifier(StringBuilder builder, string identifier)
+		{
+			builder.Append('"');
+			EscapeIdentifier(builder, identifier.Substring(0, Math.Min(identifier.Length, _options.Settings.ObjectLengthName)));
+			builder.Append('"');
+		}
+
+		public override string GenerateParameterName(string name)
+		{
+			return $"@{name.Substring(0, Math.Min(name.Length, _options.Settings.ObjectLengthName))}";
+		}
+
+		public override void GenerateParameterName(StringBuilder builder, string name)
+		{
+			builder.Append("@").Append(name.Substring(0, Math.Min(name.Length, _options.Settings.ObjectLengthName)));
+		}
 	}
 }
