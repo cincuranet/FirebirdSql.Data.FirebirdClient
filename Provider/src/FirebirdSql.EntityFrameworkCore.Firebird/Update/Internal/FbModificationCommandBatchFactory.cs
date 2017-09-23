@@ -15,6 +15,8 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
+using System.Linq;
+using FirebirdSql.EntityFrameworkCore.Firebird.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update;
@@ -25,11 +27,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 	{
 		readonly IRelationalCommandBuilderFactory _commandBuilderFactory;
 		readonly ISqlGenerationHelper _sqlGenerationHelper;
-		readonly IUpdateSqlGenerator _updateSqlGenerator;
+		readonly IFbUpdateSqlGenerator _updateSqlGenerator;
 		readonly IRelationalValueBufferFactoryFactory _valueBufferFactoryFactory;
 		readonly IDbContextOptions _options;
 
-		public FbModificationCommandBatchFactory(IRelationalCommandBuilderFactory commandBuilderFactory, ISqlGenerationHelper sqlGenerationHelper, IUpdateSqlGenerator updateSqlGenerator, IRelationalValueBufferFactoryFactory valueBufferFactoryFactory, IDbContextOptions options)
+		public FbModificationCommandBatchFactory(IRelationalCommandBuilderFactory commandBuilderFactory, ISqlGenerationHelper sqlGenerationHelper, IFbUpdateSqlGenerator updateSqlGenerator, IRelationalValueBufferFactoryFactory valueBufferFactoryFactory, IDbContextOptions options)
 		{
 			_commandBuilderFactory = commandBuilderFactory;
 			_sqlGenerationHelper = sqlGenerationHelper;
@@ -38,13 +40,10 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 			_options = options;
 		}
 
-		public ModificationCommandBatch Create()
+		public virtual ModificationCommandBatch Create()
 		{
-			return new SingularModificationCommandBatch(
-				_commandBuilderFactory,
-				_sqlGenerationHelper,
-				_updateSqlGenerator,
-				_valueBufferFactoryFactory);
+			var optionsExtension = _options.Extensions.OfType<FbOptionsExtension>().FirstOrDefault();
+			return new FbModificationCommandBatch(_commandBuilderFactory, _sqlGenerationHelper, _updateSqlGenerator, _valueBufferFactoryFactory, optionsExtension?.MaxBatchSize);
 		}
 	}
 }
