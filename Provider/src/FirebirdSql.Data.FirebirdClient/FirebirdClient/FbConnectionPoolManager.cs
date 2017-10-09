@@ -42,12 +42,12 @@ namespace FirebirdSql.Data.FirebirdClient
 			{
 				bool _disposed;
 
-				public DateTimeOffset Created { get; private set; }
+				public int CreatedTicks { get; private set; }
 				public FbConnectionInternal Connection { get; private set; }
 
-				public Item(DateTimeOffset created, FbConnectionInternal connection)
+				public Item(int createdTicks, FbConnectionInternal connection)
 				{
-					Created = created;
+					CreatedTicks = createdTicks;
 					Connection = connection;
 				}
 
@@ -56,7 +56,7 @@ namespace FirebirdSql.Data.FirebirdClient
 					if (_disposed)
 						return;
 					_disposed = true;
-					Created = default(DateTimeOffset);
+					CreatedTicks = default(int);
 					Connection.Dispose();
 					Connection = null;
 				}
@@ -114,7 +114,7 @@ namespace FirebirdSql.Data.FirebirdClient
 					var removed = _busy.Remove(connection);
 					if (removed)
 					{
-						_available.Push(new Item(DateTimeOffset.UtcNow, connection));
+						_available.Push(new Item(Environment.TickCount, connection));
 					}
 				}
 			}
@@ -125,15 +125,15 @@ namespace FirebirdSql.Data.FirebirdClient
 				{
 					CheckDisposedImpl();
 
-					var now = DateTimeOffset.UtcNow;
+					var currentTicks = Environment.TickCount;
 					var available = _available.ToArray();
 					if (available.Count() <= _connectionString.MinPoolSize)
 						return;
-					var keep = available.Where(x => IsAlive(_connectionString.ConnectionLifeTime, x.Created, now)).ToArray();
+					var keep = available.Where(x => IsAlive(_connectionString.ConnectionLifeTime, x.CreatedTicks, currentTicks)).ToArray();
 					var keepCount = keep.Count();
 					if (keepCount < _connectionString.MinPoolSize)
 					{
-						keep = keep.Concat(available.Except(keep).OrderByDescending(x => x.Created).Take(_connectionString.MinPoolSize - keepCount)).ToArray();
+						keep = keep.Concat(available.Except(keep).OrderByDescending(x => x.CreatedTicks).Take(_connectionString.MinPoolSize - keepCount)).ToArray();
 					}
 					var release = available.Except(keep).ToArray();
 					release.AsParallel().ForAll(x => x.Dispose());
@@ -160,11 +160,15 @@ namespace FirebirdSql.Data.FirebirdClient
 				return result;
 			}
 
-			static bool IsAlive(long connectionLifeTime, DateTimeOffset created, DateTimeOffset now)
+			static readonly long IsAliveOverflow = -(long)int.MinValue + (long)int.MaxValue;
+			static bool IsAlive(long connectionLifeTime, int created, int now)
 			{
 				if (connectionLifeTime == 0)
 					return true;
-				return created.AddSeconds(connectionLifeTime) > now;
+				var diff = (long)now - (long)created;
+				if (diff < 0)
+					diff = diff + IsAliveOverflow + 1;
+				return diff > (connectionLifeTime * 1000);
 			}
 
 			void CleanConnectionsImpl()
