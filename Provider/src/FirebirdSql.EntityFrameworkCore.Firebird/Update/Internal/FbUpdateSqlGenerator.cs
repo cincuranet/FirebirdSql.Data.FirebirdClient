@@ -23,46 +23,49 @@ using Microsoft.EntityFrameworkCore.Update;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 {
-	public class FbUpdateSqlGenerator : UpdateSqlGenerator, IFbUpdateSqlGenerator
-	{
-		readonly IRelationalTypeMapper _typeMapper;
+    public class FbUpdateSqlGenerator : UpdateSqlGenerator, IFbUpdateSqlGenerator
+    {
+        readonly IRelationalTypeMapper _typeMapper;
 
-		public FbUpdateSqlGenerator(UpdateSqlGeneratorDependencies dependencies, IRelationalTypeMapper typeMapper)
-			: base(dependencies)
-		{
-			_typeMapper = typeMapper;
-		}
+        public FbUpdateSqlGenerator(UpdateSqlGeneratorDependencies dependencies, IRelationalTypeMapper typeMapper)
+            : base(dependencies)
+        {
+            _typeMapper = typeMapper;
+        }
 
-		protected override void AppendIdentityWhereCondition(StringBuilder commandStringBuilder, ColumnModification columnModification)
-		{
+        protected override void AppendIdentityWhereCondition(StringBuilder commandStringBuilder, ColumnModification columnModification)
+        {
 #warning Finish
-			throw new NotImplementedException();
-		}
+            throw new NotImplementedException();
+        }
 
-		protected override void AppendRowsAffectedWhereCondition(StringBuilder commandStringBuilder, int expectedRowsAffected)
-		{
+        protected override void AppendRowsAffectedWhereCondition(StringBuilder commandStringBuilder, int expectedRowsAffected)
+        {
 #warning Finish
-			throw new NotImplementedException();
-		}
+            throw new NotImplementedException();
+        }
 
-		public override ResultSetMapping AppendInsertOperation(StringBuilder commandStringBuilder, ModificationCommand command, int commandPosition)
-		{
-			commandStringBuilder.Clear();
-			var name = command.TableName;
-			var operations = command.ColumnModifications;
-			var writeOperations = operations.Where(o => o.IsWrite).ToList();
-			var readOperations = operations.Where(o => o.IsRead).ToList();
-			AppendInsertCommandHeader(commandStringBuilder, name, null, writeOperations);
-			AppendValuesHeader(commandStringBuilder, writeOperations);
-			AppendValues(commandStringBuilder, writeOperations);
-			if (readOperations.Any())
-			{
-				commandStringBuilder.AppendLine();
-				commandStringBuilder.Append("RETURNING ");
-				commandStringBuilder.Append(string.Join(", ", readOperations.Select(x => SqlGenerationHelper.DelimitIdentifier(x.ColumnName))));
-			}
-			commandStringBuilder.Append(SqlGenerationHelper.StatementTerminator).AppendLine();
-			return ResultSetMapping.LastInResultSet;
-		}
-	}
+        public override ResultSetMapping AppendInsertOperation(StringBuilder commandStringBuilder, ModificationCommand command, int commandPosition)
+        {
+            commandStringBuilder.Clear();
+            var resultSetMapping = ResultSetMapping.NoResultSet;
+            var name = command.TableName;
+            var operations = command.ColumnModifications;
+            var writeOperations = operations.Where(o => o.IsWrite).ToList();
+            var readOperations = operations.Where(o => o.IsRead).ToList();
+            AppendInsertCommandHeader(commandStringBuilder, name, null, writeOperations);
+            AppendValuesHeader(commandStringBuilder, writeOperations);
+            AppendValues(commandStringBuilder, writeOperations);
+
+            if (readOperations.Any())
+            {
+                commandStringBuilder.AppendLine();
+                commandStringBuilder.Append("RETURNING ");
+                commandStringBuilder.Append(string.Join(", ", readOperations.Select(x => SqlGenerationHelper.DelimitIdentifier(x.ColumnName))));
+                resultSetMapping = ResultSetMapping.LastInResultSet;
+            }
+            commandStringBuilder.Append(SqlGenerationHelper.StatementTerminator).AppendLine();
+            return resultSetMapping;
+        }
+    }
 }

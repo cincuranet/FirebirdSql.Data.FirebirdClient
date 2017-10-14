@@ -20,19 +20,21 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Internal
 {
-	public class FbOptions : IFbOptions
-	{
-		public void Initialize(IDbContextOptions options)
-		{
-			var fbOptions = GetOptions(options);
-		}
+    public class FbOptions : IFbOptions
+    {
+        public FbOptionsExtension FirebirdOptions { get; private set; }
 
-		public void Validate(IDbContextOptions options)
-		{
-			var fbOptions = GetOptions(options);
-		}
+        public void Initialize(IDbContextOptions options)
+        {
+            FirebirdOptions = GetOptions(options);
+        }
 
-		static FbOptionsExtension GetOptions(IDbContextOptions options)
-			=> options.FindExtension<FbOptionsExtension>() ?? new FbOptionsExtension();
-	}
+        public void Validate(IDbContextOptions options)
+        {
+            FirebirdOptions = GetOptions(options);
+        }
+
+        static FbOptionsExtension GetOptions(IDbContextOptions options)
+            => options.FindExtension<FbOptionsExtension>() ?? new FbOptionsExtension();
+    }
 }
