@@ -47,6 +47,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 
 		public override ResultSetMapping AppendInsertOperation(StringBuilder commandStringBuilder, ModificationCommand command, int commandPosition)
 		{
+			var result = ResultSetMapping.NoResultSet;
 			commandStringBuilder.Clear();
 			var resultSetMapping = ResultSetMapping.NoResultSet;
 			var name = command.TableName;
@@ -62,10 +63,10 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 				commandStringBuilder.AppendLine();
 				commandStringBuilder.Append("RETURNING ");
 				commandStringBuilder.Append(string.Join(", ", readOperations.Select(x => SqlGenerationHelper.DelimitIdentifier(x.ColumnName))));
-				resultSetMapping = ResultSetMapping.LastInResultSet;
+				result = ResultSetMapping.LastInResultSet;
 			}
 			commandStringBuilder.Append(SqlGenerationHelper.StatementTerminator).AppendLine();
-			return resultSetMapping;
+			return result;
 		}
 	}
 }
