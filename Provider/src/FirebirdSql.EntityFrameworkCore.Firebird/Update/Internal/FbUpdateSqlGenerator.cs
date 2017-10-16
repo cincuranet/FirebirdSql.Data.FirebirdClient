@@ -49,7 +49,6 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 		{
 			var result = ResultSetMapping.NoResultSet;
 			commandStringBuilder.Clear();
-			var resultSetMapping = ResultSetMapping.NoResultSet;
 			var name = command.TableName;
 			var operations = command.ColumnModifications;
 			var writeOperations = operations.Where(o => o.IsWrite).ToList();
