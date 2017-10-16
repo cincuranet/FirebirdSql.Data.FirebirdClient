@@ -31,13 +31,16 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Migrations
 {
 	public class FbMigrationsSqlGenerator : MigrationsSqlGenerator
 	{
+		readonly IFbMigrationSqlGeneratorBehavior _behavior; 
 		private IFbOptions _options;
 		private Version _serverVersion;
 
-		public FbMigrationsSqlGenerator(MigrationsSqlGeneratorDependencies dependencies, IFbOptions options)
+		public FbMigrationsSqlGenerator(MigrationsSqlGeneratorDependencies dependencies, IFbMigrationSqlGeneratorBehavior behavior, IFbOptions options)
 			: base(dependencies)
 		{
 			_options = options;
+			_behavior = behavior ?? new FbMigrationSqlGeneratorBehavior(dependencies.SqlGenerationHelper);
+
 			using (var connection = new FirebirdClientConnection(_options.FirebirdOptions.ConnectionString))
 			{
 				connection.Open();
@@ -62,7 +65,10 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Migrations
 						var typeSequence = IsSequenceIdentityOrTrigger(colAnnotation.Value as FbValueGenerationStrategy?);
 						if (typeSequence == FbValueGenerationStrategy.SequenceTrigger)
 						{
-							GenerateSequenceOnTrigger(builder, column.Table, column.Name);
+							foreach (var item in _behavior.CreateIdentityForColumn(builder, column.Name, column.Table))
+							{
+								EndStatement(builder);
+							}
 						}
 					}
 				}
