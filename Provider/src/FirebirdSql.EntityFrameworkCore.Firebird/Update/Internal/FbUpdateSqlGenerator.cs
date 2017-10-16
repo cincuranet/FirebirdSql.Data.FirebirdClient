@@ -28,7 +28,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 		readonly IRelationalTypeMapper _typeMapper;
 
 		public FbUpdateSqlGenerator(UpdateSqlGeneratorDependencies dependencies, IRelationalTypeMapper typeMapper)
-		 : base(dependencies)
+			: base(dependencies)
 		{
 			_typeMapper = typeMapper;
 		}
@@ -47,16 +47,15 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 
 		public override ResultSetMapping AppendInsertOperation(StringBuilder commandStringBuilder, ModificationCommand command, int commandPosition)
 		{
-			var result = ResultSetMapping.NoResultSet;
 			commandStringBuilder.Clear();
+			var result = ResultSetMapping.NoResultSet;
 			var name = command.TableName;
 			var operations = command.ColumnModifications;
 			var writeOperations = operations.Where(o => o.IsWrite).ToList();
 			var readOperations = operations.Where(o => o.IsRead).ToList();
 			AppendInsertCommandHeader(commandStringBuilder, name, null, writeOperations);
 			AppendValuesHeader(commandStringBuilder, writeOperations);
-			AppendValues(commandStringBuilder, writeOperations);
-
+			AppendValues(commandStringBuilder, writeOperations); 
 			if (readOperations.Any())
 			{
 				commandStringBuilder.AppendLine();
