@@ -26,7 +26,7 @@ using FirebirdSql.Data.Common;
 
 namespace FirebirdSql.Data.FirebirdClient
 {
-	sealed class FbConnectionPoolManager : IDisposable
+	internal sealed class FbConnectionPoolManager : IDisposable
 	{
 		static Lazy<FbConnectionPoolManager> _instanceLazy = new Lazy<FbConnectionPoolManager>(() => new FbConnectionPoolManager(), LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -35,7 +35,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			get { return _instanceLazy.Value; }
 		}
 
-		sealed class Pool : IDisposable
+		internal sealed class Pool : IDisposable
 		{
 			sealed class Item : IDisposable
 			{
@@ -159,14 +159,14 @@ namespace FirebirdSql.Data.FirebirdClient
 				return result;
 			}
 
-			static bool IsAlive(long connectionLifeTime, long created, long now)
+			internal static bool IsAlive(long connectionLifeTime, long created, long now)
 			{
 				if (connectionLifeTime == 0)
 					return true;
-				return (now - created) > (connectionLifeTime * 1000);
+				return (now - created) < (connectionLifeTime * 1000);
 			}
 
-			static long GetTicks()
+			internal static long GetTicks()
 			{
 				var ticks = Environment.TickCount;
 				return ticks + -(long)int.MinValue;
