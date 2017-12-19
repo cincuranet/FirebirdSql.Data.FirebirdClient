@@ -26,7 +26,7 @@ using FirebirdSql.Data.Common;
 
 namespace FirebirdSql.Data.FirebirdClient
 {
-	internal sealed class FbConnectionPoolManager : IDisposable
+	sealed class FbConnectionPoolManager : IDisposable
 	{
 		static Lazy<FbConnectionPoolManager> _instanceLazy = new Lazy<FbConnectionPoolManager>(() => new FbConnectionPoolManager(), LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -35,7 +35,7 @@ namespace FirebirdSql.Data.FirebirdClient
 			get { return _instanceLazy.Value; }
 		}
 
-		internal sealed class Pool : IDisposable
+		sealed class Pool : IDisposable
 		{
 			sealed class Item : IDisposable
 			{
@@ -128,7 +128,7 @@ namespace FirebirdSql.Data.FirebirdClient
 					var available = _available.ToArray();
 					if (available.Count() <= _connectionString.MinPoolSize)
 						return;
-					var keep = available.Where(x => IsAlive(_connectionString.ConnectionLifeTime, x.Created, now)).ToArray();
+					var keep = available.Where(x => ConnectionPoolLifetimeHelper.IsAlive(_connectionString.ConnectionLifeTime, x.Created, now)).ToArray();
 					var keepCount = keep.Count();
 					if (keepCount < _connectionString.MinPoolSize)
 					{
@@ -159,14 +159,7 @@ namespace FirebirdSql.Data.FirebirdClient
 				return result;
 			}
 
-			internal static bool IsAlive(long connectionLifeTime, long created, long now)
-			{
-				if (connectionLifeTime == 0)
-					return true;
-				return (now - created) < (connectionLifeTime * 1000);
-			}
-
-			internal static long GetTicks()
+			static long GetTicks()
 			{
 				var ticks = Environment.TickCount;
 				return ticks + -(long)int.MinValue;
@@ -265,6 +258,16 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			if (Volatile2.Read(ref _disposed) == 1)
 				throw new ObjectDisposedException(nameof(FbConnectionPoolManager));
+		}
+	}
+
+	internal static class ConnectionPoolLifetimeHelper
+	{
+		internal static bool IsAlive(long connectionLifeTime, long created, long now)
+		{
+			if (connectionLifeTime == 0)
+				return true;
+			return (now - created) < (connectionLifeTime * 1000);
 		}
 	}
 }
