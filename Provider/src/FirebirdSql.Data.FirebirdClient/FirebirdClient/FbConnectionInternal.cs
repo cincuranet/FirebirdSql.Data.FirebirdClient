@@ -494,7 +494,7 @@ namespace FirebirdSql.Data.FirebirdClient
 #if NETSTANDARD1_6
 			return PlatformServices.Default.Application.ApplicationBasePath;
 #elif NETSTANDARD2_0
-			return System.AppDomain.CurrentDomain.BaseDirectory;
+			return System.AppContext.BaseDirectory;
 #else
 			Assembly assembly;
 			try
