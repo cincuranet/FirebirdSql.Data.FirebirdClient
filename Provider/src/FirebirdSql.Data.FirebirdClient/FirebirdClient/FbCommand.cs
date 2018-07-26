@@ -32,6 +32,10 @@ using FirebirdSql.Data.Common;
 
 namespace FirebirdSql.Data.FirebirdClient
 {
+	public static class FbCommandOptions
+	{
+		public static bool EnableCommandLogging = true;
+	}
 	public sealed class FbCommand : DbCommand
 #if !NETSTANDARD1_6
 		, ICloneable
@@ -1323,7 +1327,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		[Conditional(TraceHelper.ConditionalSymbol)]
 		private void LogCommand()
 		{
-			if (TraceHelper.HasListeners)
+			if (TraceHelper.HasListeners && FbCommandOptions.EnableCommandLogging)
 			{
 				StringBuilder message = new StringBuilder();
 				message.AppendLine("Command:");
