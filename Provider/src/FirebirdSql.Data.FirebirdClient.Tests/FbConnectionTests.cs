@@ -423,7 +423,6 @@ namespace FirebirdSql.Data.FirebirdClient.Tests
 					UserID = "\"CaseSensitive\"",
 					Password = "password"
 				};
-				Console.WriteLine(csBuilder.ToString());
 				try
 				{
 					using (var conn2 = new FbConnection(csBuilder.ToString()))
