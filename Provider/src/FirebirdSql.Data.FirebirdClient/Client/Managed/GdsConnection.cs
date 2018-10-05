@@ -387,7 +387,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 		public static string NormalizeLogin(string login)
 		{
-			if (String.IsNullOrEmpty(login))
+			if (string.IsNullOrEmpty(login))
 			{
 				return login;
 			}
