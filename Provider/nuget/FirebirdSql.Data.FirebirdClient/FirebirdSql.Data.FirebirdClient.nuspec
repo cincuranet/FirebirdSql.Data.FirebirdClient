@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
 	<metadata minClientVersion="3.6">
 		<id>FirebirdSql.Data.FirebirdClient</id>
 		<version>0.0.0.0</version>
@@ -9,6 +9,7 @@
 		<owners>FirebirdSQL</owners>
 		<licenseUrl>https://raw.githubusercontent.com/FirebirdSQL/NETProvider/master/license.txt</licenseUrl>
 		<projectUrl>http://www.firebirdsql.org/en/net-provider/</projectUrl>
+		<repository type="git" url="https://github.com/cincuranet/FirebirdSql.Data.FirebirdClient.git" />
 		<iconUrl>http://www.firebirdsql.org/file/about/ds-firebird-logo-64.png</iconUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<tags>firebird firebirsql firebirdclient adonet database</tags>
