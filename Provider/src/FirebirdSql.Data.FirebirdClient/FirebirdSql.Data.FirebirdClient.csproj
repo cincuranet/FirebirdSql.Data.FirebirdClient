@@ -56,5 +56,8 @@
 	<ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
 		<PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
 	</ItemGroup>
+	<ItemGroup>
+	  <PackageReference Include="dant02.snippets.dotnet.lib" Version="1.0.1" />
+	</ItemGroup>
 	<Import Project="..\FirebirdSql.Data.Zlib\FirebirdSql.Data.Zlib.projitems" Label="Shared" />
 </Project>
