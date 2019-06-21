@@ -22,7 +22,6 @@ using System.Linq;
 using FirebirdSql.Data.Common;
 using System.Threading.Tasks;
 using System.Threading;
-using dant02.snippets.dotnet.lib;
 
 namespace FirebirdSql.Data.Client.Managed
 {
