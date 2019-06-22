@@ -31,6 +31,7 @@ namespace FirebirdSql.Data.Client.Managed
 
 		private const int PreferredBufferSize = 32 * 1024;
 		private const int InvalidOperation = -1;
+		private const int CompressionBufferSize = 1 * 1024 * 1024;
 
 		#endregion
 
@@ -792,10 +793,10 @@ namespace FirebirdSql.Data.Client.Managed
 				buffer = ms.ToArray();
 			}
 
-			var pole = new byte[PreferredBufferSize];
+			var input = new byte[CompressionBufferSize];
 
-			_inflate.OutputBuffer = pole;
-			_inflate.AvailableBytesOut = pole.Length;
+			_inflate.OutputBuffer = input;
+			_inflate.AvailableBytesOut = input.Length;
 			_inflate.NextOut = 0;
 			_inflate.InputBuffer = buffer;
 			_inflate.AvailableBytesIn = buffer.Length;
@@ -807,7 +808,7 @@ namespace FirebirdSql.Data.Client.Managed
 			if (_inflate.AvailableBytesIn != 0)
 				throw new IOException("Decompression buffer too small.");
 
-			using (var ms = new MemoryStream(pole))
+			using (var ms = new MemoryStream(input))
 				_inputBuffer.ReadFromStream(ms, _inflate.NextOut);
 		}
 
@@ -820,7 +821,7 @@ namespace FirebirdSql.Data.Client.Managed
 				buffer = ms.ToArray();
 			}
 
-			byte[] output = new byte[PreferredBufferSize];
+			byte[] output = new byte[CompressionBufferSize];
 
 			_deflate.OutputBuffer = output;
 			_deflate.AvailableBytesOut = output.Length;
