@@ -13,7 +13,7 @@
  *    All Rights Reserved.
  */
 
-//$Authors = Carlos Guzman Alvarez, Jiri Cincura (jiri@cincura.net)
+//$Authors = Carlos Guzman Alvarez, Jiri Cincura (jiri@cincura.net), Daniel Trubac
 
 using System;
 using System.IO;
@@ -210,7 +210,7 @@ namespace FirebirdSql.Data.Client.Managed
 						read = _inputBuffer.ReadFromStream(_innerStream, PreferredBufferSize);
 
 					// wait for data a bit, under certain conditions we can read faster then networksteam can provide data, encoutered when reading long rows of nulls
-					if (read < count && step < int.MaxValue)
+					if (read < count && step < 1024)
 						LoadIfNeeded(count - read, step + 1);
 				}
 				catch (IOException)
@@ -237,7 +237,7 @@ namespace FirebirdSql.Data.Client.Managed
 						read = await _inputBuffer.ReadFromStreamAsync(_innerStream, PreferredBufferSize);
 
 					// wait for data a bit, under certain conditions we can read faster then networksteam can provide data, encoutered when reading long rows of nulls
-					if (read < count && step < int.MaxValue)
+					if (read < count && step < 1024)
 						await LoadIfNeededAsync(count - read, step + 1);
 				}
 				catch (IOException)
@@ -470,18 +470,21 @@ namespace FirebirdSql.Data.Client.Managed
 		public int ReadInt32()
 		{
 			LoadIfNeeded(4);
+			_position += 4;
 			return IPAddress.HostToNetworkOrder(_inputBuffer.GetInt32());
 		}
 
 		public async Task<int> ReadInt32Async()
 		{
 			await LoadIfNeededAsync(4);
+			_position += 4;
 			return IPAddress.HostToNetworkOrder(_inputBuffer.GetInt32());
 		}
 
 		public long ReadInt64()
 		{
 			LoadIfNeeded(8);
+			_position += 8;
 			return IPAddress.HostToNetworkOrder(_inputBuffer.GetInt64());
 		}
 
