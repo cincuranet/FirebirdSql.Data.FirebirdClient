@@ -13,7 +13,7 @@
  *    All Rights Reserved.
  */
 
-//$Authors = Daniel Trubač
+//$Authors = Daniel Trubac
 
 using System;
 using System.IO;
@@ -28,15 +28,10 @@ namespace FirebirdSql.Data.Client.Managed
 		protected int readIndex = 0;
 		protected int writeIndex = 0;
 
-		public ByteQueue(string name)
+		public ByteQueue(string name, int size)
 		{
 			this.Name = name;
-			this.buffer = new byte[allocatedSize];
-		}
-
-		public ByteQueue(string name, int size) : this(name)
-		{
-			allocatedSize = size;
+			this.allocatedSize = size;
 			this.buffer = new byte[allocatedSize];
 		}
 
