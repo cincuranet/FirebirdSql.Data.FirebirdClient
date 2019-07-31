@@ -1,6 +1,11 @@
-trigger: none
-pr: none
-
+trigger:
+  branches:
+    include:
+    - '*'
+pr:
+  branches:
+    include:
+    - '*'
 stages:
 - stage:
   variables:
