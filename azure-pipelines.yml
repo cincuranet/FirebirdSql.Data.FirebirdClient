@@ -5,7 +5,8 @@ stages:
 - stage:
   displayName: CI Build
   jobs:
-  - job: All
+  - job: 
+    displayName: Provider - NET | FB30
     pool:
       vmImage: windows-2019
     steps:
@@ -33,7 +34,48 @@ stages:
          $env:PATH += ';C:\Program Files\7-Zip'
          $env:tests_firebird_dir = 'C:\firebird'
        
-         .\Provider\tests.ps1 -Configuration Release -FirebirdSelection FB30 -TestSuite Tests-All
+         .\Provider\tests.ps1 -Configuration Release -FirebirdSelection FB30 -TestSuite Tests-FirebirdClient-NET
+         exit $LASTEXITCODE
+       }
+       catch {
+         exit 1
+       }
+      displayName: Tests
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        PathtoPublish: '.\\Provider\\out\\'
+  - job: 
+    displayName: Provider - Core | FB30
+    pool:
+      vmImage: windows-2019
+    steps:
+    - script: |
+       choco install 7zip --yes
+       choco install wixtoolset --version 3.11.1 --yes
+      displayName: Chocolatey
+
+    - powershell: |
+       try {
+         $env:PATH += ';C:\Program Files\7-Zip'
+         $env:build_wix = 'C:\Program Files (x86)\WiX Toolset v3.11\bin'
+       
+         .\Provider\build.ps1 -Configuration Release
+         exit $LASTEXITCODE
+       }
+       catch {
+         echo $_
+         exit 1
+       }
+      displayName: Build
+
+    - powershell: |
+       try {
+         $env:PATH += ';C:\Program Files\7-Zip'
+         $env:tests_firebird_dir = 'C:\firebird'
+       
+         .\Provider\tests.ps1 -Configuration Release -FirebirdSelection FB30 -TestSuite Tests-FirebirdClient-Core
          exit $LASTEXITCODE
        }
        catch {
