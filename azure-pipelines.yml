@@ -2,7 +2,8 @@ trigger: none
 pr: none
 
 stages:
-- stage: CI Build
+- stage:
+  displayName: CI Build
   jobs:
   - job: All
     pool:
