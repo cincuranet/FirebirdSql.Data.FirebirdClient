@@ -31,6 +31,10 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 			_fbDbType = fbDbType;
 		}
 
+		private FbStringTypeMapping(RelationalTypeMappingParameters parameters)
+			: base(parameters)
+		{ }
+
 		protected override void ConfigureParameter(DbParameter parameter)
 		{
 			((FbParameter)parameter).FbDbType = _fbDbType;
@@ -42,6 +46,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 			return IsUnicode
 				? $"_UTF8'{EscapeSqlLiteral(svalue)}'"
 				: $"'{EscapeSqlLiteral(svalue)}'";
+		}
+
+		protected override RelationalTypeMapping Clone(RelationalTypeMappingParameters parameters)
+		{
+			return new FbStringTypeMapping(parameters);
 		}
 	}
 }

@@ -28,9 +28,18 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 			: base("BOOLEAN", System.Data.DbType.Boolean)
 		{ }
 
+		private FbBoolTypeMapping(RelationalTypeMappingParameters parameters)
+			: base(parameters)
+		{ }
+
 		protected override string GenerateNonNullSqlLiteral(object value)
 		{
 			return (bool)value ? TrueLiteral : FalseLiteral;
+		}
+
+		protected override RelationalTypeMapping Clone(RelationalTypeMappingParameters parameters)
+		{
+			return new FbBoolTypeMapping(parameters);
 		}
 	}
 }

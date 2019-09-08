@@ -32,6 +32,10 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 			_fbDbType = fbDbType;
 		}
 
+		private FbDateTimeTypeMapping(RelationalTypeMappingParameters parameters)
+			: base(parameters)
+		{ }
+
 		protected override void ConfigureParameter(DbParameter parameter)
 		{
 			((FbParameter)parameter).FbDbType = _fbDbType;
@@ -50,6 +54,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 				default:
 					throw new ArgumentOutOfRangeException(nameof(_fbDbType), $"{nameof(_fbDbType)}={_fbDbType}");
 			}
+		}
+
+		protected override RelationalTypeMapping Clone(RelationalTypeMappingParameters parameters)
+		{
+			return new FbDateTimeTypeMapping(parameters);
 		}
 	}
 }
