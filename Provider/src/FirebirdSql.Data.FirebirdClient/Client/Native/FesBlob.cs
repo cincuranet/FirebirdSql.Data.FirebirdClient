@@ -118,7 +118,7 @@ namespace FirebirdSql.Data.Client.Native
 			_db.ProcessStatusVector(_statusVector);
 		}
 
-		protected override byte[] GetSegment()
+		protected override void GetSegment(MemoryStream ms)
 		{
 			var requested = (short)SegmentSize;
 			short segmentLength = 0;
@@ -145,8 +145,8 @@ namespace FirebirdSql.Data.Client.Native
 
 				if (_statusVector[1] == new IntPtr(IscCodes.isc_segstr_eof))
 				{
-					segment.SetLength(0);
 					RblAddValue(IscCodes.RBL_eof_pending);
+					return;
 				}
 				else
 				{
@@ -160,7 +160,7 @@ namespace FirebirdSql.Data.Client.Native
 					}
 				}
 
-				return segment.ToArray();
+				segment.WriteTo(ms);
 			}
 		}
 
