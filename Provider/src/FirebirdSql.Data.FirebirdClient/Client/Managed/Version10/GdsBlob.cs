@@ -103,7 +103,7 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 			}
 		}
 
-		protected override void GetSegment(MemoryStream ms)
+		protected override void GetSegment(Stream stream)
 		{
 			var requested = SegmentSize;
 
@@ -119,16 +119,21 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 
 				RblRemoveValue(IscCodes.RBL_segment);
 				if (response.ObjectHandle == 1)
+				{
 					RblAddValue(IscCodes.RBL_segment);
-
+				}
 				else if (response.ObjectHandle == 2)
+				{
 					RblAddValue(IscCodes.RBL_eof_pending);
+				}
 
 				var buffer = response.Data;
 
-				// previous	segment	was	last, this has no data
 				if (buffer.Length == 0)
+				{
+					// previous	segment	was	last, this has no data
 					return;
+				}
 
 				var len = 0;
 				var srcpos = 0;
@@ -138,7 +143,7 @@ namespace FirebirdSql.Data.Client.Managed.Version10
 					len = (int)IscHelper.VaxInteger(buffer, srcpos, 2);
 					srcpos += 2;
 
-					ms.Write(buffer, srcpos, len);
+					stream.Write(buffer, srcpos, len);
 					srcpos += len;
 				}
 			}
