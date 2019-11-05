@@ -24,7 +24,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 {
-	public class FbTypeMappingSource : RelationalTypeMappingSource
+	public class FbTypeMappingSource : RelationalTypeMappingSource, IFbTypeMappingSource
 	{
 		public const int BinaryMaxSize = Int32.MaxValue;
 		public const int VarcharMaxSize = 32765 / 4;
@@ -189,6 +189,19 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 			}
 
 			return null;
+		}
+
+		public virtual string StringLiteralQueryType(string s)
+		{
+			if (!(s?.Length > 0))
+				throw new ArgumentException(nameof(s));
+
+			return $"VARCHAR({s.Length}) CHARACTER SET UTF8";
+		}
+
+		public virtual string StringParameterQueryType()
+		{
+			return $"VARCHAR({VarcharMaxSize})";
 		}
 	}
 }

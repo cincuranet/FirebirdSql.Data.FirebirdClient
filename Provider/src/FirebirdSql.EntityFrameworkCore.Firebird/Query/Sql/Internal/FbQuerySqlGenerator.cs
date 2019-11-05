@@ -111,7 +111,14 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.Sql.Internal
 			if (_fbOptions.ExplicitParameterTypes)
 			{
 				Sql.Append(" AS ");
-				Sql.Append(Dependencies.TypeMappingSource.GetMapping(parameterExpression.Type).StoreType);
+				if (parameterExpression.Type == typeof(string))
+				{
+					Sql.Append(((IFbTypeMappingSource)Dependencies.TypeMappingSource).StringParameterQueryType());
+				}
+				else
+				{
+					Sql.Append(Dependencies.TypeMappingSource.GetMapping(parameterExpression.Type).StoreType);
+				}
 				Sql.Append(")");
 			}
 			return parameterExpression;
@@ -181,9 +188,9 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.Sql.Internal
 			base.VisitConstant(constantExpression);
 			if (_fbOptions.ExplicitStringLiteralTypes && explicitVarcharPossible)
 			{
-				Sql.Append(" AS VARCHAR(");
-				Sql.Append(svalue.Length);
-				Sql.Append(") CHARACTER SET UTF8)");
+				Sql.Append(" AS ");
+				Sql.Append(((IFbTypeMappingSource)Dependencies.TypeMappingSource).StringLiteralQueryType(svalue));
+				Sql.Append(")");
 			}
 			return constantExpression;
 		}
