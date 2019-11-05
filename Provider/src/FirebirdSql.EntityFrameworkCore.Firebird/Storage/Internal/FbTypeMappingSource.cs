@@ -193,18 +193,30 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 
 		public virtual string StringLiteralQueryType(string s)
 		{
-			var length = s?.Length ?? 1;
-			if (length > VarcharMaxSize)
-				throw new ArgumentOutOfRangeException(nameof(s));
+			var length = MinimumStringQueryTypeLength(s);
+			EnsureStringQueryTypeLength(length);
 			return $"VARCHAR({length}) CHARACTER SET UTF8";
 		}
 
 		public virtual string StringParameterQueryType(string s)
 		{
-			var length = s?.Length ?? 1;
-			if (length > VarcharMaxSize)
-				throw new ArgumentOutOfRangeException(nameof(s));
+			var length = MinimumStringQueryTypeLength(s);
+			EnsureStringQueryTypeLength(length);
 			return $"VARCHAR({length})";
+		}
+
+		static int MinimumStringQueryTypeLength(string s)
+		{
+			var length = s?.Length ?? 0;
+			if (length == 0)
+				length = 1;
+			return length;
+		}
+
+		static void EnsureStringQueryTypeLength(int length)
+		{
+			if (length > VarcharMaxSize)
+				throw new ArgumentOutOfRangeException(nameof(length));
 		}
 	}
 }
