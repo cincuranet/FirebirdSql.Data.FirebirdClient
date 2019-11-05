@@ -22,6 +22,6 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 	public interface IFbTypeMappingSource : IRelationalTypeMappingSource
 	{
 		string StringLiteralQueryType(string s);
-		string StringParameterQueryType();
+		string StringParameterQueryType(string s);
 	}
 }

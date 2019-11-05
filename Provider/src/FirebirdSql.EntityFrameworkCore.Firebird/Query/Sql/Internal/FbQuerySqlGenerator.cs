@@ -113,7 +113,8 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.Sql.Internal
 				Sql.Append(" AS ");
 				if (parameterExpression.Type == typeof(string))
 				{
-					Sql.Append(((IFbTypeMappingSource)Dependencies.TypeMappingSource).StringParameterQueryType());
+					Sql.Append(((IFbTypeMappingSource)Dependencies.TypeMappingSource).StringParameterQueryType((string)ParameterValues[parameterExpression.Name]));
+					IsCacheable = false;
 				}
 				else
 				{
@@ -180,13 +181,12 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.Sql.Internal
 		protected override Expression VisitConstant(ConstantExpression constantExpression)
 		{
 			var svalue = constantExpression.Value as string;
-			var explicitVarcharPossible = constantExpression.Type == typeof(string) && svalue?.Length > 0;
-			if (_fbOptions.ExplicitStringLiteralTypes && explicitVarcharPossible)
+			if (_fbOptions.ExplicitStringLiteralTypes && constantExpression.Type == typeof(string))
 			{
 				Sql.Append("CAST(");
 			}
 			base.VisitConstant(constantExpression);
-			if (_fbOptions.ExplicitStringLiteralTypes && explicitVarcharPossible)
+			if (_fbOptions.ExplicitStringLiteralTypes && constantExpression.Type == typeof(string))
 			{
 				Sql.Append(" AS ");
 				Sql.Append(((IFbTypeMappingSource)Dependencies.TypeMappingSource).StringLiteralQueryType(svalue));
