@@ -113,8 +113,15 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.Sql.Internal
 				Sql.Append(" AS ");
 				if (parameterExpression.Type == typeof(string))
 				{
-					Sql.Append(((IFbTypeMappingSource)Dependencies.TypeMappingSource).StringParameterQueryType((string)ParameterValues[parameterExpression.Name]));
-					IsCacheable = false;
+					if (ParameterValues.TryGetValue(parameterExpression.Name, out var parameterValue))
+					{
+						Sql.Append(((IFbTypeMappingSource)Dependencies.TypeMappingSource).StringParameterQueryType((string)parameterValue));
+						IsCacheable = false;
+					}
+					else
+					{
+						Sql.Append(((IFbTypeMappingSource)Dependencies.TypeMappingSource).StringParameterQueryType());
+					}
 				}
 				else
 				{

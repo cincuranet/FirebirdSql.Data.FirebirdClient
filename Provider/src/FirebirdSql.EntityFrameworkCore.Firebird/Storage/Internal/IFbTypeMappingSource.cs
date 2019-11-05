@@ -23,5 +23,6 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 	{
 		string StringLiteralQueryType(string s);
 		string StringParameterQueryType(string s);
+		string StringParameterQueryType();
 	}
 }

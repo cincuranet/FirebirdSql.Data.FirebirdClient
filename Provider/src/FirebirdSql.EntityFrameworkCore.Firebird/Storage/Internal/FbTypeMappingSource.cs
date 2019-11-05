@@ -205,6 +205,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 			return $"VARCHAR({length})";
 		}
 
+		public virtual string StringParameterQueryType()
+		{
+			return $"VARCHAR({VarcharMaxSize})";
+		}
+
 		static int MinimumStringQueryTypeLength(string s)
 		{
 			var length = s?.Length ?? 0;
