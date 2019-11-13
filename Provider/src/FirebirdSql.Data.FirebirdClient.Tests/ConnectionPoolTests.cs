@@ -73,6 +73,32 @@ namespace FirebirdSql.Data.FirebirdClient.Tests
 				}
 			}
 			Assert.IsEmpty(connections);
+      
+			#region DNET-917 workaround
+			// http://tracker.firebirdsql.org/browse/DNET-917
+			// Extra loop on connections to really provoke crash
+
+			for (var i = 1; i < csb.MaxPoolSize; i++)
+			{
+				var connection = new FbConnection(cs);
+				connection.Open();
+				connections.Add(connection);
+			}
+
+			foreach (var connection in connections.ToArray())
+			{
+				try
+				{
+					QuerySomething(connection);
+				}
+				catch
+				{
+					connection.Dispose();
+					connections.Remove(connection);
+				}
+			}
+			Assert.IsEmpty(connections);
+			#endregion
 
 			// create new connections
 			try
