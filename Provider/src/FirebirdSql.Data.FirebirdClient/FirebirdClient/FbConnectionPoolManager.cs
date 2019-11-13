@@ -99,10 +99,16 @@ namespace FirebirdSql.Data.FirebirdClient
 					CheckDisposedImpl();
 
 					var removed = _busy.Remove(connection);
-					if (removed)
+
+					if (connection.Database.ConnectionBroken)
 					{
-						_available.Push(new Item(GetTicks(), connection));
+						if (!connection.IsEnlisted)
+							connection.Dispose();
+						return;
 					}
+
+					if (removed)
+						_available.Push(new Item(GetTicks(), connection));
 				}
 			}
 

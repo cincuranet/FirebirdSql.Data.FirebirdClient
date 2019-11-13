@@ -511,18 +511,7 @@ namespace FirebirdSql.Data.FirebirdClient
 							_innerConnection.EnableCancel();
 						}
 
-						if (!_innerConnection.Database.ConnectionBroken)
-						{
-							FbConnectionPoolManager.Instance.Release(_innerConnection);
-						}
-						else
-						{
-							if (!_innerConnection.IsEnlisted)
-							{
-								_innerConnection.Dispose();
-							}
-							_innerConnection = null;
-						}
+						FbConnectionPoolManager.Instance.Release(_innerConnection);
 					}
 					else
 					{
