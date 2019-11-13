@@ -9,7 +9,7 @@ pr:
 stages:
 - stage:
   variables:
-    CONFIGURATION: Release
+    CONFIGURATION: Debug
   jobs:
   - job:
     pool:
