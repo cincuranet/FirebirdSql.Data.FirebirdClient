@@ -18,6 +18,8 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Configuration;
+using System.Collections.Specialized;
 
 using FirebirdSql.Data.Common;
 
@@ -249,27 +251,35 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			var options = new FbTransactionOptions();
 			options.WaitTimeout = null;
-			options.TransactionBehavior = FbTransactionBehavior.Write;
 
-			options.TransactionBehavior |= FbTransactionBehavior.NoWait;
-
-			switch (IsolationLevel)
+			var settingSection = ConfigurationManager.GetSection("firebirdSettings") as NameValueCollection;
+			var setting = settingSection?.Get("TransactionBehavior." + IsolationLevel);
+			if(!string.IsNullOrEmpty(setting) && Enum.TryParse(setting, out FbTransactionBehavior behaviorSetting))
+				options.TransactionBehavior = behaviorSetting;
+			else
 			{
-				case IsolationLevel.Serializable:
-					options.TransactionBehavior |= FbTransactionBehavior.Consistency;
-					break;
+				options.TransactionBehavior = FbTransactionBehavior.Write;
+				
+				options.TransactionBehavior |= FbTransactionBehavior.NoWait;
 
-				case IsolationLevel.RepeatableRead:
-				case IsolationLevel.Snapshot:
-					options.TransactionBehavior |= FbTransactionBehavior.Concurrency;
-					break;
+				switch (IsolationLevel)
+				{
+					case IsolationLevel.Serializable:
+						options.TransactionBehavior |= FbTransactionBehavior.Consistency;
+						break;
 
-				case IsolationLevel.ReadCommitted:
-				case IsolationLevel.ReadUncommitted:
-				default:
-					options.TransactionBehavior |= FbTransactionBehavior.ReadCommitted;
-					options.TransactionBehavior |= FbTransactionBehavior.RecVersion;
-					break;
+					case IsolationLevel.RepeatableRead:
+					case IsolationLevel.Snapshot:
+						options.TransactionBehavior |= FbTransactionBehavior.Concurrency;
+						break;
+
+					case IsolationLevel.ReadCommitted:
+					case IsolationLevel.ReadUncommitted:
+					default:
+						options.TransactionBehavior |= FbTransactionBehavior.ReadCommitted;
+						options.TransactionBehavior |= FbTransactionBehavior.RecVersion;
+						break;
+				}
 			}
 
 			return BuildTpb(options);
