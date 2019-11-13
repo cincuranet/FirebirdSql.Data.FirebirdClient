@@ -39,13 +39,9 @@ namespace FirebirdSql.Data.FirebirdClient.Tests
 			csb.MaxPoolSize = 10;
 			var cs = csb.ToString();
 
-			// get a stable connection to operate on
-			var workConnection = new FbConnection(cs);
-			workConnection.Open();
-
 			// fill pool with connections
 			var connections = new List<FbConnection>();
-			for (var i = 1; i < csb.MaxPoolSize; i++)
+			for (var i = 0; i < csb.MaxPoolSize; i++)
 			{
 				var connection = new FbConnection(cs);
 				connection.Open();
@@ -53,11 +49,14 @@ namespace FirebirdSql.Data.FirebirdClient.Tests
 			}
 
 			// kill all open connection - simulates broken tcp connections
-			using (var cmd = workConnection.CreateCommand())
+			var trans = Connection.BeginTransaction();
+			using (var cmd = Connection.CreateCommand())
 			{
+				cmd.Transaction = trans;
 				cmd.CommandText = "delete from mon$attachments where mon$attachment_id <> current_connection";
 				cmd.ExecuteScalar();
 			}
+			trans.Commit();
 
 			// use connections to test for crashed state
 			foreach (var connection in connections.ToArray())
@@ -78,7 +77,7 @@ namespace FirebirdSql.Data.FirebirdClient.Tests
 			// http://tracker.firebirdsql.org/browse/DNET-917
 			// Extra loop on connections to really provoke crash
 
-			for (var i = 1; i < csb.MaxPoolSize; i++)
+			for (var i = 0; i < csb.MaxPoolSize; i++)
 			{
 				var connection = new FbConnection(cs);
 				connection.Open();
@@ -103,7 +102,7 @@ namespace FirebirdSql.Data.FirebirdClient.Tests
 			// create new connections
 			try
 			{
-				for (var i = 1; i < csb.MaxPoolSize; i++)
+				for (var i = 0; i < csb.MaxPoolSize; i++)
 				{
 					var connection = new FbConnection(cs);
 					connection.Open();
