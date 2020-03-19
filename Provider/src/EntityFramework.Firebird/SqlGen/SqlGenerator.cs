@@ -2650,19 +2650,60 @@ namespace EntityFramework.Firebird.SqlGen
 		private static ISqlFragment HandleCanonicalFunctionCreateDateTime(SqlGenerator sqlgen, DbFunctionExpression e)
 		{
 			var result = new SqlBuilder();
+
 			result.Append("CAST('");
-			result.Append(e.Arguments[0].Accept(sqlgen));
+
+			if (e.Arguments[0].ExpressionKind==DbExpressionKind.Constant) // year
+				result.Append(e.Arguments[0].Accept(sqlgen));
+			else
+				result.Append("0001");
 			result.Append("-");
-			result.Append(e.Arguments[1].Accept(sqlgen));
+
+			if (e.Arguments[1].ExpressionKind==DbExpressionKind.Constant) // month
+				result.Append(e.Arguments[1].Accept(sqlgen));
+			else
+				result.Append("1");
 			result.Append("-");
-			result.Append(e.Arguments[2].Accept(sqlgen));
-			result.Append(" ");
-			result.Append(e.Arguments[3].Accept(sqlgen));
-			result.Append(":");
-			result.Append(e.Arguments[4].Accept(sqlgen));
-			result.Append(":");
-			result.Append(e.Arguments[5].Accept(sqlgen));
+
+			if (e.Arguments[2].ExpressionKind==DbExpressionKind.Constant) // day
+				result.Append(e.Arguments[2].Accept(sqlgen));
+			else
+				result.Append("1");
+
 			result.Append("' AS TIMESTAMP)");
+
+			void nestDateAddResult(string datePart, ISqlFragment value)
+			{
+				SqlBuilder nestResult = new SqlBuilder();
+				nestResult.Append("DATEADD("+datePart+",");
+				nestResult.Append(value);
+				nestResult.Append(",");
+				nestResult.Append(result);
+				nestResult.Append(")");
+				result = nestResult;
+			};
+
+			if (e.Arguments[0].ExpressionKind!=DbExpressionKind.Constant && e.Arguments[0].ExpressionKind!=DbExpressionKind.Null)
+				nestDateAddResult("YEAR", e.Arguments[0].Accept(sqlgen));
+			if (e.Arguments[1].ExpressionKind!=DbExpressionKind.Constant && e.Arguments[1].ExpressionKind!=DbExpressionKind.Null)
+				nestDateAddResult("MONTH", e.Arguments[1].Accept(sqlgen));
+			if (e.Arguments[2].ExpressionKind!=DbExpressionKind.Constant && e.Arguments[2].ExpressionKind!=DbExpressionKind.Null)
+				nestDateAddResult("DAY", e.Arguments[2].Accept(sqlgen));
+
+			if (e.Arguments[3].ExpressionKind!=DbExpressionKind.Constant && e.Arguments[3].ExpressionKind!=DbExpressionKind.Null)
+				nestDateAddResult("HOUR", e.Arguments[3].Accept(sqlgen));
+			if (e.Arguments[4].ExpressionKind!=DbExpressionKind.Constant && e.Arguments[4].ExpressionKind!=DbExpressionKind.Null)
+				nestDateAddResult("MINUTE", e.Arguments[4].Accept(sqlgen));
+			if (e.Arguments[5].ExpressionKind!=DbExpressionKind.Constant && e.Arguments[5].ExpressionKind!=DbExpressionKind.Null)
+				nestDateAddResult("SECOND", e.Arguments[5].Accept(sqlgen));
+
+			if (e.Arguments[0].ExpressionKind!=DbExpressionKind.Constant)
+				nestDateAddResult("YEAR", DbExpression.FromInt32(-1).Accept(sqlgen));
+			if (e.Arguments[1].ExpressionKind!=DbExpressionKind.Constant)
+				nestDateAddResult("MONTH", DbExpression.FromInt32(-1).Accept(sqlgen));
+			if (e.Arguments[2].ExpressionKind!=DbExpressionKind.Constant)
+				nestDateAddResult("DAY", DbExpression.FromInt32(-1).Accept(sqlgen));
+
 			return result;
 		}
 
