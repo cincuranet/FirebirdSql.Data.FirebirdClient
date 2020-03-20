@@ -172,7 +172,7 @@ namespace EntityFramework.Firebird.Tests
 				var q = c.Quxs
 					.Where(x => x.QuxDateTime == DbFunctions.CreateDateTime(2020, 3, 19, 14, 12, 36))
 					.ToString();
-				StringAssert.Contains("DATEADD(SECOND,CAST(36 AS DOUBLE PRECISION),CAST('2020-3-19 14:12:00' AS TIMESTAMP))", q.ToString());
+				StringAssert.Contains("DATEADD(SECOND, CAST(36 AS DOUBLE PRECISION), CAST('2020-3-19 14:12:00' AS TIMESTAMP))", q.ToString());
 			}
 		}
 		[Test]
@@ -183,7 +183,7 @@ namespace EntityFramework.Firebird.Tests
 				var q = c.Quxs
 					.Where(x => x.QuxDateTime == DbFunctions.CreateDateTime(null, null, null, null, null, null))
 					.ToString();
-				StringAssert.Contains("DATEADD(DAY,-1,DATEADD(MONTH,-1,DATEADD(YEAR,-1,CAST('0001-01-01 00:00:00' AS TIMESTAMP))))", q.ToString());
+				StringAssert.Contains("DATEADD(DAY, -1, DATEADD(MONTH, -1, DATEADD(YEAR, -1, CAST('0001-01-01 00:00:00' AS TIMESTAMP))))", q.ToString());
 			}
 		}
 		[Test]
@@ -194,7 +194,7 @@ namespace EntityFramework.Firebird.Tests
 				var q = c.Quxs
 					.Where(x => x.QuxDateTime == DbFunctions.CreateDateTime(x.QuxYear, x.QuxMonth, x.QuxDay, null, null, null))
 					.ToString();
-				StringAssert.Contains("DATEADD(DAY,-1,DATEADD(MONTH,-1,DATEADD(YEAR,-1,DATEADD(DAY,\"B\".\"QuxDay\",DATEADD(MONTH,\"B\".\"QuxMonth\",DATEADD(YEAR,\"B\".\"QuxYear\",CAST('0001-01-01 00:00:00' AS TIMESTAMP)))))))", q.ToString());
+				StringAssert.Contains("DATEADD(DAY, -1, DATEADD(MONTH, -1, DATEADD(YEAR, -1, DATEADD(DAY, \"B\".\"QuxDay\", DATEADD(MONTH, \"B\".\"QuxMonth\", DATEADD(YEAR, \"B\".\"QuxYear\", CAST('0001-01-01 00:00:00' AS TIMESTAMP)))))))", q.ToString());
 			}
 		}
 	}

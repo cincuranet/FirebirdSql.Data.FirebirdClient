@@ -2676,7 +2676,7 @@ namespace EntityFramework.Firebird.SqlGen
 				result = HandleDateAdd("HOUR", e.Arguments[3].Accept(sqlgen), result);
 			if (e.Arguments[4].ExpressionKind != DbExpressionKind.Constant && e.Arguments[4].ExpressionKind != DbExpressionKind.Null)
 				result = HandleDateAdd("MINUTE", e.Arguments[4].Accept(sqlgen), result);
-			if ((e.Arguments[5].ExpressionKind != DbExpressionKind.Constant || (((DbConstantExpression)e.Arguments[5]).Value as double?)!=0) && e.Arguments[5].ExpressionKind != DbExpressionKind.Null)
+			if ((e.Arguments[5].ExpressionKind != DbExpressionKind.Constant || (((DbConstantExpression)e.Arguments[5]).Value as double?) != 0) && e.Arguments[5].ExpressionKind != DbExpressionKind.Null)
 				result = HandleDateAdd("SECOND", e.Arguments[5].Accept(sqlgen), result);
 
 			// in case a default value was used for the year/month/day part, remove it afterwards
@@ -2695,9 +2695,9 @@ namespace EntityFramework.Firebird.SqlGen
 			SqlBuilder result = new SqlBuilder();
 			result.Append("DATEADD(");
 			result.Append(datePart);
-			result.Append(",");
+			result.Append(", ");
 			result.Append(value);
-			result.Append(",");
+			result.Append(", ");
 			result.Append(dateTime);
 			result.Append(")");
 			return result;
