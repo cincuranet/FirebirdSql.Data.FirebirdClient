@@ -71,7 +71,6 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 				{ "VARCHAR", _varchar },
 				{ "BLOB SUB_TYPE TEXT", _clob },
 				{ "BLOB SUB_TYPE 0", _binary },
-				{ "BLOB SUB_TYPE 1", _binary },
 				{ "FLOAT", _float },
 				{ "DOUBLE PRECISION", _double },
 				{ "DECIMAL", _decimal },
