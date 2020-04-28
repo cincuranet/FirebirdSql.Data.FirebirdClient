@@ -19,14 +19,12 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Scaffolding;
 using Microsoft.EntityFrameworkCore.Scaffolding.Metadata;
-using Microsoft.EntityFrameworkCore.Utilities;
 using Microsoft.Extensions.Logging;
 using FirebirdSql.Data.FirebirdClient;
 
@@ -57,7 +55,6 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
 				connection.Open();
 			}
 
-#warning Finish
 			try
 			{
 				_serverVersion = Data.Services.FbServerProperties.ParseServerVersion(connection.ServerVersion);
@@ -87,27 +84,29 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
 		}
 
 
-
 		private string GetDefaultSchema(DbConnection connection)
 		{
 			return null;
 		}
 
-		private static Func<string, string, bool> GenerateTableFilter(
-			IReadOnlyList<string> tables,
-			IReadOnlyList<string> schemas)
+		private static Func<string, string, bool> GenerateTableFilter(IReadOnlyList<string> tables,IReadOnlyList<string> schemas)
 		{
 			return tables.Count > 0 ? (s, t) => tables.Contains(t) : (Func<string, string, bool>)null;
 		}
 
-		private const string GetTablesQuery = @"SELECT trim(r.RDB$RELATION_NAME),r.RDB$DESCRIPTION, r.RDB$RELATION_TYPE
-FROM RDB$RELATIONS r
-where r.RDB$SYSTEM_FLAG is distinct from 1
-order by r.RDB$RELATION_NAME";
+		private const string GetTablesQuery =
+			@"SELECT
+                trim(r.RDB$RELATION_NAME),
+                r.RDB$DESCRIPTION,
+                r.RDB$RELATION_TYPE
+              FROM
+               RDB$RELATIONS r
+             WHERE
+              r.RDB$SYSTEM_FLAG is distinct from 1
+             ORDER BY
+              r.RDB$RELATION_NAME";
 
-		private IEnumerable<DatabaseTable> GetTables(
-			DbConnection connection,
-			Func<string, string, bool> filter)
+		private IEnumerable<DatabaseTable> GetTables(DbConnection connection,Func<string, string, bool> filter)
 		{
 			using (var command = connection.CreateCommand())
 			{
@@ -146,59 +145,53 @@ order by r.RDB$RELATION_NAME";
 			}
 		}
 
-		private const string GetColumnsQuery = @"SELECT
-    trim(RF.RDB$FIELD_NAME) as COLUMN_NAME,
-    rf.RDB$FIELD_POSITION as ORDINAL_POSITION,
-    COALESCE(RF.RDB$DEFAULT_SOURCE, F.RDB$DEFAULT_SOURCE) as COLUMN_DEFAULT,
-    COALESCE(RF.RDB$NULL_FLAG, 0)  as NOT_NULL,
-    CASE Coalesce(F.RDB$FIELD_TYPE, 0)
-    WHEN 7 THEN
-        CASE F.RDB$FIELD_SUB_TYPE
-        WHEN 0 THEN 'SMALLINT'
-        ELSE 'DECIMAL'
-        END
-    WHEN 8 THEN
-        CASE F.RDB$FIELD_SUB_TYPE
-        WHEN 0 THEN 'INTEGER'
-        ELSE 'DECIMAL'
-        END
-    WHEN 9 THEN 'QUAD'
-    WHEN 10 THEN 'FLOAT'
-    WHEN 12 THEN 'DATE'
-    WHEN 13 THEN 'TIME'
-    WHEN 14 THEN 'CHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ') '
-    WHEN 16 THEN
-        CASE F.RDB$FIELD_SUB_TYPE
-        WHEN 0 THEN 'BIGINT'
-        ELSE 'DECIMAL'
-        END
-    WHEN 27 THEN 'DOUBLE PRECISION'
-    WHEN 35 THEN 'TIMESTAMP'
-    WHEN 37 THEN 'VARCHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
-    WHEN 40 THEN 'CSTRING' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
-    WHEN 45 THEN 'BLOB_ID'
-    WHEN 261 THEN 'BLOB SUB_TYPE ' || F.RDB$FIELD_SUB_TYPE 
-    ELSE 'RDB$FIELD_TYPE: ' || F.RDB$FIELD_TYPE || '?'
-    END as STORE_TYPE,
-    ch.RDB$CHARACTER_SET_NAME as CHARACTER_SET_NAME,
-    F.rdb$description as COLUMN_COMMENT,
-    COALESCE(RF.RDB$IDENTITY_TYPE, 0)   as auto_generated
-    
-FROM
-    RDB$RELATION_FIELDS RF
-JOIN
-    RDB$FIELDS F ON(F.RDB$FIELD_NAME = RF.RDB$FIELD_SOURCE)
-LEFT OUTER JOIN
-    RDB$CHARACTER_SETS CH ON(CH.RDB$CHARACTER_SET_ID = F.RDB$CHARACTER_SET_ID)
-WHERE
-    (trim(RF.RDB$RELATION_NAME) = '" + "{0}" + @"') AND(COALESCE(RF.RDB$SYSTEM_FLAG, 0) = 0)
-ORDER BY
-RF.RDB$FIELD_POSITION;";
+		private const string GetColumnsQuery =
+			@"SELECT
+               trim(RF.RDB$FIELD_NAME) as COLUMN_NAME,
+               COALESCE(RF.RDB$DEFAULT_SOURCE, F.RDB$DEFAULT_SOURCE) as COLUMN_DEFAULT,
+               COALESCE(RF.RDB$NULL_FLAG, 0)  as NOT_NULL,
+               CASE Coalesce(F.RDB$FIELD_TYPE, 0)
+                WHEN 7 THEN
+                 CASE F.RDB$FIELD_SUB_TYPE
+                  WHEN 0 THEN 'SMALLINT'
+                  ELSE 'DECIMAL'
+                 END
+                WHEN 8 THEN
+                 CASE F.RDB$FIELD_SUB_TYPE
+                  WHEN 0 THEN 'INTEGER'
+                  ELSE 'DECIMAL'
+                 END
+				WHEN 9 THEN 'QUAD'
+				WHEN 10 THEN 'FLOAT'
+				WHEN 12 THEN 'DATE'
+				WHEN 13 THEN 'TIME'
+				WHEN 14 THEN 'CHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ') '
+				WHEN 16 THEN
+				CASE F.RDB$FIELD_SUB_TYPE
+				 WHEN 0 THEN 'BIGINT'
+				 ELSE 'DECIMAL'
+				END
+				WHEN 27 THEN 'DOUBLE PRECISION'
+				WHEN 35 THEN 'TIMESTAMP'
+				WHEN 37 THEN 'VARCHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
+				WHEN 40 THEN 'CSTRING' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
+				WHEN 45 THEN 'BLOB_ID'
+				WHEN 261 THEN 'BLOB SUB_TYPE ' || F.RDB$FIELD_SUB_TYPE 
+				ELSE 'RDB$FIELD_TYPE: ' || F.RDB$FIELD_TYPE || '?'
+			   END as STORE_TYPE,
+               F.rdb$description as COLUMN_COMMENT,
+               COALESCE(RF.RDB$IDENTITY_TYPE, 0)   as AUTO_GENERATED
+              FROM
+               RDB$RELATION_FIELDS RF
+               JOIN  RDB$FIELDS F ON(F.RDB$FIELD_NAME = RF.RDB$FIELD_SOURCE)
+               LEFT OUTER JOIN  RDB$CHARACTER_SETS CH ON(CH.RDB$CHARACTER_SET_ID = F.RDB$CHARACTER_SET_ID)
+              WHERE
+               trim(RF.RDB$RELATION_NAME) = '" + "{0}" + @"'
+               AND COALESCE(RF.RDB$SYSTEM_FLAG, 0) = 0
+             ORDER BY
+              RF.RDB$FIELD_POSITION;";
 
-		private void GetColumns(
-			DbConnection connection,
-			IReadOnlyList<DatabaseTable> tables,
-			Func<string, string, bool> tableFilter)
+		private void GetColumns(DbConnection connection,IReadOnlyList<DatabaseTable> tables,Func<string, string, bool> tableFilter)
 		{
 			foreach (var table in tables)
 			{
@@ -209,17 +202,13 @@ RF.RDB$FIELD_POSITION;";
 					{
 						while (reader.Read())
 						{
-							String name = reader["COLUMN_NAME"].ToString();
-							String defaultValue = reader["COLUMN_DEFAULT"].ToString();
-							Boolean nullable = !Convert.ToBoolean(reader["NOT_NULL"]);
-							Boolean autoGenerated = Convert.ToBoolean(reader["AUTO_GENERATED"]);
-							String storeType = reader["STORE_TYPE"].ToString();
-							// String dataType = reader["DATA_TYPE"].ToString();
-							String charset = reader["CHARACTER_SET_NAME"].ToString();
-							// String collation = reader["COLLATION_NAME"].ToString();
-							// String columType = reader["COLUMN_TYPE"].ToString();
-							// String extra = reader["EXTRA"].ToString();
-							String comment = reader["COLUMN_COMMENT"].ToString();
+							string name = reader["COLUMN_NAME"].ToString();
+							string defaultValue = reader["COLUMN_DEFAULT"].ToString();
+							bool nullable = !Convert.ToBoolean(reader["NOT_NULL"]);
+							bool autoGenerated = Convert.ToBoolean(reader["AUTO_GENERATED"]);
+							string storeType = reader["STORE_TYPE"].ToString();
+							string charset = reader["CHARACTER_SET_NAME"].ToString();
+							string comment = reader["COLUMN_COMMENT"].ToString();
 
 
 							ValueGenerated valueGenerated = ValueGenerated.Never;
@@ -228,8 +217,6 @@ RF.RDB$FIELD_POSITION;";
 							{
 								valueGenerated = ValueGenerated.OnAdd;
 							}
-
-							// defaultValue = FilterClrDefaults(dataType, nullable, defaultValue);
 
 							var column = new DatabaseColumn
 							{
@@ -240,8 +227,6 @@ RF.RDB$FIELD_POSITION;";
 								DefaultValueSql = CreateDefaultValueString(defaultValue),
 								ValueGenerated = valueGenerated,
 								Comment = string.IsNullOrEmpty(comment) ? null : comment,
-								// [FbAnnotationNames.CharSet] = _settings.CharSet ? charset : null,
-								// [FbAnnotationNames.Collation] = _settings.Collation ? collation : null,
 							};
 
 							table.Columns.Add(column);
@@ -270,25 +255,21 @@ RF.RDB$FIELD_POSITION;";
 
 		}
 
-		private const string GetPrimaryQuery = @"SELECT
-   trim(i.rdb$index_name) as index_name,
-   trim(sg.rdb$field_name) as field_name
-FROM
-    RDB$INDICES i
-    LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name 
-    LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name 
-WHERE
-     rc.rdb$constraint_type = 'PRIMARY KEY'
-    AND
-     trim(i.rdb$relation_name) = '{0}'
-    order by sg.RDB$FIELD_POSITION;";
+		private const string GetPrimaryQuery =
+		@"SELECT
+           trim(i.rdb$index_name) as INDEX_NAME,
+           trim(sg.rdb$field_name) as FIELD_NAME
+          FROM
+           RDB$INDICES i
+           LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name 
+           LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name 
+          WHERE
+           rc.rdb$constraint_type = 'PRIMARY KEY'
+           AND trim(i.rdb$relation_name) = '{0}'
+          ORDER BY sg.RDB$FIELD_POSITION;";
 
-		/// <remarks>
-		/// Primary keys are handled as in <see cref="GetConstraints"/>, not here
-		/// </remarks>
-		private void GetPrimaryKeys(
-			DbConnection connection,
-			IReadOnlyList<DatabaseTable> tables)
+		
+		private void GetPrimaryKeys(DbConnection connection,IReadOnlyList<DatabaseTable> tables)
 		{
 			foreach (var x in tables)
 			{
@@ -324,18 +305,19 @@ WHERE
 			}
 		}
 
-		private const string GetIndexesQuery = @"SELECT
-    trim(I.rdb$index_name) as Index_Name,
-    COALESCE(I.rdb$unique_flag, 0) as Non_Unique,
-    list(trim(sg.RDB$FIELD_NAME)) as Columns
-FROM
-    RDB$INDICES i
-    LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
-    LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name and rc.rdb$constraint_type = null
- WHERE
-   trim(i.rdb$relation_name) = '{0}'
-GROUP BY
-   Index_Name, Non_Unique ;";
+		private const string GetIndexesQuery =
+			@"SELECT
+               trim(I.rdb$index_name) as INDEX_NAME,
+               COALESCE(I.rdb$unique_flag, 0) as NON_UNIQUE,
+               list(trim(sg.RDB$FIELD_NAME)) as COLUMNS
+              FROM
+               RDB$INDICES i
+               LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
+               LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name and rc.rdb$constraint_type = null
+              WHERE
+               trim(i.rdb$relation_name) = '{0}'
+              GROUP BY
+               INDEX_NAME, NON_UNIQUE ;";
 
 		/// <remarks>
 		/// Primary keys are handled as in <see cref="GetConstraints"/>, not here
@@ -379,25 +361,25 @@ GROUP BY
 			}
 		}
 
-		private const string GetConstraintsQuery = @"SELECT
-    trim(drs.rdb$constraint_name) as CONSTRAINT_NAME,
-    trim(drs.RDB$RELATION_NAME) as TABLE_NAME,
-    trim(mrc.rdb$relation_name) AS REFERENCED_TABLE_NAME,
-    /* LIST(distinct trim(dis.rdb$field_name)||'#'||dis.rdb$field_position,',') AS SRC_COLUMN_NAME,
-       LIST(distinct trim(mis.rdb$field_name)||'#'||mis.rdb$field_position,',') AS PRINC_COLUMN_NAME, */
-    ( select list(trim(di.rdb$field_name)||'|'||trim(mi.rdb$field_name))
-       from rdb$index_segments di
-       join rdb$index_segments mi on mi.RDB$FIELD_POSITION=di.RDB$FIELD_POSITION and mi.rdb$index_name = mrc.rdb$index_name
-       where di.rdb$index_name = drs.rdb$index_name) as PAIRED_COLUMNS,
-    rc.RDB$DELETE_RULE as DELETE_RULE
-FROM
-    rdb$relation_constraints drs
-    left JOIN rdb$ref_constraints rc ON drs.rdb$constraint_name = rc.rdb$constraint_name
-    left JOIN rdb$relation_constraints mrc ON rc.rdb$const_name_uq = mrc.rdb$constraint_name
-    
-WHERE
-    drs.rdb$constraint_type = 'FOREIGN KEY'
-    AND trim(drs.RDB$RELATION_NAME) = '{0}' ";
+		private const string GetConstraintsQuery =
+			@"SELECT
+               trim(drs.rdb$constraint_name) as CONSTRAINT_NAME,
+               trim(drs.RDB$RELATION_NAME) as TABLE_NAME,
+               trim(mrc.rdb$relation_name) AS REFERENCED_TABLE_NAME,
+               (select list(trim(di.rdb$field_name)||'|'||trim(mi.rdb$field_name)) 
+                from
+                 rdb$index_segments di
+                 join rdb$index_segments mi on mi.RDB$FIELD_POSITION=di.RDB$FIELD_POSITION and mi.rdb$index_name = mrc.rdb$index_name
+                where
+                 di.rdb$index_name = drs.rdb$index_name) as PAIRED_COLUMNS,
+               rc.RDB$DELETE_RULE as DELETE_RULE
+              FROM
+               rdb$relation_constraints drs
+               left JOIN rdb$ref_constraints rc ON drs.rdb$constraint_name = rc.rdb$constraint_name
+               left JOIN rdb$relation_constraints mrc ON rc.rdb$const_name_uq = mrc.rdb$constraint_name
+              WHERE
+               drs.rdb$constraint_type = 'FOREIGN KEY'
+               AND trim(drs.RDB$RELATION_NAME) = '{0}' ";
 
 		private void GetConstraints(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
 		{
