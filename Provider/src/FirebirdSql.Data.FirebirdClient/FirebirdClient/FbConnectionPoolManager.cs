@@ -84,9 +84,29 @@ namespace FirebirdSql.Data.FirebirdClient
 				{
 					CheckDisposedImpl();
 
-					var connection = _available.Any()
-						? _available.Pop().Connection
-						: CreateNewConnectionIfPossibleImpl(_connectionString);
+					if (_available.Any())
+					{
+						var existing = _available.Pop().Connection;
+						existing.SetOwningConnection(owner);
+						_busy.Add(existing);
+						return existing;
+					}
+
+					if (_busy.Count() + 1 > _connectionString.MaxPoolSize)
+						throw new InvalidOperationException("Connection pool is full.");
+				}
+
+				var connection = CreateNewConnection(_connectionString);
+				lock (_syncRoot)
+				{
+					CheckDisposedImpl();
+
+					if (_busy.Count() + 1 > _connectionString.MaxPoolSize)
+					{
+						connection.Dispose();
+						throw new InvalidOperationException("Connection pool is full.");
+					}
+
 					connection.SetOwningConnection(owner);
 					_busy.Add(connection);
 					return connection;
@@ -163,13 +183,6 @@ namespace FirebirdSql.Data.FirebirdClient
 			{
 				if (_disposed)
 					throw new ObjectDisposedException(nameof(Pool));
-			}
-
-			FbConnectionInternal CreateNewConnectionIfPossibleImpl(ConnectionString connectionString)
-			{
-				if (_busy.Count() + 1 > connectionString.MaxPoolSize)
-					throw new InvalidOperationException("Connection pool is full.");
-				return CreateNewConnection(connectionString);
 			}
 		}
 
