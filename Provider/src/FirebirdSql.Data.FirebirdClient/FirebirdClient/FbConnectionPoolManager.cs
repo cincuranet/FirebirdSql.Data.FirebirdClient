@@ -20,6 +20,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using FirebirdSql.Data.Common;
 
 namespace FirebirdSql.Data.FirebirdClient
@@ -79,17 +80,21 @@ namespace FirebirdSql.Data.FirebirdClient
 
 			public FbConnectionInternal GetConnection(FbConnection owner)
 			{
+				FbConnectionInternal connection;
+				bool createdNew;
 				lock (_syncRoot)
 				{
 					CheckDisposedImpl();
 
-					var connection = _available.Any()
-						? _available.Pop().Connection
-						: CreateNewConnectionIfPossibleImpl(_connectionString);
-					connection.SetOwningConnection(owner);
+					connection = GetOrCreateConnectionImpl(out createdNew);
 					_busy.Add(connection);
-					return connection;
 				}
+				if (createdNew)
+				{
+					connection.Connect();
+				}
+				connection.SetOwningConnection(owner);
+				return connection;
 			}
 
 			public void ReleaseConnection(FbConnectionInternal connection, bool returnToAvailable)
@@ -123,7 +128,7 @@ namespace FirebirdSql.Data.FirebirdClient
 						keep = keep.Concat(available.Except(keep).OrderByDescending(x => x.Created).Take(_connectionString.MinPoolSize - keepCount)).ToList();
 					}
 					var release = available.Except(keep).ToList();
-					release.AsParallel().ForAll(x => x.Dispose());
+					Parallel.ForEach(release, x => x.Dispose());
 					_available = new Stack<Item>(keep);
 				}
 			}
@@ -139,19 +144,6 @@ namespace FirebirdSql.Data.FirebirdClient
 				}
 			}
 
-			static FbConnectionInternal CreateNewConnection(ConnectionString connectionString)
-			{
-				var result = new FbConnectionInternal(connectionString);
-				result.Connect();
-				return result;
-			}
-
-			static long GetTicks()
-			{
-				var ticks = Environment.TickCount;
-				return ticks + -(long)int.MinValue;
-			}
-
 			void CleanConnectionsImpl()
 			{
 				foreach (var item in _available)
@@ -164,11 +156,26 @@ namespace FirebirdSql.Data.FirebirdClient
 					throw new ObjectDisposedException(nameof(Pool));
 			}
 
-			FbConnectionInternal CreateNewConnectionIfPossibleImpl(ConnectionString connectionString)
+			FbConnectionInternal GetOrCreateConnectionImpl(out bool createdNew)
 			{
-				if (_busy.Count() + 1 > connectionString.MaxPoolSize)
-					throw new InvalidOperationException("Connection pool is full.");
-				return CreateNewConnection(connectionString);
+				if (_available.Any())
+				{
+					createdNew = false;
+					return _available.Pop().Connection;
+				}
+				else
+				{
+					createdNew = true;
+					if (_busy.Count() + 1 > _connectionString.MaxPoolSize)
+						throw new InvalidOperationException("Connection pool is full.");
+					return new FbConnectionInternal(_connectionString);
+				}
+			}
+
+			static long GetTicks()
+			{
+				var ticks = Environment.TickCount;
+				return ticks + -(long)int.MinValue;
 			}
 		}
 
@@ -207,7 +214,7 @@ namespace FirebirdSql.Data.FirebirdClient
 		{
 			CheckDisposed();
 
-			_pools.Values.AsParallel().ForAll(p => p.ClearPool());
+			Parallel.ForEach(_pools.Values, x => x.ClearPool());
 		}
 
 		internal void ClearPool(ConnectionString connectionString)
@@ -229,12 +236,12 @@ namespace FirebirdSql.Data.FirebirdClient
 				_cleanupTimer.Dispose(mre);
 				mre.WaitOne();
 			}
-			_pools.Values.AsParallel().ForAll(x => x.Dispose());
+			Parallel.ForEach(_pools.Values, x => x.Dispose());
 		}
 
 		void CleanupCallback(object o)
 		{
-			_pools.Values.AsParallel().ForAll(x => x.CleanupPool());
+			Parallel.ForEach(_pools.Values, x => x.CleanupPool());
 		}
 
 		void CheckDisposed()

@@ -38,6 +38,13 @@ namespace FirebirdSql.Data.Common
 		Time,
 		TimeStamp,
 		VarChar,
+		TimeStampTZ,
+		TimeStampTZEx,
+		TimeTZ,
+		TimeTZEx,
+		Dec16,
+		Dec34,
+		Int128,
 		Null,
 	}
 }

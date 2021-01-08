@@ -22,7 +22,6 @@ namespace FirebirdSql.Data.Common
 	internal sealed class BlobParameterBuffer : ParameterBuffer
 	{
 		public BlobParameterBuffer()
-			: base(BitConverter.IsLittleEndian)
 		{ }
 	}
 }

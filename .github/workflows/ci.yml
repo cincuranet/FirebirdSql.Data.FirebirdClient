@@ -1,0 +1,52 @@
+name: CI
+
+on: [push, pull_request]
+
+env:
+  CONFIGURATION: Release
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build:
+    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        FIREBIRD_SELECTION: [FB25, FB30, FB40]
+        TEST_SUITE: [Tests-FirebirdClient, Tests-EFCore, Tests-EF6]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          try {
+            $env:build_wix = 'C:\Program Files (x86)\WiX Toolset v3.11\bin'
+
+            .\Provider\build.ps1 -Configuration ${{ env.CONFIGURATION }}
+            exit $LASTEXITCODE
+          }
+          catch {
+            echo $_
+            exit 1
+          }
+        shell: powershell
+
+      - name: Tests
+        run: |
+          try {
+            $env:tests_firebird_dir = 'C:\firebird'
+
+            .\Provider\tests.ps1 -Configuration ${{ env.CONFIGURATION }} -FirebirdSelection ${{ matrix.FIREBIRD_SELECTION }} -TestSuite ${{ matrix.TEST_SUITE }}
+            exit $LASTEXITCODE
+          }
+          catch {
+            echo $_
+            exit 1
+          }
+        shell: powershell
+
+      - name: Publish Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          path: '.\\Provider\\out\\'

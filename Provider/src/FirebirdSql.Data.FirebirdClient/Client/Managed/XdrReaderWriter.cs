@@ -19,8 +19,10 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using FirebirdSql.Data.Common;
+using FirebirdSql.Data.Types;
 
 namespace FirebirdSql.Data.Client.Managed
 {
@@ -177,7 +179,9 @@ namespace FirebirdSql.Data.Client.Managed
 					return TypeDecoder.DecodeDecimal(ReadInt64(), scale, type);
 				case IscCodes.SQL_DOUBLE:
 				case IscCodes.SQL_D_FLOAT:
-					return Convert.ToDecimal(ReadDouble());
+					return TypeDecoder.DecodeDecimal(ReadDouble(), scale, type);
+				case IscCodes.SQL_INT128:
+					return TypeDecoder.DecodeDecimal(ReadInt128(), scale, type);
 				default:
 					throw new ArgumentOutOfRangeException(nameof(type), $"{nameof(type)}={type}");
 			}
@@ -186,6 +190,33 @@ namespace FirebirdSql.Data.Client.Managed
 		public bool ReadBoolean()
 		{
 			return TypeDecoder.DecodeBoolean(ReadOpaque(1));
+		}
+
+		public FbZonedDateTime ReadZonedDateTime(bool isExtended)
+		{
+			var dt = ReadDateTime();
+			dt = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+			return TypeHelper.CreateZonedDateTime(dt, (ushort)ReadInt16(), isExtended ? ReadInt16() : (short?)null);
+		}
+
+		public FbZonedTime ReadZonedTime(bool isExtended)
+		{
+			return TypeHelper.CreateZonedTime(ReadTime(), (ushort)ReadInt16(), isExtended ? ReadInt16() : (short?)null);
+		}
+
+		public FbDecFloat ReadDec16()
+		{
+			return TypeDecoder.DecodeDec16(ReadOpaque(8));
+		}
+
+		public FbDecFloat ReadDec34()
+		{
+			return TypeDecoder.DecodeDec34(ReadOpaque(16));
+		}
+
+		public BigInteger ReadInt128()
+		{
+			return TypeDecoder.DecodeInt128(ReadOpaque(16));
 		}
 
 		public IscException ReadStatusVector()
@@ -350,7 +381,10 @@ namespace FirebirdSql.Data.Client.Managed
 					break;
 				case IscCodes.SQL_DOUBLE:
 				case IscCodes.SQL_D_FLOAT:
-					Write((double)value);
+					Write((double)numeric);
+					break;
+				case IscCodes.SQL_INT128:
+					Write((BigInteger)numeric);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(type), $"{nameof(type)}={type}");
@@ -371,6 +405,21 @@ namespace FirebirdSql.Data.Client.Managed
 		public void Write(Guid value)
 		{
 			WriteOpaque(TypeEncoder.EncodeGuid(value));
+		}
+
+		public void Write(FbDecFloat value, int size)
+		{
+			WriteOpaque(size switch
+			{
+				16 => TypeEncoder.EncodeDec16(value),
+				34 => TypeEncoder.EncodeDec34(value),
+				_ => throw new ArgumentOutOfRangeException(),
+			});
+		}
+
+		public void Write(BigInteger value)
+		{
+			WriteOpaque(TypeEncoder.EncodeInt128(value));
 		}
 
 		public void WriteDate(DateTime value)

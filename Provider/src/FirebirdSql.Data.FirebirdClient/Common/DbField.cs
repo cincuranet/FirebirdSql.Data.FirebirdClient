@@ -16,7 +16,9 @@
 //$Authors = Carlos Guzman Alvarez, Jiri Cincura (jiri@cincura.net)
 
 using System;
+using System.Numerics;
 using System.Text;
+using FirebirdSql.Data.Types;
 
 namespace FirebirdSql.Data.Common
 {
@@ -360,7 +362,7 @@ namespace FirebirdSql.Data.Common
 						break;
 
 					case IscCodes.SQL_LONG:
-						if (NumericScale < 0)
+						if (_numericScale < 0)
 						{
 							Value = TypeDecoder.DecodeDecimal(
 								BitConverter.ToInt32(buffer, 0),
@@ -386,7 +388,7 @@ namespace FirebirdSql.Data.Common
 					case IscCodes.SQL_INT64:
 					case IscCodes.SQL_BLOB:
 					case IscCodes.SQL_ARRAY:
-						if (NumericScale < 0)
+						if (_numericScale < 0)
 						{
 							Value = TypeDecoder.DecodeDecimal(
 								BitConverter.ToInt64(buffer, 0),
@@ -400,11 +402,12 @@ namespace FirebirdSql.Data.Common
 						break;
 
 					case IscCodes.SQL_TIMESTAMP:
-						var date = TypeDecoder.DecodeDate(BitConverter.ToInt32(buffer, 0));
-						var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer, 4));
-
-						Value = date.Add(time);
-						break;
+						{
+							var date = TypeDecoder.DecodeDate(BitConverter.ToInt32(buffer, 0));
+							var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer, 4));
+							Value = date.Add(time);
+							break;
+						}
 
 					case IscCodes.SQL_TYPE_TIME:
 						Value = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer, 0));
@@ -416,6 +419,66 @@ namespace FirebirdSql.Data.Common
 
 					case IscCodes.SQL_BOOLEAN:
 						Value = TypeDecoder.DecodeBoolean(buffer);
+						break;
+
+					case IscCodes.SQL_TIMESTAMP_TZ:
+						{
+							var date = TypeDecoder.DecodeDate(BitConverter.ToInt32(buffer, 0));
+							var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer, 4));
+							var tzId = BitConverter.ToUInt16(buffer, 8);
+							var dt = DateTime.SpecifyKind(date.Add(time), DateTimeKind.Utc);
+							Value = TypeHelper.CreateZonedDateTime(dt, tzId, null);
+							break;
+						}
+
+					case IscCodes.SQL_TIMESTAMP_TZ_EX:
+						{
+							var date = TypeDecoder.DecodeDate(BitConverter.ToInt32(buffer, 0));
+							var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer, 4));
+							var tzId = BitConverter.ToUInt16(buffer, 8);
+							var offset = BitConverter.ToInt16(buffer, 10);
+							var dt = DateTime.SpecifyKind(date.Add(time), DateTimeKind.Utc);
+							Value = TypeHelper.CreateZonedDateTime(dt, tzId, offset);
+							break;
+						}
+
+					case IscCodes.SQL_TIME_TZ:
+						{
+							var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer, 0));
+							var tzId = BitConverter.ToUInt16(buffer, 4);
+							Value = TypeHelper.CreateZonedTime(time, tzId, null);
+							break;
+						}
+
+					case IscCodes.SQL_TIME_TZ_EX:
+						{
+							var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer, 0));
+							var tzId = BitConverter.ToUInt16(buffer, 4);
+							var offset = BitConverter.ToInt16(buffer, 6);
+							Value = TypeHelper.CreateZonedTime(time, tzId, offset);
+							break;
+						}
+
+					case IscCodes.SQL_DEC16:
+						Value = DecimalCodec.DecFloat16.ParseBytes(buffer);
+						break;
+
+					case IscCodes.SQL_DEC34:
+						Value = DecimalCodec.DecFloat34.ParseBytes(buffer);
+						break;
+
+					case IscCodes.SQL_INT128:
+						if (_numericScale < 0)
+						{
+							Value = TypeDecoder.DecodeDecimal(
+								Int128Helper.GetInt128(buffer),
+								_numericScale,
+								_dataType);
+						}
+						else
+						{
+							Value = Int128Helper.GetInt128(buffer);
+						}
 						break;
 
 					default:
@@ -478,6 +541,25 @@ namespace FirebirdSql.Data.Common
 
 					case DbDataType.Boolean:
 						Value = false;
+						break;
+
+					case DbDataType.TimeStampTZ:
+					case DbDataType.TimeStampTZEx:
+						Value = new FbZonedDateTime(new DateTime(0 * 10000L + 621355968000000000), TimeZoneMapping.DefaultTimeZoneName);
+						break;
+
+					case DbDataType.TimeTZ:
+					case DbDataType.TimeTZEx:
+						Value = new FbZonedTime(TimeSpan.Zero, TimeZoneMapping.DefaultTimeZoneName);
+						break;
+
+					case DbDataType.Dec16:
+					case DbDataType.Dec34:
+						Value = new FbDecFloat(0, 0);
+						break;
+
+					case DbDataType.Int128:
+						Value = (BigInteger)0;
 						break;
 
 					default:
