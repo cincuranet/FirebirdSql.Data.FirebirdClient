@@ -17,20 +17,16 @@
 
 using System;
 using System.Globalization;
+using System.Numerics;
+using FirebirdSql.Data.Types;
 
 namespace FirebirdSql.Data.Common
 {
 	internal sealed class DbValue
 	{
-		#region Fields
-
 		private StatementBase _statement;
 		private DbField _field;
 		private object _value;
-
-		#endregion
-
-		#region Properties
 
 		public DbField Field
 		{
@@ -42,10 +38,6 @@ namespace FirebirdSql.Data.Common
 			get { return GetValue(); }
 			set { _value = value; }
 		}
-
-		#endregion
-
-		#region Constructors
 
 		public DbValue(DbField field, object value)
 		{
@@ -66,10 +58,6 @@ namespace FirebirdSql.Data.Common
 			_field = field;
 			_value = value ?? DBNull.Value;
 		}
-
-		#endregion
-
-		#region Methods
 
 		public bool IsDBNull()
 		{
@@ -132,15 +120,12 @@ namespace FirebirdSql.Data.Common
 
 		public Guid GetGuid()
 		{
-			switch (_value)
+			return _value switch
 			{
-				case Guid guid:
-					return guid;
-				case byte[] bytes:
-					return TypeDecoder.DecodeGuid(bytes);
-				default:
-					throw new InvalidOperationException($"Incorrect {nameof(Guid)} value.");
-			}
+				Guid guid => guid,
+				byte[] bytes => TypeDecoder.DecodeGuid(bytes),
+				_ => throw new InvalidOperationException($"Incorrect {nameof(Guid)} value."),
+			};
 		}
 
 		public double GetDouble()
@@ -150,15 +135,14 @@ namespace FirebirdSql.Data.Common
 
 		public DateTime GetDateTime()
 		{
-			switch (_value)
+			return _value switch
 			{
-				case TimeSpan ts:
-					return new DateTime(0 * 10000L + 621355968000000000 + ts.Ticks);
-				case DateTimeOffset dto:
-					return Convert.ToDateTime(dto.DateTime, CultureInfo.CurrentCulture.DateTimeFormat);
-				default:
-					return Convert.ToDateTime(_value, CultureInfo.CurrentCulture.DateTimeFormat);
-			}
+				TimeSpan ts => new DateTime(0 * 10000L + 621355968000000000 + ts.Ticks),
+				DateTimeOffset dto => dto.DateTime,
+				FbZonedDateTime zdt => zdt.DateTime,
+				FbZonedTime zt => new DateTime(0 * 10000L + 621355968000000000 + zt.Time.Ticks),
+				_ => Convert.ToDateTime(_value, CultureInfo.CurrentCulture.DateTimeFormat),
+			};
 		}
 
 		public Array GetArray()
@@ -192,13 +176,44 @@ namespace FirebirdSql.Data.Common
 
 		public int GetTime()
 		{
-			switch (_value)
+			return _value switch
 			{
-				case TimeSpan ts:
-					return TypeEncoder.EncodeTime(ts);
-				default:
-					return TypeEncoder.EncodeTime(TypeHelper.DateTimeToTimeSpan(GetDateTime()));
+				TimeSpan ts => TypeEncoder.EncodeTime(ts),
+				FbZonedTime zt => TypeEncoder.EncodeTime(zt.Time),
+				_ => TypeEncoder.EncodeTime(TypeHelper.DateTimeToTimeSpan(GetDateTime())),
+			};
+		}
+
+		public ushort GetTimeZoneId()
+		{
+			{
+				if (_value is FbZonedDateTime zdt && TimeZoneMapping.TryGetByName(zdt.TimeZone, out var id))
+				{
+					return id;
+				}
 			}
+			{
+				if (_value is FbZonedTime zt && TimeZoneMapping.TryGetByName(zt.TimeZone, out var id))
+				{
+					return id;
+				}
+			}
+			throw new InvalidOperationException($"Incorrect time zone value.");
+		}
+
+		public FbDecFloat GetDec16()
+		{
+			return (FbDecFloat)_value;
+		}
+
+		public FbDecFloat GetDec34()
+		{
+			return (FbDecFloat)_value;
+		}
+
+		public BigInteger GetInt128()
+		{
+			return (BigInteger)_value;
 		}
 
 		public byte[] GetBytes()
@@ -311,28 +326,91 @@ namespace FirebirdSql.Data.Common
 					return BitConverter.GetBytes(GetDouble());
 
 				case DbDataType.Date:
-					return BitConverter.GetBytes(TypeEncoder.EncodeDate(GetDateTime()));
+					return BitConverter.GetBytes(GetDate());
 
 				case DbDataType.Time:
 					return BitConverter.GetBytes(GetTime());
 
 				case DbDataType.TimeStamp:
-					var dt = GetDateTime();
-					var date = BitConverter.GetBytes(TypeEncoder.EncodeDate(dt));
-					var time = BitConverter.GetBytes(TypeEncoder.EncodeTime(TypeHelper.DateTimeToTimeSpan(dt)));
+					{
+						var dt = GetDateTime();
+						var date = BitConverter.GetBytes(TypeEncoder.EncodeDate(dt));
+						var time = BitConverter.GetBytes(TypeEncoder.EncodeTime(TypeHelper.DateTimeToTimeSpan(dt)));
 
-					var result = new byte[8];
-
-					Buffer.BlockCopy(date, 0, result, 0, date.Length);
-					Buffer.BlockCopy(time, 0, result, 4, time.Length);
-
-					return result;
+						var result = new byte[8];
+						Buffer.BlockCopy(date, 0, result, 0, date.Length);
+						Buffer.BlockCopy(time, 0, result, 4, time.Length);
+						return result;
+					}
 
 				case DbDataType.Guid:
 					return TypeEncoder.EncodeGuid(GetGuid());
 
 				case DbDataType.Boolean:
 					return BitConverter.GetBytes(GetBoolean());
+
+				case DbDataType.TimeStampTZ:
+					{
+						var dt = GetDateTime();
+						var date = BitConverter.GetBytes(TypeEncoder.EncodeDate(dt));
+						var time = BitConverter.GetBytes(TypeEncoder.EncodeTime(TypeHelper.DateTimeToTimeSpan(dt)));
+						var tzId = BitConverter.GetBytes(GetTimeZoneId());
+
+						var result = new byte[10];
+						Buffer.BlockCopy(date, 0, result, 0, date.Length);
+						Buffer.BlockCopy(time, 0, result, 4, time.Length);
+						Buffer.BlockCopy(tzId, 0, result, 8, tzId.Length);
+						return result;
+					}
+
+				case DbDataType.TimeStampTZEx:
+					{
+						var dt = GetDateTime();
+						var date = BitConverter.GetBytes(TypeEncoder.EncodeDate(dt));
+						var time = BitConverter.GetBytes(TypeEncoder.EncodeTime(TypeHelper.DateTimeToTimeSpan(dt)));
+						var tzId = BitConverter.GetBytes(GetTimeZoneId());
+						var offset = new byte[] { 0, 0 };
+
+						var result = new byte[12];
+						Buffer.BlockCopy(date, 0, result, 0, date.Length);
+						Buffer.BlockCopy(time, 0, result, 4, time.Length);
+						Buffer.BlockCopy(tzId, 0, result, 8, tzId.Length);
+						Buffer.BlockCopy(offset, 0, result, 10, offset.Length);
+						return result;
+					}
+
+				case DbDataType.TimeTZ:
+					{
+						var time = BitConverter.GetBytes(GetTime());
+						var tzId = BitConverter.GetBytes(GetTimeZoneId());
+
+						var result = new byte[6];
+						Buffer.BlockCopy(time, 0, result, 0, time.Length);
+						Buffer.BlockCopy(tzId, 0, result, 4, tzId.Length);
+						return result;
+					}
+
+				case DbDataType.TimeTZEx:
+					{
+						var time = BitConverter.GetBytes(GetTime());
+						var tzId = BitConverter.GetBytes(GetTimeZoneId());
+						var offset = new byte[] { 0, 0 };
+
+						var result = new byte[8];
+						Buffer.BlockCopy(time, 0, result, 0, time.Length);
+						Buffer.BlockCopy(tzId, 0, result, 4, tzId.Length);
+						Buffer.BlockCopy(offset, 0, result, 6, offset.Length);
+						return result;
+					}
+
+				case DbDataType.Dec16:
+					return DecimalCodec.DecFloat16.EncodeDecimal(GetDec16());
+
+				case DbDataType.Dec34:
+					return DecimalCodec.DecFloat34.EncodeDecimal(GetDec34());
+
+				case DbDataType.Int128:
+					return Int128Helper.GetBytes(GetInt128());
 
 				default:
 					throw TypeHelper.InvalidDataType((int)Field.DbDataType);
@@ -352,21 +430,21 @@ namespace FirebirdSql.Data.Common
 				case IscCodes.SQL_LONG:
 					return BitConverter.GetBytes((int)numeric);
 
-				case IscCodes.SQL_INT64:
 				case IscCodes.SQL_QUAD:
+				case IscCodes.SQL_INT64:
 					return BitConverter.GetBytes((long)numeric);
 
 				case IscCodes.SQL_DOUBLE:
-					return BitConverter.GetBytes(GetDouble());
+				case IscCodes.SQL_D_FLOAT:
+					return BitConverter.GetBytes((double)numeric);
+
+				case IscCodes.SQL_INT128:
+					return Int128Helper.GetBytes((BigInteger)numeric);
 
 				default:
 					return null;
 			}
 		}
-
-		#endregion
-
-		#region Private Methods
 
 		private object GetValue()
 		{
@@ -441,7 +519,5 @@ namespace FirebirdSql.Data.Common
 
 			return gdsArray.Read();
 		}
-
-		#endregion
 	}
 }

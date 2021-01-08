@@ -18,6 +18,8 @@
 using System;
 using System.Globalization;
 using System.Net;
+using System.Numerics;
+using FirebirdSql.Data.Types;
 
 namespace FirebirdSql.Data.Common
 {
@@ -25,28 +27,29 @@ namespace FirebirdSql.Data.Common
 	{
 		public static object EncodeDecimal(decimal d, int scale, int sqltype)
 		{
-			long multiplier = 1;
-
-			if (scale < 0)
-			{
-				multiplier = (long)Math.Pow(10, -scale);
-			}
+			var shift = scale < 0 ? -scale : 1;
 
 			switch (sqltype & ~1)
 			{
 				case IscCodes.SQL_SHORT:
-					return (short)(d * multiplier);
+					return (short)DecimalShiftHelper.ShiftDecimalRight(d, shift);
 
 				case IscCodes.SQL_LONG:
-					return (int)(d * multiplier);
+					return (int)DecimalShiftHelper.ShiftDecimalRight(d, shift);
 
 				case IscCodes.SQL_QUAD:
 				case IscCodes.SQL_INT64:
-					return (long)(d * multiplier);
+					return (long)DecimalShiftHelper.ShiftDecimalRight(d, shift);
 
 				case IscCodes.SQL_DOUBLE:
+				case IscCodes.SQL_D_FLOAT:
+					return (double)d;
+
+				case IscCodes.SQL_INT128:
+					return (BigInteger)DecimalShiftHelper.ShiftDecimalRight(d, shift);
+
 				default:
-					return d;
+					throw new ArgumentOutOfRangeException(nameof(sqltype), $"{nameof(sqltype)}={sqltype}");
 			}
 		}
 
@@ -110,6 +113,36 @@ namespace FirebirdSql.Data.Common
 		public static byte[] EncodeInt64(long value)
 		{
 			return BitConverter.GetBytes(IPAddress.NetworkToHostOrder(value));
+		}
+
+		public static byte[] EncodeDec16(FbDecFloat value)
+		{
+			var result = DecimalCodec.DecFloat16.EncodeDecimal(value);
+			if (BitConverter.IsLittleEndian)
+			{
+				Array.Reverse(result);
+			}
+			return result;
+		}
+
+		public static byte[] EncodeDec34(FbDecFloat value)
+		{
+			var result = DecimalCodec.DecFloat34.EncodeDecimal(value);
+			if (BitConverter.IsLittleEndian)
+			{
+				Array.Reverse(result);
+			}
+			return result;
+		}
+
+		public static byte[] EncodeInt128(BigInteger value)
+		{
+			var result = Int128Helper.GetBytes(value);
+			if (BitConverter.IsLittleEndian)
+			{
+				Array.Reverse(result);
+			}
+			return result;
 		}
 	}
 }

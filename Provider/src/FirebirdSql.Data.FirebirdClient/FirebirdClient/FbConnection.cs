@@ -54,54 +54,16 @@ namespace FirebirdSql.Data.FirebirdClient
 
 		#region Static Database Creation/Drop methods
 
-		public static void CreateDatabase(string connectionString, bool overwrite)
-		{
-			CreateDatabaseImpl(connectionString, overwrite: overwrite);
-		}
-
 		public static void CreateDatabase(string connectionString, int pageSize = 4096, bool forcedWrites = true, bool overwrite = false)
-		{
-			CreateDatabaseImpl(connectionString, pageSize, forcedWrites, overwrite);
-		}
-
-		private static void CreateDatabaseImpl(string connectionString, int pageSize = 4096, bool forcedWrites = true, bool overwrite = false)
 		{
 			var options = new ConnectionString(connectionString);
 			options.Validate();
 
 			try
 			{
-				var dpb = new DatabaseParameterBuffer();
-
-				dpb.Append(IscCodes.isc_dpb_version1);
-				dpb.Append(IscCodes.isc_dpb_dummy_packet_interval, new byte[] { 120, 10, 0, 0 });
-				dpb.Append(IscCodes.isc_dpb_sql_dialect, new byte[] { options.Dialect, 0, 0, 0 });
-				if (!string.IsNullOrEmpty(options.UserID))
-				{
-					dpb.Append(IscCodes.isc_dpb_user_name, options.UserID);
-				}
-				if (options.Charset.Length > 0)
-				{
-					var charset = Charset.GetCharset(options.Charset);
-					if (charset == null)
-					{
-						throw new ArgumentException("Character set is not valid.");
-					}
-					else
-					{
-						dpb.Append(IscCodes.isc_dpb_set_db_charset, charset.Name);
-					}
-				}
-				dpb.Append(IscCodes.isc_dpb_force_write, (short)(forcedWrites ? 1 : 0));
-				dpb.Append(IscCodes.isc_dpb_overwrite, (overwrite ? 1 : 0));
-				if (pageSize > 0)
-				{
-					dpb.Append(IscCodes.isc_dpb_page_size, pageSize);
-				}
-
 				using (var db = new FbConnectionInternal(options))
 				{
-					db.CreateDatabase(dpb);
+					db.CreateDatabase(pageSize, forcedWrites, overwrite);
 				}
 			}
 			catch (IscException ex)

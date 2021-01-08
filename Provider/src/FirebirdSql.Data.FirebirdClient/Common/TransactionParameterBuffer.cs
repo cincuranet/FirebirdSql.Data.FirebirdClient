@@ -23,7 +23,6 @@ namespace FirebirdSql.Data.Common
 	internal sealed class TransactionParameterBuffer : ParameterBuffer
 	{
 		public TransactionParameterBuffer()
-			: base(BitConverter.IsLittleEndian)
 		{ }
 
 		public void Append(int type, short value)

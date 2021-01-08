@@ -16,8 +16,9 @@
 //$Authors = Carlos Guzman Alvarez, Jiri Cincura (jiri@cincura.net)
 
 using System;
-using System.Globalization;
 using System.Net;
+using System.Numerics;
+using FirebirdSql.Data.Types;
 
 namespace FirebirdSql.Data.Common
 {
@@ -25,50 +26,55 @@ namespace FirebirdSql.Data.Common
 	{
 		public static decimal DecodeDecimal(object value, int scale, int sqltype)
 		{
-			long divisor = 1;
-			var returnValue = Convert.ToDecimal(value, CultureInfo.InvariantCulture);
-
-			if (scale < 0)
-			{
-				divisor = (long)Math.Pow(10, -scale);
-			}
+			var shift = scale < 0 ? -scale : 1;
 
 			switch (sqltype & ~1)
 			{
 				case IscCodes.SQL_SHORT:
+					return DecimalShiftHelper.ShiftDecimalLeft((decimal)(short)value, shift);
+
 				case IscCodes.SQL_LONG:
+					return DecimalShiftHelper.ShiftDecimalLeft((decimal)(int)value, shift);
+
 				case IscCodes.SQL_QUAD:
 				case IscCodes.SQL_INT64:
-					returnValue = returnValue / divisor;
-					break;
+					return DecimalShiftHelper.ShiftDecimalLeft((decimal)(long)value, shift);
+
+				case IscCodes.SQL_DOUBLE:
+				case IscCodes.SQL_D_FLOAT:
+					return (decimal)(double)value;
+
+				case IscCodes.SQL_INT128:
+					return DecimalShiftHelper.ShiftDecimalLeft((decimal)(BigInteger)value, shift);
+
+				default:
+					throw new ArgumentOutOfRangeException(nameof(sqltype), $"{nameof(sqltype)}={sqltype}");
 			}
-
-			return returnValue;
 		}
 
-		public static TimeSpan DecodeTime(int sql_time)
+		public static TimeSpan DecodeTime(int sqlTime)
 		{
-			return TimeSpan.FromTicks(sql_time * 1000L);
+			return TimeSpan.FromTicks(sqlTime * 1000L);
 		}
 
-		public static DateTime DecodeDate(int sql_date)
+		public static DateTime DecodeDate(int sqlDate)
 		{
 			int year, month, day, century;
 
-			sql_date -= 1721119 - 2400001;
-			century = (4 * sql_date - 1) / 146097;
-			sql_date = 4 * sql_date - 1 - 146097 * century;
-			day = sql_date / 4;
+			sqlDate -= 1721119 - 2400001;
+			century = (4 * sqlDate - 1) / 146097;
+			sqlDate = 4 * sqlDate - 1 - 146097 * century;
+			day = sqlDate / 4;
 
-			sql_date = (4 * day + 3) / 1461;
-			day = 4 * day + 3 - 1461 * sql_date;
+			sqlDate = (4 * day + 3) / 1461;
+			day = 4 * day + 3 - 1461 * sqlDate;
 			day = (day + 4) / 4;
 
 			month = (5 * day - 3) / 153;
 			day = 5 * day - 3 - 153 * month;
 			day = (day + 5) / 5;
 
-			year = 100 * century + sql_date;
+			year = 100 * century + sqlDate;
 
 			if (month < 10)
 			{
@@ -107,6 +113,33 @@ namespace FirebirdSql.Data.Common
 		public static long DecodeInt64(byte[] value)
 		{
 			return IPAddress.HostToNetworkOrder(BitConverter.ToInt64(value, 0));
+		}
+
+		public static FbDecFloat DecodeDec16(byte[] value)
+		{
+			if (BitConverter.IsLittleEndian)
+			{
+				Array.Reverse(value);
+			}
+			return DecimalCodec.DecFloat16.ParseBytes(value);
+		}
+
+		public static FbDecFloat DecodeDec34(byte[] value)
+		{
+			if (BitConverter.IsLittleEndian)
+			{
+				Array.Reverse(value);
+			}
+			return DecimalCodec.DecFloat34.ParseBytes(value);
+		}
+
+		public static BigInteger DecodeInt128(byte[] value)
+		{
+			if (BitConverter.IsLittleEndian)
+			{
+				Array.Reverse(value);
+			}
+			return Int128Helper.GetInt128(value);
 		}
 	}
 }
