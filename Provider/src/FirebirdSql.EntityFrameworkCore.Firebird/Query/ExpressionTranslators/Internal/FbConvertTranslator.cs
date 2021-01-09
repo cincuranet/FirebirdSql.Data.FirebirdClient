@@ -23,6 +23,10 @@ using FirebirdSql.EntityFrameworkCore.Firebird.Query.Internal;
 using FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+#if !NETSTANDARD2_0
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+#endif
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.ExpressionTranslators.Internal
 {
@@ -65,7 +69,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.ExpressionTranslators.I
 			_fbSqlExpressionFactory = fbSqlExpressionFactory;
 		}
 
+#if NETSTANDARD2_0
 		public SqlExpression Translate(SqlExpression instance, MethodInfo method, IReadOnlyList<SqlExpression> arguments)
+#else
+		public SqlExpression Translate(SqlExpression instance, MethodInfo method, IReadOnlyList<SqlExpression> arguments, IDiagnosticsLogger<DbLoggerCategory.Query> logger)
+#endif
 		{
 			if (!SupportedMethods.Contains(method))
 				return null;

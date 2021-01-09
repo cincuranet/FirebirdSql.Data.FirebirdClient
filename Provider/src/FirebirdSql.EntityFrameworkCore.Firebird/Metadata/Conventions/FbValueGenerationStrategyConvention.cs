@@ -22,7 +22,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Conventions
 {
-	public class FbValueGenerationStrategyConvention : IModelInitializedConvention, IModelFinalizedConvention
+	public class FbValueGenerationStrategyConvention : IModelInitializedConvention,
+		#if NETSTANDARD2_0
+		IModelFinalizedConvention
+#else
+		IModelFinalizingConvention
+#endif
 	{
 		public FbValueGenerationStrategyConvention(ProviderConventionSetBuilderDependencies dependencies, RelationalConventionSetBuilderDependencies relationalDependencies)
 		{
@@ -35,8 +40,12 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Conventions
 		{
 			modelBuilder.HasValueGenerationStrategy(FbValueGenerationStrategy.IdentityColumn);
 		}
-
-		public virtual void ProcessModelFinalized(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
+#if NETSTANDARD2_0
+       public virtual void ProcessModelFinalized(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
+#else
+		public virtual void ProcessModelFinalizing(IConventionModelBuilder modelBuilder, IConventionContext<IConventionModelBuilder> context)
+#endif
+		
 		{
 			foreach (var entityType in modelBuilder.Metadata.GetEntityTypes())
 			{
@@ -51,5 +60,8 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Conventions
 				}
 			}
 		}
+	
+
+
 	}
 }

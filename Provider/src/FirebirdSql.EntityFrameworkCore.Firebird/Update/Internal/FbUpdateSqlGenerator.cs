@@ -48,7 +48,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Update.Internal
 			var anyRead = readOperations.Any();
 			AppendInsertCommandHeader(commandStringBuilder, name, null, writeOperations);
 			AppendValuesHeader(commandStringBuilder, writeOperations);
-			AppendValues(commandStringBuilder, writeOperations);
+#if NETSTANDARD2_0
+            AppendValues(commandStringBuilder, writeOperations);
+#else
+			AppendValues(commandStringBuilder,"","", writeOperations);
+#endif
 			if (anyRead)
 			{
 				commandStringBuilder.AppendLine();

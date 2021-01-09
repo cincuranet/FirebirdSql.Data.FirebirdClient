@@ -52,7 +52,12 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.Expressions.Internal
 				: this;
 		}
 
+#if NETSTANDARD2_0
 		public override void Print(ExpressionPrinter expressionPrinter)
+#else
+		protected override void Print(ExpressionPrinter expressionPrinter)
+#endif
+
 		{
 			expressionPrinter.Append("TRIM(");
 			expressionPrinter.Append(Where);

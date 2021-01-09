@@ -228,9 +228,17 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Migrations
 			builder.Append("CREATE SEQUENCE ");
 			builder.Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Name, operation.Schema));
 			builder.Append(" START WITH ");
-			builder.Append(operation.StartValue);
+#if NETSTANDARD2_0
+		    builder.Append(operation.StartValue);
+#else
+			builder.Append(operation.StartValue.ToString());
+#endif
 			builder.Append(" INCREMENT BY ");
-			builder.Append(operation.IncrementBy);
+#if NETSTANDARD2_0
+		    builder.Append(operation.IncrementBy);
+#else
+			builder.Append(operation.IncrementBy.ToString());
+#endif
 			TerminateStatement(builder);
 		}
 
@@ -239,7 +247,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Migrations
 			builder.Append("ALTER SEQUENCE ");
 			builder.Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Name, operation.Schema));
 			builder.Append(" RESTART INCREMENT BY ");
-			builder.Append(operation.IncrementBy);
+#if NETSTANDARD2_0
+		    builder.Append(operation.IncrementBy);
+#else
+			builder.Append(operation.IncrementBy.ToString());
+#endif
 			TerminateStatement(builder);
 		}
 
@@ -248,7 +260,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Migrations
 			builder.Append("ALTER SEQUENCE ");
 			builder.Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Name, operation.Schema));
 			builder.Append(" START WITH ");
-			builder.Append(operation.StartValue);
+#if NETSTANDARD2_0
+		    builder.Append(operation.StartValue);
+#else
+			builder.Append(operation.StartValue.ToString());
+#endif
 			TerminateStatement(builder);
 		}
 
