@@ -180,7 +180,8 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
 				ELSE 'RDB$FIELD_TYPE: ' || F.RDB$FIELD_TYPE || '?'
 			   END as STORE_TYPE,
                F.rdb$description as COLUMN_COMMENT,
-               COALESCE(RF.RDB$IDENTITY_TYPE, 0)   as AUTO_GENERATED
+               COALESCE(RF.RDB$IDENTITY_TYPE, 0)   as AUTO_GENERATED,
+               ch.RDB$CHARACTER_SET_NAME as CHARACTER_SET_NAME
               FROM
                RDB$RELATION_FIELDS RF
                JOIN  RDB$FIELDS F ON(F.RDB$FIELD_NAME = RF.RDB$FIELD_SOURCE)

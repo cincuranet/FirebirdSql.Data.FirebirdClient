@@ -172,7 +172,12 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.Internal
 				Sql.Append("ROWS (");
 				Visit(selectExpression.Offset);
 				Sql.Append(" + 1) TO (");
-				Sql.Append(long.MaxValue);
+#if NETSTANDARD2_0
+		        Sql.Append(long.MaxValue);
+#else
+				Sql.Append(long.MaxValue.ToString());
+#endif
+
 				Sql.Append(")");
 			}
 		}

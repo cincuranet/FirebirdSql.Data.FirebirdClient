@@ -45,8 +45,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 
 		readonly FloatTypeMapping _float = new FloatTypeMapping("FLOAT");
 		readonly DoubleTypeMapping _double = new DoubleTypeMapping("DOUBLE PRECISION");
+#if NETSTANDARD2_0
 		readonly DecimalTypeMapping _decimal = new DecimalTypeMapping($"DECIMAL({DefaultDecimalPrecision},{DefaultDecimalScale})");
-
+#else
+		readonly DecimalTypeMapping _decimal = new DecimalTypeMapping($"DECIMAL({DefaultDecimalPrecision},{DefaultDecimalScale})",default,null,null);
+#endif
 		readonly FbDateTimeTypeMapping _timestamp = new FbDateTimeTypeMapping("TIMESTAMP", FbDbType.TimeStamp);
 		readonly FbDateTimeTypeMapping _date = new FbDateTimeTypeMapping("DATE", FbDbType.Date);
 

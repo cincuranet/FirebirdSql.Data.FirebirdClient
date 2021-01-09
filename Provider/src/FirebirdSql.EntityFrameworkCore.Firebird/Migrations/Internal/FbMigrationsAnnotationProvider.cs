@@ -30,7 +30,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Migrations.Internal
 		public FbMigrationsAnnotationProvider(MigrationsAnnotationProviderDependencies dependencies)
 			: base(dependencies)
 		{ }
-
+#if NETSTANDARD2_0
 		public override IEnumerable<IAnnotation> For(IProperty property)
 		{
 			var valueGenerationStrategy = property.GetValueGenerationStrategy();
@@ -39,5 +39,6 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Migrations.Internal
 				yield return new Annotation(FbAnnotationNames.ValueGenerationStrategy, valueGenerationStrategy);
 			}
 		}
+#endif
 	}
 }

@@ -15,23 +15,43 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
+using System;
 using System.Data.Common;
 using FirebirdSql.Data.FirebirdClient;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 {
-	public class FbRelationalConnection : RelationalConnection, IFbRelationalConnection
+	public class FbDecimalTypeMapping : DecimalTypeMapping
 	{
-		public FbRelationalConnection(RelationalConnectionDependencies dependencies)
-			: base(dependencies)
-		{ }
+		
 
+		public FbDecimalTypeMapping(string storeType, FbDbType fbDbType)
+			: base(storeType)
+		{
+		
+		}
 
-#if NETSTANDARD2_0
-		public override bool IsMultipleActiveResultSetsEnabled => true;
-#endif
-		protected override DbConnection CreateDbConnection()
-			=> new FbConnection(ConnectionString);
+		protected FbDecimalTypeMapping(RelationalTypeMappingParameters parameters)
+			: base(parameters)
+		{
+		
+		}
+
+		protected override void ConfigureParameter(DbParameter parameter)
+		{
+			((FbParameter)parameter).FbDbType = FbDbType.Decimal;
+		}
+
+		protected override string GenerateNonNullSqlLiteral(object value)
+		{
+
+			var svalue = value.ToString();
+			return svalue;
+			
+		}
+
+		protected override RelationalTypeMapping Clone(RelationalTypeMappingParameters parameters)
+			=> new FbDecimalTypeMapping(parameters);
 	}
 }
