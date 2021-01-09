@@ -26,9 +26,26 @@ $FirebirdConfiguration = @{
 		Args = @('-a', '-m');
 	};
 }
-
+ 
 $testsBaseDir = "$baseDir\src\FirebirdSql.Data.FirebirdClient.Tests"
+if ($TestSuite="Tests-FirebirdClient")
+{
+$testsProviderDir = "$testsBaseDir\bin\$Configuration\net5.0"
+}
+
+if ($TestSuite="Tests-EF6")
+{
+$testsProviderDir = "$testsBaseDir\bin\$Configuration\net5.0"
+}
+
+if ($TestSuite="Tests-EFCore")
+{
 $testsProviderDir = "$testsBaseDir\bin\$Configuration\netcoreapp3.1"
+}
+
+
+	
+	
 
 $startDir = $null
 $firebirdProcess = $null
@@ -105,7 +122,7 @@ function Tests-FirebirdClient() {
 function Tests-EF6() {
 	echo "=== $($MyInvocation.MyCommand.Name) ==="
 
-	cd "$baseDir\src\EntityFramework.Firebird.Tests\bin\$Configuration\netcoreapp3.1"
+	cd "$baseDir\src\EntityFramework.Firebird.Tests\bin\$Configuration\net5.0"
 	.\EntityFramework.Firebird.Tests.exe --labels=All
 	Check-ExitCode
 
