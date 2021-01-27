@@ -42,29 +42,14 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Conventions
 			ReplaceConvention(conventionSet.ForeignKeyAddedConventions, valueGenerationConvention);
 			ReplaceConvention(conventionSet.ForeignKeyRemovedConventions, valueGenerationConvention);
 
-
-			// 2.0: public static bool AddBefore<TConvention>([NotNullAttribute] IList<TConvention> conventionsList, [NotNullAttribute] TConvention newConvention, [NotNullAttribute] Type existingConventionType);
-			// 5.0: public static bool AddBefore<TConvention>([NotNullAttribute] IList<TConvention> conventionsList, [NotNullAttribute] TConvention newConvention, [NotNullAttribute] Type existingConventionType);
-#if NETSTANDARD2_0
-			ConventionSet.AddBefore<IModelFinalizedConvention>(conventionSet.ModelFinalizedConventions, valueGenerationStrategyConvention, typeof(ValidatingConvention));
-#else
-			ConventionSet.AddBefore<IModelFinalizingConvention>(conventionSet.ModelFinalizingConventions, valueGenerationStrategyConvention, typeof(ValidatingConvention));
-#endif
-
+			ConventionSet.AddBefore(conventionSet.ModelFinalizedConventions, valueGenerationStrategyConvention, typeof(ValidatingConvention));
 
 			var storeGenerationConvention = new FbStoreGenerationConvention(Dependencies, RelationalDependencies);
 
 			ReplaceConvention(conventionSet.PropertyAnnotationChangedConventions, storeGenerationConvention);
 			ReplaceConvention(conventionSet.PropertyAnnotationChangedConventions, (RelationalValueGenerationConvention)valueGenerationConvention);
 
-
-#if NETSTANDARD2_0
 			ReplaceConvention(conventionSet.ModelFinalizedConventions, storeGenerationConvention);
-#else
-			ReplaceConvention(conventionSet.ModelFinalizingConventions, storeGenerationConvention);
-#endif
-
-
 
 			return conventionSet;
 		}

@@ -20,10 +20,6 @@ using System.Reflection;
 using FirebirdSql.EntityFrameworkCore.Firebird.Query.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
-#if !NETSTANDARD2_0
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-#endif
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.ExpressionTranslators.Internal
 {
@@ -36,30 +32,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Query.ExpressionTranslators.I
 			_fbSqlExpressionFactory = fbSqlExpressionFactory;
 		}
 
-		//
-		// Summary:
-		//     Translates a LINQ System.Linq.Expressions.MemberExpression to a SQL equivalent.
-		//
-		// Parameters:
-		//   instance:
-		//     A SQL representation of System.Linq.Expressions.MemberExpression.Expression.
-		//
-		//   member:
-		//     The member info from System.Linq.Expressions.MemberExpression.Member.
-		//
-		//   returnType:
-		//     The return type from MemberExpression.Type.
-		//
-		//   logger:
-		//     The query logger to use.
-		//
-		// Returns:
-		//     A SQL translation of the System.Linq.Expressions.MemberExpression.
-#if NETSTANDARD2_0
 		public SqlExpression Translate(SqlExpression instance, MemberInfo member, Type returnType)
-#else
-		public SqlExpression Translate(SqlExpression instance, MemberInfo member, Type returnType, IDiagnosticsLogger<DbLoggerCategory.Query> logger)
-#endif
 		{
 			if (member.DeclaringType == typeof(DateTime) && member.Name == nameof(DateTime.Date))
 			{

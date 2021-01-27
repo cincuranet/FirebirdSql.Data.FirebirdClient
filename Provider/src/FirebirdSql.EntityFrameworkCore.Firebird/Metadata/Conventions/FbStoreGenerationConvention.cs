@@ -87,13 +87,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Conventions
 			base.ProcessPropertyAnnotationChanged(propertyBuilder, name, annotation, oldAnnotation, context);
 		}
 
-#if NETSTANDARD2_0
 		protected override void Validate(IConventionProperty property)
-#else
-		protected override void Validate(IConventionProperty property, in StoreObjectIdentifier storeObject)
-#endif
-
-
 		{
 			if (property.GetValueGenerationStrategyConfigurationSource() != null
 				&& property.GetValueGenerationStrategy() != FbValueGenerationStrategy.None)
@@ -120,12 +114,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Conventions
 				}
 			}
 
-
-#if NETSTANDARD2_0
-		base.Validate(property);
-#else
-			base.Validate(property,storeObject);
-#endif
+			base.Validate(property);
 		}
-}
+	}
 }

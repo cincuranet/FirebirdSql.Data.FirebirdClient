@@ -27,10 +27,8 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Storage.Internal
 			: base(dependencies)
 		{ }
 
-
-#if NETSTANDARD2_0
 		public override bool IsMultipleActiveResultSetsEnabled => true;
-#endif
+
 		protected override DbConnection CreateDbConnection()
 			=> new FbConnection(ConnectionString);
 	}
