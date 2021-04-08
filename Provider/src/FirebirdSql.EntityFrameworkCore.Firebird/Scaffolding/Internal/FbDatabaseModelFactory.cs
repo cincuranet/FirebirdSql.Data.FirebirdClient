@@ -169,7 +169,12 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
 				WHEN 37 THEN 'VARCHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
 				WHEN 40 THEN 'CSTRING' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
 				WHEN 45 THEN 'BLOB_ID'
-				WHEN 261 THEN 'BLOB SUB_TYPE ' || F.RDB$FIELD_SUB_TYPE
+				WHEN 261 THEN 'BLOB SUB_TYPE ' ||
+				  CASE F.RDB$FIELD_SUB_TYPE
+				    WHEN 0 THEN 'BINARY'
+				    WHEN 1 THEN 'TEXT'
+				    ELSE ''
+                  END
 				ELSE 'RDB$FIELD_TYPE: ' || F.RDB$FIELD_TYPE || '?'
 			   END as STORE_TYPE,
                F.rdb$description as COLUMN_COMMENT,
