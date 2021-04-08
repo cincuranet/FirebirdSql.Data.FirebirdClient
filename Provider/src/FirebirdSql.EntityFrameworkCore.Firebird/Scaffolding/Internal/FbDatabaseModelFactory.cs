@@ -168,7 +168,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
 				WHEN 37 THEN 'VARCHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
 				WHEN 40 THEN 'CSTRING' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
 				WHEN 45 THEN 'BLOB_ID'
-				WHEN 261 THEN 'BLOB SUB_TYPE ' || F.RDB$FIELD_SUB_TYPE 
+				WHEN 261 THEN 'BLOB SUB_TYPE ' || F.RDB$FIELD_SUB_TYPE
 				ELSE 'RDB$FIELD_TYPE: ' || F.RDB$FIELD_TYPE || '?'
 			   END as STORE_TYPE,
                F.rdb$description as COLUMN_COMMENT,
@@ -252,8 +252,8 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
            trim(sg.rdb$field_name) as FIELD_NAME
           FROM
            RDB$INDICES i
-           LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name 
-           LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name 
+           LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
+           LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name
           WHERE
            rc.rdb$constraint_type = 'PRIMARY KEY'
            AND trim(i.rdb$relation_name) = '{0}'
@@ -341,13 +341,13 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
                trim(drs.rdb$constraint_name) as CONSTRAINT_NAME,
                trim(drs.RDB$RELATION_NAME) as TABLE_NAME,
                trim(mrc.rdb$relation_name) AS REFERENCED_TABLE_NAME,
-               (select list(trim(di.rdb$field_name)||'|'||trim(mi.rdb$field_name)) 
+               (select list(trim(di.rdb$field_name)||'|'||trim(mi.rdb$field_name))
                 from
                  rdb$index_segments di
                  join rdb$index_segments mi on mi.RDB$FIELD_POSITION=di.RDB$FIELD_POSITION and mi.rdb$index_name = mrc.rdb$index_name
                 where
                  di.rdb$index_name = drs.rdb$index_name) as PAIRED_COLUMNS,
-               rc.RDB$DELETE_RULE as DELETE_RULE
+               trim(rc.RDB$DELETE_RULE) as DELETE_RULE
               FROM
                rdb$relation_constraints drs
                left JOIN rdb$ref_constraints rc ON drs.rdb$constraint_name = rc.rdb$constraint_name
