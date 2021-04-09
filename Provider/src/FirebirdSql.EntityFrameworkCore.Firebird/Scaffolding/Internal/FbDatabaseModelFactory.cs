@@ -159,10 +159,10 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
 				WHEN 13 THEN 'TIME'
 				WHEN 14 THEN 'CHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ') '
 				WHEN 16 THEN
-				CASE F.RDB$FIELD_SUB_TYPE
-				 WHEN 0 THEN 'BIGINT'
-				 ELSE 'DECIMAL'
-				END
+				 CASE F.RDB$FIELD_SUB_TYPE
+				  WHEN 0 THEN 'BIGINT'
+				  ELSE 'DECIMAL'
+				 END
                 WHEN 23 THEN 'BOOLEAN'
 				WHEN 27 THEN 'DOUBLE PRECISION'
 				WHEN 35 THEN 'TIMESTAMP'
@@ -173,7 +173,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
 				  CASE F.RDB$FIELD_SUB_TYPE
 				    WHEN 0 THEN 'BINARY'
 				    WHEN 1 THEN 'TEXT'
-				    ELSE ''
+				    ELSE F.RDB$FIELD_SUB_TYPE
                   END
 				ELSE 'RDB$FIELD_TYPE: ' || F.RDB$FIELD_TYPE || '?'
 			   END as STORE_TYPE,
