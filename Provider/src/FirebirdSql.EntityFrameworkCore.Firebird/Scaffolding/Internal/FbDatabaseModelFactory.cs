@@ -297,7 +297,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
 		private const string GetIndexesQuery =
 			@"SELECT
                trim(I.rdb$index_name) as INDEX_NAME,
-               COALESCE(I.rdb$unique_flag, 0) as NON_UNIQUE,
+               COALESCE(I.rdb$unique_flag, 0) as IS_UNIQUE,
                list(trim(sg.RDB$FIELD_NAME)) as COLUMNS
               FROM
                RDB$INDICES i
@@ -306,7 +306,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
               WHERE
                trim(i.rdb$relation_name) = '{0}'
               GROUP BY
-               INDEX_NAME, NON_UNIQUE ;";
+               INDEX_NAME, IS_UNIQUE ;";
 
 		/// <remarks>
 		/// Primary keys are handled as in <see cref="GetConstraints"/>, not here
@@ -327,7 +327,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
 							{
 								Table = table,
 								Name = reader.GetString(0).Trim(),
-								IsUnique = !reader.GetBoolean(1),
+								IsUnique = reader.GetBoolean(1),
 							};
 
 							foreach (var column in reader.GetString(2).Split(','))
@@ -353,7 +353,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal
                  join rdb$index_segments mi on mi.RDB$FIELD_POSITION=di.RDB$FIELD_POSITION and mi.rdb$index_name = mrc.rdb$index_name
                 where
                  di.rdb$index_name = drs.rdb$index_name) as PAIRED_COLUMNS,
-               rc.RDB$DELETE_RULE as DELETE_RULE
+               trim(rc.RDB$DELETE_RULE) as DELETE_RULE
               FROM
                rdb$relation_constraints drs
                left JOIN rdb$ref_constraints rc ON drs.rdb$constraint_name = rc.rdb$constraint_name
