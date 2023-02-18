@@ -73,8 +73,8 @@ public class FbStoreGenerationConvention : StoreGenerationConvention
 				break;
 			case FbAnnotationNames.ValueGenerationStrategy:
 				if ((propertyBuilder.HasDefaultValue(null, fromDataAnnotation) == null
-					 | propertyBuilder.HasDefaultValueSql(null, fromDataAnnotation) == null
-					 | propertyBuilder.HasComputedColumnSql(null, fromDataAnnotation) == null)
+					 || propertyBuilder.HasDefaultValueSql(null, fromDataAnnotation) == null
+					 || propertyBuilder.HasComputedColumnSql(null, fromDataAnnotation) == null)
 					&& propertyBuilder.HasValueGenerationStrategy(null, fromDataAnnotation) != null)
 				{
 					context.StopProcessing();

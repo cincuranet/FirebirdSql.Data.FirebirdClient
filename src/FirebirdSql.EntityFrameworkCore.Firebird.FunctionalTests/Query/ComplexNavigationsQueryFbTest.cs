@@ -15,13 +15,11 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
+using System;
 using System.Threading.Tasks;
-using System.Linq;
 using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Helpers;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Query;
-using Microsoft.EntityFrameworkCore.TestModels.ComplexNavigationsModel;
-using Microsoft.EntityFrameworkCore.TestUtilities;
 using Xunit;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
@@ -557,23 +555,11 @@ public class ComplexNavigationsQueryFbTest : ComplexNavigationsQueryTestBase<Com
 		return base.GroupJoin_with_complex_subquery_with_joins_does_not_get_flattened3(isAsync);
 	}
 
-	[GeneratedNameTooLongFact]
-	public override void Include18()
-	{
-		base.Include18();
-	}
-
 	[GeneratedNameTooLongTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Include18_1_1(bool isAsync)
 	{
 		return base.Include18_1_1(isAsync);
-	}
-
-	[GeneratedNameTooLongFact]
-	public override void Include19()
-	{
-		base.Include19();
 	}
 
 	[GeneratedNameTooLongTheory]
@@ -695,12 +681,6 @@ public class ComplexNavigationsQueryFbTest : ComplexNavigationsQueryTestBase<Com
 		return base.Include_reference_with_groupby_in_subquery(async);
 	}
 
-	[GeneratedNameTooLongTheory]
-	[MemberData(nameof(IsAsyncData))]
-	public override Task Project_shadow_properties(bool async)
-	{
-		return base.Project_shadow_properties(async);
-	}
 	[NotSupportedOnFirebirdTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task SelectMany_with_outside_reference_to_joined_table_correctly_translated_to_apply(bool isAsync)
@@ -720,5 +700,40 @@ public class ComplexNavigationsQueryFbTest : ComplexNavigationsQueryTestBase<Com
 	public override Task Prune_does_not_throw_null_ref(bool async)
 	{
 		return base.Prune_does_not_throw_null_ref(async);
+	}
+
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task GroupJoin_with_subquery_on_inner(bool async)
+	{
+		return base.GroupJoin_with_subquery_on_inner(async);
+	}
+
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task GroupJoin_with_subquery_on_inner_and_no_DefaultIfEmpty(bool async)
+	{
+		return base.GroupJoin_with_subquery_on_inner_and_no_DefaultIfEmpty(async);
+	}
+
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Nested_SelectMany_correlated_with_join_table_correctly_translated_to_apply(bool async)
+	{
+		return base.Nested_SelectMany_correlated_with_join_table_correctly_translated_to_apply(async);
+	}
+
+	[Theory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task GroupJoin_client_method_in_OrderBy(bool async)
+	{
+		return AssertTranslationFailed(() => base.GroupJoin_client_method_in_OrderBy(async));
+	}
+
+	[Theory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Join_with_result_selector_returning_queryable_throws_validation_error(bool async)
+	{
+		return Assert.ThrowsAsync<ArgumentException>(() => base.Join_with_result_selector_returning_queryable_throws_validation_error(async));
 	}
 }
