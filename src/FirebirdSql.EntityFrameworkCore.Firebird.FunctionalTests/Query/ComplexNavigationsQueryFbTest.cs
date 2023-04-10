@@ -564,6 +564,13 @@ public class ComplexNavigationsQueryFbTest : ComplexNavigationsQueryTestBase<Com
 
 	[GeneratedNameTooLongTheory]
 	[MemberData(nameof(IsAsyncData))]
+	public override Task Include19(bool isAsync)
+	{
+		return base.Include19(isAsync);
+	}
+
+	[GeneratedNameTooLongTheory]
+	[MemberData(nameof(IsAsyncData))]
 	public override Task Join_navigation_deeply_nested_non_key_join(bool isAsync)
 	{
 		return base.Join_navigation_deeply_nested_non_key_join(isAsync);
@@ -679,6 +686,48 @@ public class ComplexNavigationsQueryFbTest : ComplexNavigationsQueryTestBase<Com
 	public override Task Include_reference_with_groupby_in_subquery(bool async)
 	{
 		return base.Include_reference_with_groupby_in_subquery(async);
+	}
+
+	[GeneratedNameTooLongTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Project_shadow_properties1(bool async)
+	{
+		return base.Project_shadow_properties1(async);
+	}
+
+	[GeneratedNameTooLongTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Project_shadow_properties2(bool async)
+	{
+		return base.Project_shadow_properties2(async);
+	}
+
+	[GeneratedNameTooLongTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Project_shadow_properties3(bool async)
+	{
+		return base.Project_shadow_properties3(async);
+	}
+
+	[GeneratedNameTooLongTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Project_shadow_properties4(bool async)
+	{
+		return base.Project_shadow_properties4(async);
+	}
+
+	[GeneratedNameTooLongTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Project_shadow_properties9(bool async)
+	{
+		return base.Project_shadow_properties9(async);
+	}
+
+	[GeneratedNameTooLongTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Project_shadow_properties10(bool async)
+	{
+		return base.Project_shadow_properties10(async);
 	}
 
 	[NotSupportedOnFirebirdTheory]

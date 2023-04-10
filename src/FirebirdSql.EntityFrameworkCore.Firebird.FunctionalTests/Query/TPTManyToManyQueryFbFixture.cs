@@ -15,6 +15,7 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
+using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Helpers;
 using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.TestUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -29,21 +30,6 @@ public class TPTManyToManyQueryFbFixture : TPTManyToManyQueryRelationalFixture
 	protected override void OnModelCreating(ModelBuilder modelBuilder, DbContext context)
 	{
 		base.OnModelCreating(modelBuilder, context);
-		foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-		{
-			entityType.SetTableName(Shorten(entityType.ShortName()));
-			foreach (var property in entityType.GetProperties())
-			{
-				property.SetColumnName(Shorten(property.Name));
-			}
-		}
-
-		static string Shorten(string s)
-		{
-			return s
-				.Replace("UnidirectionalEntity", "UE")
-				.Replace("Unidirectional", "U")
-				.Replace("JoinOneToThree", "J1_3");
-		}
+		ModelHelpers.ShortenMM(modelBuilder);
 	}
 }
