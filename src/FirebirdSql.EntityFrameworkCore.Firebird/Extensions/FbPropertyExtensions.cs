@@ -51,6 +51,10 @@ public static class FbPropertyExtensions
 		{
 			return FbValueGenerationStrategy.IdentityColumn;
 		}
+		if (modelStrategy == FbValueGenerationStrategy.HiLo && IsCompatibleHiLoColumn(property))
+		{
+			return FbValueGenerationStrategy.HiLo;
+		}
 
 		return FbValueGenerationStrategy.None;
 	}
@@ -81,6 +85,10 @@ public static class FbPropertyExtensions
 		if (modelStrategy == FbValueGenerationStrategy.IdentityColumn && IsCompatibleIdentityColumn(property))
 		{
 			return FbValueGenerationStrategy.IdentityColumn;
+		}
+		if (modelStrategy == FbValueGenerationStrategy.HiLo && IsCompatibleHiLoColumn(property))
+		{
+			return FbValueGenerationStrategy.HiLo;
 		}
 
 		return FbValueGenerationStrategy.None;
@@ -113,6 +121,10 @@ public static class FbPropertyExtensions
 		{
 			return FbValueGenerationStrategy.IdentityColumn;
 		}
+		if (modelStrategy == FbValueGenerationStrategy.HiLo && IsCompatibleHiLoColumn(property))
+		{
+			return FbValueGenerationStrategy.HiLo;
+		}
 
 		return FbValueGenerationStrategy.None;
 	}
@@ -144,6 +156,10 @@ public static class FbPropertyExtensions
 			{
 				throw new ArgumentException($"Incompatible data type for {nameof(FbValueGenerationStrategy.SequenceTrigger)} for '{property.Name}'.");
 			}
+			if (value == FbValueGenerationStrategy.HiLo && !IsCompatibleHiLoColumn(property))
+			{
+				throw new ArgumentException($"Incompatible data type for {nameof(FbValueGenerationStrategy.HiLo)} for '{property.Name}'.");
+			}
 		}
 	}
 
@@ -152,4 +168,7 @@ public static class FbPropertyExtensions
 
 	static bool IsCompatibleSequenceTrigger(IReadOnlyPropertyBase property)
 		=> true;
+
+	static bool IsCompatibleHiLoColumn(IReadOnlyPropertyBase property)
+		=> property.ClrType.IsInteger() || property.ClrType == typeof(decimal);
 }

@@ -43,6 +43,17 @@ public static class FbPropertyBuilderExtensions
 	public static PropertyBuilder<TProperty> UseSequenceTrigger<TProperty>(this PropertyBuilder<TProperty> propertyBuilder)
 		=> (PropertyBuilder<TProperty>)UseSequenceTrigger((PropertyBuilder)propertyBuilder);
 
+
+	public static PropertyBuilder UseHiLo(this PropertyBuilder propertyBuilder)
+	{
+		var property = propertyBuilder.Metadata;
+		property.SetValueGenerationStrategy(FbValueGenerationStrategy.HiLo);
+		return propertyBuilder;
+	}
+
+	public static PropertyBuilder<TProperty> UseHiLo<TProperty>(this PropertyBuilder<TProperty> propertyBuilder)
+		=> (PropertyBuilder<TProperty>)UseHiLo((PropertyBuilder)propertyBuilder);
+
 	public static IConventionPropertyBuilder HasValueGenerationStrategy(this IConventionPropertyBuilder propertyBuilder, FbValueGenerationStrategy? valueGenerationStrategy, bool fromDataAnnotation = false)
 	{
 		if (propertyBuilder.CanSetAnnotation(FbAnnotationNames.ValueGenerationStrategy, valueGenerationStrategy, fromDataAnnotation))
@@ -52,6 +63,9 @@ public static class FbPropertyBuilderExtensions
 			{
 			}
 			if (valueGenerationStrategy != FbValueGenerationStrategy.SequenceTrigger)
+			{
+			}
+			if (valueGenerationStrategy != FbValueGenerationStrategy.HiLo)
 			{
 			}
 			return propertyBuilder;

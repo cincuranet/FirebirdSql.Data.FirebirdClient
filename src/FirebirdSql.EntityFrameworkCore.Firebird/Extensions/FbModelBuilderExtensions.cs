@@ -37,6 +37,13 @@ public static class FbModelBuilderExtensions
 		return modelBuilder;
 	}
 
+	public static ModelBuilder UseHiLo(this ModelBuilder modelBuilder)
+	{
+		var model = modelBuilder.Model;
+		model.SetValueGenerationStrategy(FbValueGenerationStrategy.HiLo);
+		return modelBuilder;
+	}
+
 	public static IConventionModelBuilder HasValueGenerationStrategy(this IConventionModelBuilder modelBuilder, FbValueGenerationStrategy? valueGenerationStrategy, bool fromDataAnnotation = false)
 	{
 		if (modelBuilder.CanSetAnnotation(FbAnnotationNames.ValueGenerationStrategy, valueGenerationStrategy, fromDataAnnotation))
@@ -46,6 +53,9 @@ public static class FbModelBuilderExtensions
 			{
 			}
 			if (valueGenerationStrategy != FbValueGenerationStrategy.SequenceTrigger)
+			{
+			}
+			if (valueGenerationStrategy != FbValueGenerationStrategy.HiLo)
 			{
 			}
 			return modelBuilder;

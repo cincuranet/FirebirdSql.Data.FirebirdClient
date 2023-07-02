@@ -42,7 +42,7 @@ public class FbValueGenerationConvention : RelationalValueGenerationConvention
 
 	protected override ValueGenerated? GetValueGenerated(IConventionProperty property)
 		=> RelationalValueGenerationConvention.GetValueGenerated(property)
-			?? (property.GetValueGenerationStrategy() != FbValueGenerationStrategy.None
+			?? (property.GetValueGenerationStrategy() == FbValueGenerationStrategy.IdentityColumn || property.GetValueGenerationStrategy() == FbValueGenerationStrategy.SequenceTrigger
 				? ValueGenerated.OnAdd
 				: (ValueGenerated?)null);
 }
