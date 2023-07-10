@@ -30,7 +30,6 @@ $FirebirdConfiguration = @{
 $testsBaseDir = "$baseDir\src\FirebirdSql.Data.FirebirdClient.Tests"
 $testsProviderDir = "$testsBaseDir\bin\$Configuration\$(Get-UsedTargetFramework)"
 
-$startDir = $null
 $firebirdProcess = $null
 
 if ($env:tests_firebird_dir) {
@@ -43,7 +42,6 @@ else {
 function Prepare() {
 	echo "=== $($MyInvocation.MyCommand.Name) ==="
 
-	$script:startDir = $pwd
 	$selectedConfiguration = $FirebirdConfiguration[$FirebirdSelection]
 	$fbDownload = $selectedConfiguration.Download
 	$fbDownloadName = $fbDownload -Replace '.+/(.+)$','$1'
@@ -51,28 +49,33 @@ function Prepare() {
 		rm -Force -Recurse $firebirdDir
 	}
 	mkdir $firebirdDir | Out-Null
-	cd $firebirdDir
-	echo "Downloading $fbDownload"
-	Invoke-RestMethod -Uri $fbDownload -OutFile $fbDownloadName 
-	echo "Extracting $fbDownloadName"
-	7z x -bsp0 -bso0 $fbDownloadName
-	rm $fbDownloadName
-	cp -Recurse -Force .\* $testsProviderDir
 
-	ni firebird.log -ItemType File | Out-Null
+	pushd $firebirdDir
+	try {
+		echo "Downloading $fbDownload"
+		Invoke-RestMethod -Uri $fbDownload -OutFile $fbDownloadName 
+		echo "Extracting $fbDownloadName"
+		7z x -bsp0 -bso0 $fbDownloadName
+		rm $fbDownloadName
+		cp -Recurse -Force .\* $testsProviderDir
 
-	echo "Starting Firebird"
-	$process = Start-Process -FilePath $selectedConfiguration.Executable -ArgumentList $selectedConfiguration.Args -PassThru
-	echo "Version: $($process.MainModule.FileVersionInfo.FileVersion)"
-	$script:firebirdProcess = $process
+		ni firebird.log -ItemType File | Out-Null
 
-	echo "=== END ==="
+		echo "Starting Firebird"
+		$process = Start-Process -FilePath $selectedConfiguration.Executable -ArgumentList $selectedConfiguration.Args -PassThru
+		echo "Version: $($process.MainModule.FileVersionInfo.FileVersion)"
+		$script:firebirdProcess = $process
+
+		echo "=== END ==="
+	}
+	finally {
+		popd
+	}
 }
 
 function Cleanup() {
 	echo "=== $($MyInvocation.MyCommand.Name) ==="
 
-	cd $script:startDir
 	$process = $script:firebirdProcess
 	$process.Kill()
 	$process.WaitForExit()
@@ -110,30 +113,52 @@ function Tests-FirebirdClient-Embedded() {
 	Tests-FirebirdClient 'Embedded' $False 'Disabled'
 }
 function Tests-FirebirdClient($serverType, $compression, $wireCrypt) {
-	cd $testsProviderDir
-	.\FirebirdSql.Data.FirebirdClient.Tests.exe --labels=All "--where=(ServerType==$serverType && Compression==$compression && WireCrypt==$wireCrypt) || Category==NoServer"
-	Check-ExitCode
+	pushd $testsProviderDir
+	try {
+		.\FirebirdSql.Data.FirebirdClient.Tests.exe --labels=All "--where=(ServerType==$serverType && Compression==$compression && WireCrypt==$wireCrypt) || Category==NoServer"
+		Check-ExitCode
+	}
+	finally {
+		popd
+	}
 }
 
 function Tests-EF6() {
-	cd "$baseDir\src\EntityFramework.Firebird.Tests\bin\$Configuration\$(Get-UsedTargetFramework)"
-	.\EntityFramework.Firebird.Tests.exe --labels=All
-	Check-ExitCode
+	pushd "$baseDir\src\EntityFramework.Firebird.Tests\bin\$Configuration\$(Get-UsedTargetFramework)"
+	try {
+		.\EntityFramework.Firebird.Tests.exe --labels=All
+		Check-ExitCode
+	}
+	finally {
+		popd
+	}
 }
 
 function Tests-EFCore() {
-	cd "$baseDir\src\FirebirdSql.EntityFrameworkCore.Firebird.Tests\bin\$Configuration\$(Get-UsedTargetFramework)"
-	.\FirebirdSql.EntityFrameworkCore.Firebird.Tests.exe --labels=All
-	Check-ExitCode
+	pushd "$baseDir\src\FirebirdSql.EntityFrameworkCore.Firebird.Tests\bin\$Configuration\$(Get-UsedTargetFramework)"
+	try {
+		.\FirebirdSql.EntityFrameworkCore.Firebird.Tests.exe --labels=All
+		Check-ExitCode
+	}
+	finally {
+		popd
+	}
 }
 function Tests-EFCore-Functional() {
-	cd "$baseDir\src\FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests"
-	dotnet test --no-build -c $Configuration
-	Check-ExitCode
+	pushd "$baseDir\src\FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests"
+	try {
+		dotnet test --no-build -c $Configuration
+		Check-ExitCode
+	}
+	finally {
+		popd
+	}
 }
 
+# Main
+
+Prepare
 try {
-	Prepare
 	& $TestSuite
 }
 finally {
