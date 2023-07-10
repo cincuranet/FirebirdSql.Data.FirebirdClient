@@ -76,13 +76,15 @@ function Prepare() {
 }
 
 function Cleanup() {
-	echo "=== $($MyInvocation.MyCommand.Name) ==="
+	echo "=== CLEANUP ==="
 
 	$process = $script:firebirdProcess
-	$process.Kill()
-	$process.WaitForExit()
-	# give OS time to release all files
-	sleep -Milliseconds 100
+	if ($process) {
+		$process.Kill()
+		$process.WaitForExit()
+		# give OS time to release all files
+		sleep -Milliseconds 100
+	}
 	rm -Force -Recurse $firebirdDir
 
 	echo "=== END ==="
