@@ -40,7 +40,7 @@ else {
 }
 
 function Prepare() {
-	echo "=== $($MyInvocation.MyCommand.Name) ==="
+	Write-Host "=== $($MyInvocation.MyCommand.Name) ==="
 
 	$selectedConfiguration = $FirebirdConfiguration[$FirebirdSelection]
 	$fbDownload = $selectedConfiguration.Download
@@ -52,21 +52,21 @@ function Prepare() {
 
 	pushd $firebirdDir
 	try {
-		echo "Downloading $fbDownload"
+		Write-Host "Downloading $fbDownload"
 		Invoke-RestMethod -Uri $fbDownload -OutFile $fbDownloadName 
-		echo "Extracting $fbDownloadName"
+		Write-Host "Extracting $fbDownloadName"
 		7z x -bsp0 -bso0 $fbDownloadName
 		rm $fbDownloadName
 		cp -Recurse -Force .\* $testsProviderDir
 
 		ni firebird.log -ItemType File | Out-Null
 
-		echo "Starting Firebird"
+		Write-Host "Starting Firebird"
 		$process = Start-Process -FilePath $selectedConfiguration.Executable -ArgumentList $selectedConfiguration.Args -PassThru
-		echo "Version: $($process.MainModule.FileVersionInfo.FileVersion)"
+		Write-Host "Version: $($process.MainModule.FileVersionInfo.FileVersion)"
 		$script:firebirdProcess = $process
 
-		echo "=== END ==="
+		Write-Host "=== END ==="
 	}
 	finally {
 		popd
@@ -74,16 +74,21 @@ function Prepare() {
 }
 
 function Cleanup() {
-	echo "=== $($MyInvocation.MyCommand.Name) ==="
+	# Do not write to output (Write-Output, echo) here. Write-Host is ok.
+	# -- https://stackoverflow.com/a/45105609
+
+	Write-Host "=== $($MyInvocation.MyCommand.Name) ==="
 
 	$process = $script:firebirdProcess
-	$process.Kill()
-	$process.WaitForExit()
-	# give OS time to release all files
-	sleep -Milliseconds 100
+	if ($process) {
+		$process.Kill()
+		$process.WaitForExit()
+		# give OS time to release all files
+		sleep -Milliseconds 100
+	}
 	rm -Force -Recurse $firebirdDir
 
-	echo "=== END ==="
+	Write-Host "=== END ==="
 }
 
 function Tests-All() {
