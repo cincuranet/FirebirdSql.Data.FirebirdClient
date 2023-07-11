@@ -19,12 +19,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal;
 using Microsoft.EntityFrameworkCore.Scaffolding;
+using Microsoft.EntityFrameworkCore.Scaffolding.Metadata;
 using NUnit.Framework;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.Scaffolding;
 #pragma warning disable EF1001
 public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 {
+	private DatabaseModel _databaseModel;
+
+	public override async Task SetUp()
+	{
+		await base.SetUp();
+
+		var modelFactory = GetModelFactory();
+		_databaseModel = modelFactory.Create(Connection, new DatabaseModelFactoryOptions());
+	}
+
 	[Test]
 	public void JustCanRun()
 	{
@@ -105,6 +116,46 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 		var column = table.Columns.Single(x => x.Name == columnName);
 
 		Assert.That(column.StoreType, Is.EqualTo(dataType));
+	}
+
+	[Test]
+	public void CanScaffoldPrimaryKey()
+	{
+		var testTable = _databaseModel.Tables.Where(t => t.Name.Equals("TEST")).First();
+
+		Assert.NotNull(testTable.PrimaryKey);
+		Assert.AreEqual("INT_FIELD", testTable.PrimaryKey.Columns[0].Name);
+	}
+
+	[Test]
+	public void CanScaffoldColumns()
+	{
+		var testTable = _databaseModel.Tables.Where(t => t.Name == "TEST").First();	
+		Assert.NotNull(testTable);
+
+		var charColumn = testTable.Columns.Where(c => c.Name == "CHAR_FIELD").First();
+		Assert.AreEqual("CHAR(30)", charColumn.StoreType);
+
+		var varcharColumn = testTable.Columns.Where(c => c.Name == "VARCHAR_FIELD").First();
+		Assert.AreEqual("VARCHAR(100)", varcharColumn.StoreType);
+
+		var csColumn = testTable.Columns.Where(c => c.Name == "CS_FIELD").First();
+		Assert.AreEqual("CHAR(1)", csColumn.StoreType);
+		Assert.AreEqual("UNICODE_FSS", csColumn.Collation);
+
+		var numericColumn = testTable.Columns.Where(c => c.Name == "NUMERIC_FIELD").First();
+		Assert.AreEqual("NUMERIC(15,2)", numericColumn.StoreType);
+
+		var decimalColumn = testTable.Columns.Where(c => c.Name == "DECIMAL_FIELD").First();
+		Assert.AreEqual("DECIMAL(15,2)", decimalColumn.StoreType);
+
+		var exprColumn = testTable.Columns.Where(c => c.Name == "EXPR_FIELD").First();
+		Assert.AreEqual("(smallint_field * 1000)", exprColumn.ComputedColumnSql);
+	}
+	
+	private static IDatabaseModelFactory GetModelFactory()
+	{
+		return new FbDatabaseModelFactory();
 	}
 
 	static IDatabaseModelFactory GetModelFactory()

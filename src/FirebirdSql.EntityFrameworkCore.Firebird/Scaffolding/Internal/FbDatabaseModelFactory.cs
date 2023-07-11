@@ -142,103 +142,103 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		}
 	}
 
-	private const string GetColumnsQuery =
-		@"SELECT
-               trim(RF.RDB$FIELD_NAME) as COLUMN_NAME,
-               COALESCE(RF.RDB$DEFAULT_SOURCE, F.RDB$DEFAULT_SOURCE) as COLUMN_DEFAULT,
-               COALESCE(COALESCE(RF.RDB$NULL_FLAG, F.RDB$NULL_FLAG), 0) as NOT_NULL,
-               CASE Coalesce(F.RDB$FIELD_TYPE, 0)
-                WHEN 7 THEN
-                 CASE F.RDB$FIELD_SUB_TYPE
-                  WHEN 0 THEN 'SMALLINT'
-			      WHEN 1 THEN 'NUMERIC(' || (F.RDB$FIELD_PRECISION) || ',' || ABS(F.RDB$FIELD_SCALE) || ')'
-			      WHEN 2 THEN 'DECIMAL(' || (F.RDB$FIELD_PRECISION) || ',' || ABS(F.RDB$FIELD_SCALE) || ')'
-				  ELSE '?'
-                 END
-                WHEN 8 THEN
-                 CASE F.RDB$FIELD_SUB_TYPE
-                  WHEN 0 THEN 'INTEGER'
-			      WHEN 1 THEN 'NUMERIC(' || (F.RDB$FIELD_PRECISION) || ',' || ABS(F.RDB$FIELD_SCALE) || ')'
-			      WHEN 2 THEN 'DECIMAL(' || (F.RDB$FIELD_PRECISION) || ',' || ABS(F.RDB$FIELD_SCALE) || ')'
-				  ELSE '?'
-                 END
+	private const string GetColumnsQuery = @"
+		SELECT
+			rf.rdb$field_name COLUMN_NAME,
+			COALESCE(rf.rdb$default_source, f.rdb$default_source) COLUMN_DEFAULT,
+			COALESCE(rf.rdb$null_flag, f.rdb$null_flag, 0) COLUMN_REQUIRED,
+			CASE COALESCE(f.rdb$field_type, 0)
+				WHEN 7 THEN CASE f.rdb$field_sub_type
+								WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+								WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+								ELSE '?'
+							END
+				WHEN 8 THEN CASE f.rdb$field_sub_type
+								WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+								WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+								ELSE '?'
+							END
 				WHEN 9 THEN 'QUAD'
 				WHEN 10 THEN 'FLOAT'
 				WHEN 12 THEN 'DATE'
 				WHEN 13 THEN 'TIME'
-				WHEN 14 THEN 'CHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
-				WHEN 16 THEN
-				 CASE F.RDB$FIELD_SUB_TYPE
-				  WHEN 0 THEN 'BIGINT'
-			      WHEN 1 THEN 'NUMERIC(' || (F.RDB$FIELD_PRECISION) || ',' || ABS(F.RDB$FIELD_SCALE) || ')'
-			      WHEN 2 THEN 'DECIMAL(' || (F.RDB$FIELD_PRECISION) || ',' || ABS(F.RDB$FIELD_SCALE) || ')'
-				  ELSE '?'
-				 END
+				WHEN 14 THEN 'CHAR(' || (TRUNC(f.rdb$field_length / ch.rdb$bytes_per_character)) || ')'
+				WHEN 16 THEN CASE f.rdb$field_sub_type
+								 WHEN 0 THEN 'BIGINT'
+								 WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+								 WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+								 ELSE '?'
+							 END
 				WHEN 23 THEN 'BOOLEAN'
 				WHEN 27 THEN 'DOUBLE PRECISION'
 				WHEN 35 THEN 'TIMESTAMP'
-				WHEN 37 THEN 'VARCHAR(' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
-				WHEN 40 THEN 'CSTRING' || (TRUNC(F.RDB$FIELD_LENGTH / CH.RDB$BYTES_PER_CHARACTER)) || ')'
+				WHEN 37 THEN 'VARCHAR(' || (TRUNC(f.rdb$field_length / ch.rdb$bytes_per_character)) || ')'
+				WHEN 40 THEN 'CSTRING(' || (TRUNC(f.rdb$field_length / ch.rdb$bytes_per_character)) || ')'
 				WHEN 45 THEN 'BLOB_ID'
-				WHEN 261 THEN 'BLOB SUB_TYPE ' ||
-				  CASE F.RDB$FIELD_SUB_TYPE
-					WHEN 0 THEN 'BINARY'
-					WHEN 1 THEN 'TEXT'
-					ELSE F.RDB$FIELD_SUB_TYPE
-				  END
+				WHEN 261 THEN 'BLOB SUB_TYPE ' || CASE f.rdb$field_sub_type
+													  WHEN 0 THEN 'BINARY'
+													  WHEN 1 THEN 'TEXT'
+													  ELSE f.rdb$field_sub_type
+												  END
 				ELSE 'RDB$FIELD_TYPE: ' || F.RDB$FIELD_TYPE || '?'
-			   END as STORE_TYPE,
-               F.rdb$description as COLUMN_COMMENT,
-               COALESCE({1}, 0)   as AUTO_GENERATED,
-               ch.RDB$CHARACTER_SET_NAME as CHARACTER_SET_NAME
-              FROM
-               RDB$RELATION_FIELDS RF
-               JOIN  RDB$FIELDS F ON(F.RDB$FIELD_NAME = RF.RDB$FIELD_SOURCE)
-               LEFT OUTER JOIN  RDB$CHARACTER_SETS CH ON(CH.RDB$CHARACTER_SET_ID = F.RDB$CHARACTER_SET_ID)
-              WHERE
-               trim(RF.RDB$RELATION_NAME) = '" + "{0}" + @"'
-               AND COALESCE(RF.RDB$SYSTEM_FLAG, 0) = 0
-             ORDER BY
-              RF.RDB$FIELD_POSITION;";
+			END COLUMN_STORE_TYPE,
+			COALESCE(F.rdb$character_length, 0) COLUMN_LENGTH,
+			COALESCE(F.rdb$field_precision, 0) COLUMN_PRECISION,
+			COALESCE(-F.rdb$field_scale, 0) COLUMN_SCALE,
+			f.rdb$computed_source COLUMN_COMPUTED_SOURCE,
+			f.rdb$description COLUMN_COMMENT,
+			COALESCE({0}, -1) IDENTITY_TYPE,
+			ch.rdb$character_set_name as CHARACTER_SET_NAME,
+			co.rdb$collation_name COLLATION_NAME
+		FROM
+			rdb$relation_fields rf
+			JOIN rdb$fields f ON f.rdb$field_name = rf.rdb$field_source 
+			LEFT OUTER JOIN rdb$character_sets ch ON ch.rdb$character_set_id = f.rdb$character_set_id
+			LEFT OUTER JOIN rdb$collations co ON co.rdb$character_set_id = f.rdb$character_set_id AND co.rdb$collation_id = rf.rdb$collation_id
+		WHERE
+			TRIM(rf.rdb$relation_name) = @pRelationName AND COALESCE(rf.rdb$system_flag, 0) = 0
+		ORDER BY
+			rf.rdb$field_position";
 
 	private void GetColumns(DbConnection connection, IReadOnlyList<DatabaseTable> tables, Func<DatabaseTable, bool> tableFilter)
 	{
-		var identityType = MajorVersionNumber < 3 ? "null" : "rf.RDB$IDENTITY_TYPE";
+		var identityType = MajorVersionNumber < 3 ? "NULL" : "rf.rdb$identity_type";
 
 		foreach (var table in tables)
 		{
 			using (var command = connection.CreateCommand())
 			{
-				command.CommandText = string.Format(GetColumnsQuery, table.Name, identityType);
+				command.CommandText = string.Format(GetColumnsQuery, identityType);
+				command.Parameters.Add(new FbParameter("@pRelationName", table.Name));
 				using (var reader = command.ExecuteReader())
 				{
 					while (reader.Read())
 					{
 						var name = reader["COLUMN_NAME"].ToString();
 						var defaultValue = reader["COLUMN_DEFAULT"].ToString();
-						var nullable = !Convert.ToBoolean(reader["NOT_NULL"]);
-						var autoGenerated = Convert.ToBoolean(reader["AUTO_GENERATED"]);
-						var storeType = reader["STORE_TYPE"].ToString();
+						var nullable = !Convert.ToBoolean(reader["COLUMN_REQUIRED"]);
+						var autoGenerated = Convert.ToInt32(reader["IDENTITY_TYPE"]);
+						var columnLength = Convert.ToInt32(reader["COLUMN_LENGTH"]);
+						var columnPrecision = Convert.ToInt32(reader["COLUMN_PRECISION"]);
+						var columnScale = Convert.ToInt32(reader["COLUMN_SCALE"]);
+						var computedSource = reader["COLUMN_COMPUTED_SOURCE"].ToString(); 
+
+						var storeType = reader["COLUMN_STORE_TYPE"].ToString();
 						var charset = reader["CHARACTER_SET_NAME"].ToString();
+						var collation = reader["COLLATION_NAME"].ToString();
 						var comment = reader["COLUMN_COMMENT"].ToString();
-
-
-						var valueGenerated = ValueGenerated.Never;
-
-						if (autoGenerated)
-						{
-							valueGenerated = ValueGenerated.OnAdd;
-						}
 
 						var column = new DatabaseColumn
 						{
 							Table = table,
-							Name = name,
+							Name = name.Trim(),
 							StoreType = storeType,
 							IsNullable = nullable,
 							DefaultValueSql = CreateDefaultValueString(defaultValue),
-							ValueGenerated = valueGenerated,
+							ValueGenerated = autoGenerated == -1 ? ValueGenerated.Never : ValueGenerated.OnAdd,
 							Comment = string.IsNullOrEmpty(comment) ? null : comment,
+							Collation = string.IsNullOrEmpty(collation) ? null : collation.Trim(),
+							ComputedColumnSql = string.IsNullOrEmpty(computedSource) ? null : computedSource
 						};
 
 						table.Columns.Add(column);
