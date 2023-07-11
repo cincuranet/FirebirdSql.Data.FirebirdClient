@@ -15,22 +15,80 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal;
 using Microsoft.EntityFrameworkCore.Scaffolding;
+using Microsoft.EntityFrameworkCore.Scaffolding.Metadata;
 using NUnit.Framework;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.Scaffolding;
 #pragma warning disable EF1001
 public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 {
+	private DatabaseModel _databaseModel;
+
+	public override async Task SetUp()
+	{
+		await base.SetUp();
+
+		try
+		{
+			var modelFactory = GetModelFactory();
+			_databaseModel = modelFactory.Create(Connection, new DatabaseModelFactoryOptions());
+		}
+		catch (Exception)
+		{
+			_databaseModel = null;
+		}
+	}
+
 	[Test]
 	public void JustCanRun()
 	{
-		var modelFactory = GetModelFactory();
-		Assert.DoesNotThrow(() => modelFactory.Create(Connection, new DatabaseModelFactoryOptions()));
+		Assert.NotNull(_databaseModel);
 	}
 
-	static IDatabaseModelFactory GetModelFactory()
+	[Test]
+	public void CanScaffoldPrimaryKey()
+	{
+		var testTable = _databaseModel.Tables.Where(t => t.Name.Equals("TEST")).First();
+
+		Assert.NotNull(testTable.PrimaryKey);
+		Assert.AreEqual("INT_FIELD", testTable.PrimaryKey.Columns[0].Name);
+	}
+
+	[Test]
+	public void CanScaffoldChars()
+	{
+		var testTable = _databaseModel.Tables.Where(t => t.Name == "TEST").First();	
+		Assert.NotNull(testTable);
+
+		var charColumn = testTable.Columns.Where(c => c.Name == "CHAR_FIELD").First();
+		Assert.AreEqual("CHAR(30)", charColumn.StoreType);
+
+		var varcharColumn = testTable.Columns.Where(c => c.Name == "VARCHAR_FIELD").First();
+		Assert.AreEqual("VARCHAR(100)", varcharColumn.StoreType);
+
+		var csColumn = testTable.Columns.Where(c => c.Name == "CS_FIELD").First();
+		Assert.AreEqual("CHAR(1)", csColumn.StoreType);
+	}
+
+	[Test]
+	public void CanScaffoldDecimalWithPrecisionAndScale()
+	{
+		var testTable = _databaseModel.Tables.Where(t => t.Name.Equals("TEST")).First();
+		Assert.NotNull(testTable);
+
+		var numericColumn = testTable.Columns.Where(c => c.Name == "NUMERIC_FIELD").First();
+		Assert.AreEqual("NUMERIC(15,2)", numericColumn.StoreType);
+
+		var decimalColumn = testTable.Columns.Where(c => c.Name == "DECIMAL_FIELD").First();
+		Assert.AreEqual("DECIMAL(15,2)", decimalColumn.StoreType);
+	}
+
+	private static IDatabaseModelFactory GetModelFactory()
 	{
 		return new FbDatabaseModelFactory();
 	}
