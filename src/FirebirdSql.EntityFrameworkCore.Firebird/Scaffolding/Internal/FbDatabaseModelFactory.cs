@@ -173,7 +173,12 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 								 ELSE '?'
 							 END
 				WHEN 23 THEN 'BOOLEAN'
+				WHEN 24 THEN 'DECFLOAT'
+				WHEN 25 THEN 'DECFLOAT'
+				WHEN 26 THEN 'INT128'
 				WHEN 27 THEN 'DOUBLE PRECISION'
+				WHEN 28 THEN 'TIME WITH TIME ZONE'
+				WHEN 29 THEN 'TIMESTAMP WITH TIME ZONE'
 				WHEN 35 THEN 'TIMESTAMP'
 				WHEN 37 THEN 'VARCHAR(' || (TRUNC(f.rdb$field_length / ch.rdb$bytes_per_character)) || ')'
 				WHEN 40 THEN 'CSTRING(' || (TRUNC(f.rdb$field_length / ch.rdb$bytes_per_character)) || ')'
