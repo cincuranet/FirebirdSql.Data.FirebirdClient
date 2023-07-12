@@ -40,7 +40,7 @@ else {
 }
 
 function Prepare() {
-	Write-Host "=== $($MyInvocation.MyCommand.Name) ==="
+	echo "=== $($MyInvocation.MyCommand.Name) ==="
 
 	$selectedConfiguration = $FirebirdConfiguration[$FirebirdSelection]
 	$fbDownload = $selectedConfiguration.Download
@@ -52,21 +52,21 @@ function Prepare() {
 
 	pushd $firebirdDir
 	try {
-		Write-Host "Downloading $fbDownload"
+		echo "Downloading $fbDownload"
 		Invoke-RestMethod -Uri $fbDownload -OutFile $fbDownloadName 
-		Write-Host "Extracting $fbDownloadName"
+		echo "Extracting $fbDownloadName"
 		7z x -bsp0 -bso0 $fbDownloadName
 		rm $fbDownloadName
 		cp -Recurse -Force .\* $testsProviderDir
 
 		ni firebird.log -ItemType File | Out-Null
 
-		Write-Host "Starting Firebird"
+		echo "Starting Firebird"
 		$process = Start-Process -FilePath $selectedConfiguration.Executable -ArgumentList $selectedConfiguration.Args -PassThru
-		Write-Host "Version: $($process.MainModule.FileVersionInfo.FileVersion)"
+		echo "Version: $($process.MainModule.FileVersionInfo.FileVersion)"
 		$script:firebirdProcess = $process
 
-		Write-Host "=== END ==="
+		echo "=== END ==="
 	}
 	finally {
 		popd
@@ -160,10 +160,8 @@ function Tests-EFCore-Functional() {
 	}
 }
 
-# Main
-
-Prepare
 try {
+	Prepare
 	& $TestSuite
 }
 finally {
