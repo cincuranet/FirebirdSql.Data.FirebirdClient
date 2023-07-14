@@ -17,31 +17,24 @@
 
 using System;
 using System.Runtime.InteropServices;
-using System.IO;
 using FirebirdSql.Data.Common;
-using System.Threading.Tasks;
 
 namespace FirebirdSql.Data.Client.Native.Marshalers;
 
 internal static class XsqldaMarshaler
 {
-	private static int SizeOfXSQLDA = Marshal.SizeOf<XSQLDA>();
-	private static int SizeOfXSQLVAR = Marshal.SizeOf<XSQLVAR>();
-
-	public static void CleanUpNativeData(ref IntPtr pNativeData)
+	public unsafe static void CleanUpNativeData(ref IntPtr pNativeData)
 	{
 		if (pNativeData != IntPtr.Zero)
 		{
-			var xsqlda = Marshal.PtrToStructure<XSQLDA>(pNativeData);
+			var xsqlda = *(XSQLDA_STRUCT*)pNativeData;
 
-			Marshal.DestroyStructure<XSQLDA>(pNativeData);
+			Marshal.DestroyStructure<XSQLDA_STRUCT>(pNativeData);
 
 			for (var i = 0; i < xsqlda.sqln; i++)
 			{
 				var ptr = IntPtr.Add(pNativeData, ComputeLength(i));
-
-				var sqlvar = new XSQLVAR();
-				MarshalXSQLVARNativeToManaged(ptr, sqlvar, true);
+				var sqlvar = *(XSQLVAR_STRUCT*)ptr;
 
 				if (sqlvar.sqldata != IntPtr.Zero)
 				{
@@ -55,7 +48,7 @@ internal static class XsqldaMarshaler
 					sqlvar.sqlind = IntPtr.Zero;
 				}
 
-				Marshal.DestroyStructure<XSQLVAR>(ptr);
+				Marshal.DestroyStructure<XSQLVAR_STRUCT>(ptr);
 			}
 
 			Marshal.FreeHGlobal(pNativeData);
@@ -132,22 +125,15 @@ internal static class XsqldaMarshaler
 		return ptr;
 	}
 
-	public static Descriptor MarshalNativeToManaged(Charset charset, IntPtr pNativeData)
+	public unsafe static Descriptor MarshalNativeToManaged(Charset charset, IntPtr pNativeData, bool fetching = false)
 	{
-		return MarshalNativeToManaged(charset, pNativeData, false);
-	}
-
-	public static Descriptor MarshalNativeToManaged(Charset charset, IntPtr pNativeData, bool fetching)
-	{
-		var xsqlda = Marshal.PtrToStructure<XSQLDA>(pNativeData);
+		var xsqlda = *(XSQLDA_STRUCT*)pNativeData;
 
 		var descriptor = new Descriptor(xsqlda.sqln) { ActualCount = xsqlda.sqld };
 
-		var xsqlvar = new XSQLVAR();
 		for (var i = 0; i < xsqlda.sqln; i++)
 		{
-			var ptr = IntPtr.Add(pNativeData, ComputeLength(i));
-			MarshalXSQLVARNativeToManaged(ptr, xsqlvar);
+			var xsqlvar = *(XSQLVAR_STRUCT*)IntPtr.Add(pNativeData, ComputeLength(i));
 
 			descriptor[i].DataType = xsqlvar.sqltype;
 			descriptor[i].NumericScale = xsqlvar.sqlscale;
@@ -162,54 +148,23 @@ internal static class XsqldaMarshaler
 			{
 				if (descriptor[i].NullFlag != -1)
 				{
-					descriptor[i].SetValue(GetBytes(xsqlvar));
+					descriptor[i].SetValue(GetBytes(ref xsqlvar));
 				}
 			}
 
-			descriptor[i].Name = GetString(charset, xsqlvar.sqlname, xsqlvar.sqlname_length);
-			descriptor[i].Relation = GetString(charset, xsqlvar.relname, xsqlvar.relname_length);
-			descriptor[i].Owner = GetString(charset, xsqlvar.ownername, xsqlvar.ownername_length);
-			descriptor[i].Alias = GetString(charset, xsqlvar.aliasname, xsqlvar.aliasname_length);
+			descriptor[i].Name = charset.Encoding.GetString(xsqlvar.sqlname, xsqlvar.sqlname_length);
+			descriptor[i].Relation = charset.Encoding.GetString(xsqlvar.relname, xsqlvar.relname_length);
+			descriptor[i].Owner = charset.Encoding.GetString(xsqlvar.ownername, xsqlvar.ownername_length);
+			descriptor[i].Alias = charset.Encoding.GetString(xsqlvar.aliasname, xsqlvar.aliasname_length);
 		}
 
 		return descriptor;
 	}
 
-	private static void MarshalXSQLVARNativeToManaged(IntPtr ptr, XSQLVAR xsqlvar, bool onlyPointers = false)
-	{
-		unsafe
-		{
-			using (var reader = new BinaryReader(new UnmanagedMemoryStream((byte*)ptr.ToPointer(), SizeOfXSQLVAR)))
-			{
-				if (!onlyPointers) xsqlvar.sqltype = reader.ReadInt16(); else reader.BaseStream.Position += sizeof(short);
-				if (!onlyPointers) xsqlvar.sqlscale = reader.ReadInt16(); else reader.BaseStream.Position += sizeof(short);
-				if (!onlyPointers) xsqlvar.sqlsubtype = reader.ReadInt16(); else reader.BaseStream.Position += sizeof(short);
-				if (!onlyPointers) xsqlvar.sqllen = reader.ReadInt16(); else reader.BaseStream.Position += sizeof(short);
-				xsqlvar.sqldata = reader.ReadIntPtr();
-				xsqlvar.sqlind = reader.ReadIntPtr();
-				if (!onlyPointers) xsqlvar.sqlname_length = reader.ReadInt16(); else reader.BaseStream.Position += sizeof(short);
-				if (!onlyPointers) xsqlvar.sqlname = reader.ReadBytes(32); else reader.BaseStream.Position += 32;
-				if (!onlyPointers) xsqlvar.relname_length = reader.ReadInt16(); else reader.BaseStream.Position += sizeof(short);
-				if (!onlyPointers) xsqlvar.relname = reader.ReadBytes(32); else reader.BaseStream.Position += 32;
-				if (!onlyPointers) xsqlvar.ownername_length = reader.ReadInt16(); else reader.BaseStream.Position += sizeof(short);
-				if (!onlyPointers) xsqlvar.ownername = reader.ReadBytes(32); else reader.BaseStream.Position += 32;
-				if (!onlyPointers) xsqlvar.aliasname_length = reader.ReadInt16(); else reader.BaseStream.Position += sizeof(short);
-				if (!onlyPointers) xsqlvar.aliasname = reader.ReadBytes(32); else reader.BaseStream.Position += 32;
-			}
-		}
-	}
+	private unsafe static int ComputeLength(int n) =>
+		sizeof(XSQLDA_STRUCT) + (n * sizeof(XSQLVAR_STRUCT)) + (IntPtr.Size == 8 ? 4 : 0);
 
-	private static int ComputeLength(int n)
-	{
-		var length = (SizeOfXSQLDA + n * SizeOfXSQLVAR);
-		if (IntPtr.Size == 8)
-		{
-			length += 4;
-		}
-		return length;
-	}
-
-	private static byte[] GetBytes(XSQLVAR xsqlvar)
+	private static byte[] GetBytes(ref XSQLVAR_STRUCT xsqlvar)
 	{
 		if (xsqlvar.sqllen == 0 || xsqlvar.sqldata == IntPtr.Zero)
 		{
@@ -262,16 +217,5 @@ internal static class XsqldaMarshaler
 		var buffer = new byte[32];
 		charset.GetBytes(value, 0, value.Length, buffer, 0);
 		return buffer;
-	}
-
-	private static string GetString(Charset charset, byte[] buffer)
-	{
-		var value = charset.GetString(buffer);
-		return value.TrimEnd('\0', ' ');
-	}
-
-	private static string GetString(Charset charset, byte[] buffer, short bufferLength)
-	{
-		return charset.GetString(buffer, 0, bufferLength);
 	}
 }

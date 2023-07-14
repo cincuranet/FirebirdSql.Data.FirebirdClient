@@ -29,3 +29,12 @@ internal struct XSQLDA
 	public short sqln;
 	public short sqld;
 }
+
+internal unsafe struct XSQLDA_STRUCT
+{
+	public short version;
+	public fixed byte sqldaid[8];
+	public int sqldabc;
+	public short sqln;
+	public short sqld;
+}

@@ -42,3 +42,21 @@ internal class XSQLVAR
 	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
 	public byte[] aliasname;
 }
+
+internal unsafe struct XSQLVAR_STRUCT
+{
+	public short sqltype;
+	public short sqlscale;
+	public short sqlsubtype;
+	public short sqllen;
+	public IntPtr sqldata;
+	public IntPtr sqlind;
+	public short sqlname_length;
+	public fixed byte sqlname[32];
+	public short relname_length;
+	public fixed byte relname[32];
+	public short ownername_length;
+	public fixed byte ownername[32];
+	public short aliasname_length;
+	public fixed byte aliasname[32];
+}
