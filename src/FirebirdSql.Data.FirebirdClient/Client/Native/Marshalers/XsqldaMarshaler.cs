@@ -57,63 +57,61 @@ internal static class XsqldaMarshaler
 		}
 	}
 
-	public static IntPtr MarshalManagedToNative(Charset charset, Descriptor descriptor)
+	public unsafe static IntPtr MarshalManagedToNative(Charset charset, Descriptor descriptor)
 	{
-		var xsqlda = new XSQLDA
+		var xsqlda = new XSQLDA_STRUCT
 		{
 			version = descriptor.Version,
 			sqln = descriptor.Count,
 			sqld = descriptor.ActualCount
 		};
 
-		var xsqlvar = new XSQLVAR[descriptor.Count];
+		var size = ComputeLength(xsqlda.sqln);
+		var ptr = Marshal.AllocHGlobal(size);
+		Marshal.StructureToPtr(xsqlda, ptr, true);
 
-		for (var i = 0; i < xsqlvar.Length; i++)
+		var xsqlvar = new XSQLVAR_STRUCT();
+		for (var i = 0; i < xsqlda.sqln; i++)
 		{
-			xsqlvar[i] = new XSQLVAR
-			{
-				sqltype = descriptor[i].DataType,
-				sqlscale = descriptor[i].NumericScale,
-				sqlsubtype = descriptor[i].SubType,
-				sqllen = descriptor[i].Length
-			};
+			xsqlvar.sqltype = descriptor[i].DataType;
+			xsqlvar.sqlscale = descriptor[i].NumericScale;
+			xsqlvar.sqlsubtype = descriptor[i].SubType;
+			xsqlvar.sqllen = descriptor[i].Length;
 
 			if (descriptor[i].HasDataType() && descriptor[i].DbDataType != DbDataType.Null)
 			{
 				var buffer = descriptor[i].DbValue.GetBytes();
-				xsqlvar[i].sqldata = Marshal.AllocHGlobal(buffer.Length);
-				Marshal.Copy(buffer, 0, xsqlvar[i].sqldata, buffer.Length);
+				xsqlvar.sqldata = Marshal.AllocHGlobal(buffer.Length);
+				Marshal.Copy(buffer, 0, xsqlvar.sqldata, buffer.Length);
 			}
 			else
 			{
-				xsqlvar[i].sqldata = Marshal.AllocHGlobal(0);
+				xsqlvar.sqldata = Marshal.AllocHGlobal(0);
 			}
 
-			xsqlvar[i].sqlind = Marshal.AllocHGlobal(Marshal.SizeOf<short>());
-			Marshal.WriteInt16(xsqlvar[i].sqlind, descriptor[i].NullFlag);
+			xsqlvar.sqlind = Marshal.AllocHGlobal(Marshal.SizeOf<short>());
+			Marshal.WriteInt16(xsqlvar.sqlind, descriptor[i].NullFlag);
 
-			xsqlvar[i].sqlname = GetStringBuffer(charset, descriptor[i].Name);
-			xsqlvar[i].sqlname_length = (short)descriptor[i].Name.Length;
+			fixed (char* psqlname = descriptor[i].Name)
+			fixed (char* prelname = descriptor[i].Relation)
+			fixed (char* pownername = descriptor[i].Owner)
+			fixed (char* paliasname = descriptor[i].Alias)
+			{
+				xsqlvar.sqlname_length = (short)descriptor[i].Name.Length;
+				charset.Encoding.GetBytes(psqlname, descriptor[i].Name.Length, xsqlvar.sqlname, 32);
 
-			xsqlvar[i].relname = GetStringBuffer(charset, descriptor[i].Relation);
-			xsqlvar[i].relname_length = (short)descriptor[i].Relation.Length;
+				xsqlvar.relname_length = (short)descriptor[i].Relation.Length;
+				charset.Encoding.GetBytes(prelname, descriptor[i].Relation.Length, xsqlvar.relname, 32);
 
-			xsqlvar[i].ownername = GetStringBuffer(charset, descriptor[i].Owner);
-			xsqlvar[i].ownername_length = (short)descriptor[i].Owner.Length;
+				xsqlvar.ownername_length = (short)descriptor[i].Owner.Length;
+				charset.Encoding.GetBytes(pownername, descriptor[i].Owner.Length, xsqlvar.ownername, 32);
 
-			xsqlvar[i].aliasname = GetStringBuffer(charset, descriptor[i].Alias);
-			xsqlvar[i].aliasname_length = (short)descriptor[i].Alias.Length;
-		}
+				xsqlvar.aliasname_length = (short)descriptor[i].Alias.Length;
+				charset.Encoding.GetBytes(paliasname, descriptor[i].Alias.Length, xsqlvar.aliasname, 32);
 
-		var size = ComputeLength(xsqlda.sqln);
-		var ptr = Marshal.AllocHGlobal(size);
-
-		Marshal.StructureToPtr(xsqlda, ptr, true);
-
-		for (var i = 0; i < xsqlvar.Length; i++)
-		{
-			var offset = ComputeLength(i);
-			Marshal.StructureToPtr(xsqlvar[i], IntPtr.Add(ptr, offset), true);
+				var offset = ComputeLength(i);
+				Marshal.StructureToPtr(xsqlvar, IntPtr.Add(ptr, offset), true);
+			}
 		}
 
 		return ptr;
@@ -203,12 +201,5 @@ internal static class XsqldaMarshaler
 			default:
 				throw TypeHelper.InvalidDataType(type);
 		}
-	}
-
-	private static byte[] GetStringBuffer(Charset charset, string value)
-	{
-		var buffer = new byte[32];
-		charset.GetBytes(value, 0, value.Length, buffer, 0);
-		return buffer;
 	}
 }
