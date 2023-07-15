@@ -78,7 +78,6 @@ internal static class XsqldaMarshaler
 				sqllen = descriptor[i].Length
 			};
 
-
 			if (descriptor[i].HasDataType() && descriptor[i].DbDataType != DbDataType.Null)
 			{
 				var buffer = descriptor[i].DbValue.GetBytes();
@@ -106,11 +105,6 @@ internal static class XsqldaMarshaler
 			xsqlvar[i].aliasname_length = (short)descriptor[i].Alias.Length;
 		}
 
-		return MarshalManagedToNative(xsqlda, xsqlvar);
-	}
-
-	public static IntPtr MarshalManagedToNative(XSQLDA xsqlda, XSQLVAR[] xsqlvar)
-	{
 		var size = ComputeLength(xsqlda.sqln);
 		var ptr = Marshal.AllocHGlobal(size);
 
@@ -164,7 +158,7 @@ internal static class XsqldaMarshaler
 	private unsafe static int ComputeLength(int n) =>
 		sizeof(XSQLDA_STRUCT) + (n * sizeof(XSQLVAR_STRUCT)) + (IntPtr.Size == 8 ? 4 : 0);
 
-	private static byte[] GetBytes(ref XSQLVAR_STRUCT xsqlvar)
+	private unsafe static ReadOnlySpan<byte> GetBytes(ref XSQLVAR_STRUCT xsqlvar)
 	{
 		if (xsqlvar.sqllen == 0 || xsqlvar.sqldata == IntPtr.Zero)
 		{
@@ -176,10 +170,9 @@ internal static class XsqldaMarshaler
 		{
 			case IscCodes.SQL_VARYING:
 				{
-					var buffer = new byte[Marshal.ReadInt16(xsqlvar.sqldata)];
-					var tmp = IntPtr.Add(xsqlvar.sqldata, 2);
-					Marshal.Copy(tmp, buffer, 0, buffer.Length);
-					return buffer;
+					var length = Marshal.ReadInt16(xsqlvar.sqldata);
+					var pointer = IntPtr.Add(xsqlvar.sqldata, 2).ToPointer();
+					return new ReadOnlySpan<byte>(pointer, length);
 				}
 			case IscCodes.SQL_TEXT:
 			case IscCodes.SQL_SHORT:
@@ -203,9 +196,9 @@ internal static class XsqldaMarshaler
 			case IscCodes.SQL_DEC34:
 			case IscCodes.SQL_INT128:
 				{
-					var buffer = new byte[xsqlvar.sqllen];
-					Marshal.Copy(xsqlvar.sqldata, buffer, 0, buffer.Length);
-					return buffer;
+					var length = xsqlvar.sqllen;
+					var pointer = xsqlvar.sqldata.ToPointer();
+					return new ReadOnlySpan<byte>(pointer, length);
 				}
 			default:
 				throw TypeHelper.InvalidDataType(type);

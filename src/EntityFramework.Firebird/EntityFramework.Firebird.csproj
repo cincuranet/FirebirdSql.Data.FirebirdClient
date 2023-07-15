@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net48;netstandard2.1</TargetFrameworks>
+		<TargetFrameworks>netstandard2.1</TargetFrameworks>
 		<AssemblyName>EntityFramework.Firebird</AssemblyName>
 		<RootNamespace>EntityFramework.Firebird</RootNamespace>
 		<SignAssembly>true</SignAssembly>
