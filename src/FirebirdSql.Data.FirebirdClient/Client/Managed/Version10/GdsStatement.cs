@@ -399,7 +399,7 @@ internal class GdsStatement : StatementBase
 			{
 				_database.Xdr.Write(IscCodes.op_fetch);
 				_database.Xdr.Write(_handle);
-				_database.Xdr.WriteBuffer(_fields.ToBlr().Data);
+				_database.Xdr.WriteBuffer(_fields.ToBlrSpan());
 				_database.Xdr.Write(0); // p_sqldata_message_number
 				_database.Xdr.Write(_fetchSize); // p_sqldata_messages
 				_database.Xdr.Flush();
@@ -480,7 +480,7 @@ internal class GdsStatement : StatementBase
 			{
 				await _database.Xdr.WriteAsync(IscCodes.op_fetch, cancellationToken).ConfigureAwait(false);
 				await _database.Xdr.WriteAsync(_handle, cancellationToken).ConfigureAwait(false);
-				await _database.Xdr.WriteBufferAsync(_fields.ToBlr().Data, cancellationToken).ConfigureAwait(false);
+				await _database.Xdr.WriteBufferAsync(_fields.ToBlrMemory(), cancellationToken).ConfigureAwait(false);
 				await _database.Xdr.WriteAsync(0, cancellationToken).ConfigureAwait(false); // p_sqldata_message_number
 				await _database.Xdr.WriteAsync(_fetchSize, cancellationToken).ConfigureAwait(false); // p_sqldata_messages
 				await _database.Xdr.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -781,7 +781,7 @@ internal class GdsStatement : StatementBase
 
 		if (_parameters != null)
 		{
-			_database.Xdr.WriteBuffer(_parameters.ToBlr().Data);
+			_database.Xdr.WriteBuffer(_parameters.ToBlrSpan());
 			_database.Xdr.Write(0); // Message number
 			_database.Xdr.Write(1); // Number of messages
 			_database.Xdr.WriteBytes(parametersData, parametersData.Length);
@@ -795,7 +795,12 @@ internal class GdsStatement : StatementBase
 
 		if (StatementType == DbStatementType.StoredProcedure)
 		{
-			_database.Xdr.WriteBuffer(_fields?.ToBlr().Data);
+			_database.Xdr.WriteBuffer(
+				_fields is null
+					? ReadOnlySpan<byte>.Empty
+					: _fields.ToBlrSpan()
+			);
+
 			_database.Xdr.Write(0); // Output message number
 		}
 	}
@@ -818,7 +823,7 @@ internal class GdsStatement : StatementBase
 
 		if (_parameters != null)
 		{
-			await _database.Xdr.WriteBufferAsync(_parameters.ToBlr().Data, cancellationToken).ConfigureAwait(false);
+			await _database.Xdr.WriteBufferAsync(_parameters.ToBlrMemory(), cancellationToken).ConfigureAwait(false);
 			await _database.Xdr.WriteAsync(0, cancellationToken).ConfigureAwait(false); // Message number
 			await _database.Xdr.WriteAsync(1, cancellationToken).ConfigureAwait(false); // Number of messages
 			await _database.Xdr.WriteBytesAsync(parametersData, parametersData.Length, cancellationToken).ConfigureAwait(false);
@@ -832,7 +837,12 @@ internal class GdsStatement : StatementBase
 
 		if (StatementType == DbStatementType.StoredProcedure)
 		{
-			await _database.Xdr.WriteBufferAsync(_fields?.ToBlr().Data, cancellationToken).ConfigureAwait(false);
+			await _database.Xdr.WriteBufferAsync(
+				_fields is null
+					? ReadOnlyMemory<byte>.Empty
+					: _fields.ToBlrMemory(),
+				cancellationToken
+			).ConfigureAwait(false);
 			await _database.Xdr.WriteAsync(0, cancellationToken).ConfigureAwait(false); // Output message number
 		}
 	}
