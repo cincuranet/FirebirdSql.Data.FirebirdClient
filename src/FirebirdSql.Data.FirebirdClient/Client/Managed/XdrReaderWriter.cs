@@ -521,9 +521,20 @@ sealed class XdrReaderWriter : IXdrReader, IXdrWriter
 	{
 		WriteBuffer(buffer, buffer?.Length ?? 0);
 	}
+
 	public ValueTask WriteBufferAsync(byte[] buffer, CancellationToken cancellationToken = default)
 	{
 		return WriteBufferAsync(buffer, buffer?.Length ?? 0, cancellationToken);
+	}
+
+	public void WriteBuffer(ReadOnlySpan<byte> buffer)
+	{
+		Write(buffer.Length);
+		if (buffer.Length > 0)
+		{
+			_dataProvider.Write(buffer);
+			WritePad((4 - buffer.Length) & 3);
+		}
 	}
 
 	public void WriteBuffer(byte[] buffer, int length)
@@ -535,6 +546,17 @@ sealed class XdrReaderWriter : IXdrReader, IXdrWriter
 			WritePad((4 - length) & 3);
 		}
 	}
+
+	public async Task WriteBufferAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
+	{
+		await WriteAsync(buffer.Length, cancellationToken).ConfigureAwait(false);
+		if (buffer.Length > 0)
+		{
+			await _dataProvider.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+			await WritePadAsync((4 - buffer.Length) & 3, cancellationToken).ConfigureAwait(false);
+		}
+	}
+
 	public async ValueTask WriteBufferAsync(byte[] buffer, int length, CancellationToken cancellationToken = default)
 	{
 		await WriteAsync(length, cancellationToken).ConfigureAwait(false);
@@ -838,6 +860,5 @@ sealed class XdrReaderWriter : IXdrReader, IXdrWriter
 	{
 		return _dataProvider.WriteAsync(FillArray, 0, length, cancellationToken);
 	}
-
 	#endregion
 }

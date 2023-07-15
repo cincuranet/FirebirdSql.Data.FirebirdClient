@@ -33,7 +33,7 @@ sealed class FirebirdNetworkHandlingWrapper : IDataProvider, ITracksIOFailure
 
 	readonly IDataProvider _dataProvider;
 
-	readonly Queue<byte> _outputBuffer;
+	readonly MemoryStream _outputBuffer;
 	readonly Queue<byte> _inputBuffer;
 	readonly byte[] _readBuffer;
 
@@ -48,7 +48,7 @@ sealed class FirebirdNetworkHandlingWrapper : IDataProvider, ITracksIOFailure
 	{
 		_dataProvider = dataProvider;
 
-		_outputBuffer = new Queue<byte>(PreferredBufferSize);
+		_outputBuffer = new MemoryStream(PreferredBufferSize);
 		_inputBuffer = new Queue<byte>(PreferredBufferSize);
 		_readBuffer = new byte[PreferredBufferSize];
 	}
@@ -120,22 +120,32 @@ sealed class FirebirdNetworkHandlingWrapper : IDataProvider, ITracksIOFailure
 		return dataLength;
 	}
 
+	public void Write(ReadOnlySpan<byte> buffer)
+	{
+		_outputBuffer.Write(buffer);
+	}
+
 	public void Write(byte[] buffer, int offset, int count)
 	{
-		for (var i = offset; i < count; i++)
-			_outputBuffer.Enqueue(buffer[offset + i]);
+		_outputBuffer.Write(buffer, offset, count);
 	}
+
+	public async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+	{
+		await _outputBuffer.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+	}
+
 	public ValueTask WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
 	{
-		for (var i = offset; i < count; i++)
-			_outputBuffer.Enqueue(buffer[offset + i]);
+		_outputBuffer.Write(buffer, offset, count);
 		return ValueTask2.CompletedTask;
 	}
 
 	public void Flush()
 	{
 		var buffer = _outputBuffer.ToArray();
-		_outputBuffer.Clear();
+		Array.Clear(buffer, 0, buffer.Length);
+		_outputBuffer.Position = 0;
 		var count = buffer.Length;
 		if (_compressor != null)
 		{
@@ -160,7 +170,8 @@ sealed class FirebirdNetworkHandlingWrapper : IDataProvider, ITracksIOFailure
 	public async ValueTask FlushAsync(CancellationToken cancellationToken = default)
 	{
 		var buffer = _outputBuffer.ToArray();
-		_outputBuffer.Clear();
+		Array.Clear(buffer, 0, buffer.Length);
+		_outputBuffer.Position = 0;
 		var count = buffer.Length;
 		if (_compressor != null)
 		{

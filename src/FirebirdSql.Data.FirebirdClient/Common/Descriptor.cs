@@ -98,18 +98,7 @@ internal sealed class Descriptor
 		}
 	}
 
-	internal sealed class BlrData
-	{
-		public byte[] Data { get; }
-		public int Length { get; }
-
-		public BlrData(byte[] data, int length)
-		{
-			Data = data;
-			Length = length;
-		}
-	}
-	public BlrData ToBlr()
+	public ReadOnlyMemory<byte> ToBlrMemory()
 	{
 		using (var blr = new MemoryStream(256))
 		{
@@ -292,9 +281,10 @@ internal sealed class Descriptor
 			blr.WriteByte(IscCodes.blr_end);
 			blr.WriteByte(IscCodes.blr_eoc);
 
-			return new BlrData(blr.ToArray(), length);
+			return new ReadOnlyMemory<byte>(blr.GetBuffer(), 0, length);
 		}
 	}
 
+	public ReadOnlySpan<byte> ToBlr() => ToBlrMemory().Span;
 	#endregion
 }
