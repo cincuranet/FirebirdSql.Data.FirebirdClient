@@ -276,7 +276,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 
 						if (!columnDomain.StartsWith("RDB$"))
 						{
-							column.SetAnnotation(FbAnnotationNames.DomainName, columnDomain);
+							column.SetAnnotation(FbAnnotationNames.DomainName, columnDomain.Trim());
 						}
 
 						if (identityType != -1)
