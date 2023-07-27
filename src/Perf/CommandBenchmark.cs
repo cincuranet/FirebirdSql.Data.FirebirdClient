@@ -34,7 +34,7 @@ public partial class CommandBenchmark
 		{
 			var baseJob = Job.Default
 				.WithWarmupCount(3)
-				.WithToolchain(CsProjCoreToolchain.NetCoreApp60)
+				.WithToolchain(CsProjCoreToolchain.NetCoreApp80)
 				.WithPlatform(Platform.X64)
 				.WithJit(Jit.RyuJit);
 			AddDiagnoser(MemoryDiagnoser.Default);
