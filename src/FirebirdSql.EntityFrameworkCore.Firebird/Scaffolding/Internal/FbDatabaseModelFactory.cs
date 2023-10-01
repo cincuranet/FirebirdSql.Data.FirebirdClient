@@ -152,11 +152,13 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 
 			CASE COALESCE(f.rdb$field_type, 0)
 				WHEN 7 THEN CASE f.rdb$field_sub_type
+								WHEN 0 THEN 'SMALLINT'
 								WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
 								WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
 								ELSE '?'
 							END
 				WHEN 8 THEN CASE f.rdb$field_sub_type
+								WHEN 0 THEN 'INTEGER'
 								WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
 								WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
 								ELSE '?'
@@ -188,13 +190,13 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 													  WHEN 1 THEN 'TEXT'
 													  ELSE f.rdb$field_sub_type
 												  END
-				ELSE 'RDB$FIELD_TYPE: ' || F.RDB$FIELD_TYPE || '?'
+				ELSE 'RDB$FIELD_TYPE: ' || f.RDB$FIELD_TYPE || '?'
 			END COLUMN_STORE_TYPE,
 
 			rf.rdb$field_source COLUMN_DOMAIN,
-			COALESCE(F.rdb$character_length, 0) COLUMN_LENGTH,
-			COALESCE(F.rdb$field_precision, 0) COLUMN_PRECISION,
-			COALESCE(-F.rdb$field_scale, 0) COLUMN_SCALE,
+			COALESCE(f.rdb$character_length, 0) COLUMN_LENGTH,
+			COALESCE(f.rdb$field_precision, 0) COLUMN_PRECISION,
+			COALESCE(-f.rdb$field_scale, 0) COLUMN_SCALE,
 
 			NULLIF(ch.rdb$character_set_name, d.rdb$character_set_name) as CHARACTER_SET_NAME,
 			co.rdb$collation_name COLLATION_NAME,
