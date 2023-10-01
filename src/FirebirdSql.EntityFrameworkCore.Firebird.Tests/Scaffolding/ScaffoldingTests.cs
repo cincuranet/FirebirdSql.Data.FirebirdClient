@@ -282,9 +282,4 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 	{
 		return new FbDatabaseModelFactory();
 	}
-
-	static IDatabaseModelFactory GetModelFactory()
-	{
-		return new FbDatabaseModelFactory();
-	}
 }
