@@ -144,8 +144,7 @@ sealed class FirebirdNetworkHandlingWrapper : IDataProvider, ITracksIOFailure
 	public void Flush()
 	{
 		var buffer = _outputBuffer.ToArray();
-		Array.Clear(buffer, 0, buffer.Length);
-		_outputBuffer.Position = 0;
+		_outputBuffer.SetLength(0);
 		var count = buffer.Length;
 		if (_compressor != null)
 		{
@@ -170,8 +169,7 @@ sealed class FirebirdNetworkHandlingWrapper : IDataProvider, ITracksIOFailure
 	public async ValueTask FlushAsync(CancellationToken cancellationToken = default)
 	{
 		var buffer = _outputBuffer.ToArray();
-		Array.Clear(buffer, 0, buffer.Length);
-		_outputBuffer.Position = 0;
+		_outputBuffer.SetLength(0);
 		var count = buffer.Length;
 		if (_compressor != null)
 		{
