@@ -98,12 +98,13 @@ internal sealed class Descriptor
 		}
 	}
 
-	public ReadOnlyMemory<byte> ToBlrMemory()
+	public ReadOnlyMemory<byte> ToBlrMemory() => ToBlrMemory(out int _);
+
+	public ReadOnlyMemory<byte> ToBlrMemory(out int length)
 	{
+		length = 0;
 		using (var blr = new MemoryStream(256))
 		{
-			var length = 0;
-
 			blr.WriteByte(IscCodes.blr_version5);
 			blr.WriteByte(IscCodes.blr_begin);
 			blr.WriteByte(IscCodes.blr_message);
@@ -281,10 +282,14 @@ internal sealed class Descriptor
 			blr.WriteByte(IscCodes.blr_end);
 			blr.WriteByte(IscCodes.blr_eoc);
 
-			return new ReadOnlyMemory<byte>(blr.GetBuffer(), 0, length);
+			var buf = blr.GetBuffer();
+			return new ReadOnlyMemory<byte>(buf, 0, buf.Length);
 		}
 	}
 
-	public ReadOnlySpan<byte> ToBlr() => ToBlrMemory().Span;
+	public ReadOnlySpan<byte> ToBlrSpan() => ToBlrMemory(out int _).Span;
+
+	public ReadOnlySpan<byte> ToBlrSpan(out int length) => ToBlrMemory(out length).Span;
+
 	#endregion
 }

@@ -399,7 +399,7 @@ internal class GdsStatement : StatementBase
 			{
 				_database.Xdr.Write(IscCodes.op_fetch);
 				_database.Xdr.Write(_handle);
-				_database.Xdr.WriteBuffer(_fields.ToBlr());
+				_database.Xdr.WriteBuffer(_fields.ToBlrSpan());
 				_database.Xdr.Write(0); // p_sqldata_message_number
 				_database.Xdr.Write(_fetchSize); // p_sqldata_messages
 				_database.Xdr.Flush();
@@ -781,7 +781,7 @@ internal class GdsStatement : StatementBase
 
 		if (_parameters != null)
 		{
-			_database.Xdr.WriteBuffer(_parameters.ToBlr());
+			_database.Xdr.WriteBuffer(_parameters.ToBlrSpan());
 			_database.Xdr.Write(0); // Message number
 			_database.Xdr.Write(1); // Number of messages
 			_database.Xdr.WriteBytes(parametersData, parametersData.Length);
@@ -798,7 +798,7 @@ internal class GdsStatement : StatementBase
 			_database.Xdr.WriteBuffer(
 				_fields is null
 					? ReadOnlySpan<byte>.Empty
-					: _fields.ToBlr()
+					: _fields.ToBlrSpan()
 			);
 
 			_database.Xdr.Write(0); // Output message number
