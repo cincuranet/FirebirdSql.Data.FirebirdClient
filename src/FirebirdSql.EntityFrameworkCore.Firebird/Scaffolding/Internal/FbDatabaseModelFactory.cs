@@ -175,8 +175,8 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 								 ELSE '?'
 							 END
 				WHEN 23 THEN 'BOOLEAN'
-				WHEN 24 THEN 'DECFLOAT'
-				WHEN 25 THEN 'DECFLOAT'
+				WHEN 24 THEN 'DECFLOAT(' || (f.rdb$field_precision) || ')'
+				WHEN 25 THEN 'DECFLOAT(' || (f.rdb$field_precision) || ')'
 				WHEN 26 THEN 'INT128'
 				WHEN 27 THEN 'DOUBLE PRECISION'
 				WHEN 28 THEN 'TIME WITH TIME ZONE'
