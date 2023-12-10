@@ -299,6 +299,171 @@ internal sealed class DbField
 		return ((DataType & 1) == 1);
 	}
 
+	public void SetValue(ReadOnlySpan<byte> buffer)
+	{
+		if (buffer.IsEmpty || NullFlag == -1)
+		{
+			DbValue.SetValue(DBNull.Value);
+		}
+		else
+		{
+			switch (SqlType)
+			{
+				case IscCodes.SQL_TEXT:
+				case IscCodes.SQL_VARYING:
+					if (DbDataType == DbDataType.Guid)
+					{
+						DbValue.SetValue(TypeDecoder.DecodeGuid(buffer));
+					}
+					else
+					{
+						if (Charset.IsOctetsCharset)
+						{
+							DbValue.SetValue(buffer.ToArray());  // ToDo: Remove .ToArray() -- Possible?
+						}
+						else
+						{
+							var s = Charset.Encoding.GetString(buffer);
+
+							if ((Length % Charset.BytesPerCharacter) == 0 &&
+								s.Length > CharCount)
+							{
+								s = s.Substring(0, CharCount);
+							}
+
+							DbValue.SetValue(s);
+						}
+					}
+					break;
+
+				case IscCodes.SQL_SHORT:
+					if (_numericScale < 0)
+					{
+						DbValue.SetValue(TypeDecoder.DecodeDecimal(BitConverter.ToInt16(buffer), _numericScale, _dataType));
+					}
+					else
+					{
+						DbValue.SetValue(BitConverter.ToInt16(buffer));
+					}
+					break;
+
+				case IscCodes.SQL_LONG:
+					if (_numericScale < 0)
+					{
+						DbValue.SetValue(TypeDecoder.DecodeDecimal(BitConverter.ToInt32(buffer), _numericScale, _dataType));
+					}
+					else
+					{
+						DbValue.SetValue(BitConverter.ToInt32(buffer));
+					}
+					break;
+
+				case IscCodes.SQL_FLOAT:
+					DbValue.SetValue(BitConverter.ToSingle(buffer));
+					break;
+
+				case IscCodes.SQL_DOUBLE:
+				case IscCodes.SQL_D_FLOAT:
+					DbValue.SetValue(BitConverter.ToDouble(buffer));
+					break;
+
+				case IscCodes.SQL_QUAD:
+				case IscCodes.SQL_INT64:
+				case IscCodes.SQL_BLOB:
+				case IscCodes.SQL_ARRAY:
+					if (_numericScale < 0)
+					{
+						DbValue.SetValue(TypeDecoder.DecodeDecimal(BitConverter.ToInt64(buffer), _numericScale, _dataType));
+					}
+					else
+					{
+						DbValue.SetValue(BitConverter.ToInt64(buffer));
+					}
+					break;
+
+				case IscCodes.SQL_TIMESTAMP:
+					{
+						var date = TypeDecoder.DecodeDate(BitConverter.ToInt32(buffer));
+						var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer.Slice(4, 4)));
+						DbValue.SetValue(date.Add(time));
+						break;
+					}
+
+				case IscCodes.SQL_TYPE_TIME:
+					DbValue.SetValue(TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer)));
+					break;
+
+				case IscCodes.SQL_TYPE_DATE:
+					DbValue.SetValue(TypeDecoder.DecodeDate(BitConverter.ToInt32(buffer)));
+					break;
+
+				case IscCodes.SQL_BOOLEAN:
+					DbValue.SetValue(TypeDecoder.DecodeBoolean(buffer));
+					break;
+
+				case IscCodes.SQL_TIMESTAMP_TZ:
+					{
+						var date = TypeDecoder.DecodeDate(BitConverter.ToInt32(buffer));
+						var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer.Slice(4, 4)));
+						var tzId = BitConverter.ToUInt16(buffer.Slice(8, 2));
+						var dt = DateTime.SpecifyKind(date.Add(time), DateTimeKind.Utc);
+						DbValue.SetValue(TypeHelper.CreateZonedDateTime(dt, tzId, null));
+						break;
+					}
+
+				case IscCodes.SQL_TIMESTAMP_TZ_EX:
+					{
+						var date = TypeDecoder.DecodeDate(BitConverter.ToInt32(buffer));
+						var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer.Slice(4, 4)));
+						var tzId = BitConverter.ToUInt16(buffer.Slice(8, 2));
+						var offset = BitConverter.ToInt16(buffer.Slice(10, 2));
+						var dt = DateTime.SpecifyKind(date.Add(time), DateTimeKind.Utc);
+						DbValue.SetValue(TypeHelper.CreateZonedDateTime(dt, tzId, offset));
+						break;
+					}
+
+				case IscCodes.SQL_TIME_TZ:
+					{
+						var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer));
+						var tzId = BitConverter.ToUInt16(buffer.Slice(4, 2));
+						DbValue.SetValue(TypeHelper.CreateZonedTime(time, tzId, null));
+						break;
+					}
+
+				case IscCodes.SQL_TIME_TZ_EX:
+					{
+						var time = TypeDecoder.DecodeTime(BitConverter.ToInt32(buffer.Slice(0, 2)));
+						var tzId = BitConverter.ToUInt16(buffer.Slice(4, 2));
+						var offset = BitConverter.ToInt16(buffer.Slice(6, 2));
+						DbValue.SetValue(TypeHelper.CreateZonedTime(time, tzId, offset));
+						break;
+					}
+
+				case IscCodes.SQL_DEC16:
+					DbValue.SetValue(DecimalCodec.DecFloat16.ParseBytes(buffer.ToArray())); // ToDo: Remove .ToArray()
+					break;
+
+				case IscCodes.SQL_DEC34:
+					DbValue.SetValue(DecimalCodec.DecFloat34.ParseBytes(buffer.ToArray())); // ToDo: Remove .ToArray()
+					break;
+
+				case IscCodes.SQL_INT128:
+					if (_numericScale < 0)
+					{
+						DbValue.SetValue(TypeDecoder.DecodeDecimal(Int128Helper.GetInt128(buffer.ToArray()), _numericScale, _dataType)); // ToDo: Remove .ToArray()
+					}
+					else
+					{
+						DbValue.SetValue(Int128Helper.GetInt128(buffer.ToArray())); // ToDo: Remove .ToArray()
+					}
+					break;
+
+				default:
+					throw TypeHelper.InvalidDataType(SqlType);
+			}
+		}
+	}
+
 	public void SetValue(byte[] buffer)
 	{
 		if (buffer == null || NullFlag == -1)

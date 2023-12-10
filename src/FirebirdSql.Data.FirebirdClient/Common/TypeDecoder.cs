@@ -93,6 +93,11 @@ internal static class TypeDecoder
 		return (year, month, day);
 	}
 
+	public static bool DecodeBoolean(ReadOnlySpan<byte> value)
+	{
+		return value[0] != 0;
+	}
+
 	public static bool DecodeBoolean(byte[] value)
 	{
 		return value[0] != 0;
@@ -103,9 +108,22 @@ internal static class TypeDecoder
 		var a = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(value, 0));
 		var b = IPAddress.HostToNetworkOrder(BitConverter.ToInt16(value, 4));
 		var c = IPAddress.HostToNetworkOrder(BitConverter.ToInt16(value, 6));
-		var d = new[] { value[8], value[9], value[10], value[11], value[12], value[13], value[14], value[15] };
-		return new Guid(a, b, c, d);
+		return new Guid(a, b, c, value[8], value[9], value[10], value[11], value[12], value[13], value[14], value[15]);
 	}
+	public static Guid DecodeGuid(ReadOnlySpan<byte> value) =>
+		new Guid(
+			a: IPAddress.HostToNetworkOrder(BitConverter.ToInt32(value)),
+			b: IPAddress.HostToNetworkOrder(BitConverter.ToInt16(value.Slice(4, 2))),
+			c: IPAddress.HostToNetworkOrder(BitConverter.ToInt16(value.Slice(6, 2))),
+			d: value[8],
+			e: value[9],
+			f: value[10],
+			g: value[11],
+			h: value[12],
+			i: value[13],
+			j: value[14],
+			k: value[15]
+		);
 
 	public static int DecodeInt32(byte[] value)
 	{

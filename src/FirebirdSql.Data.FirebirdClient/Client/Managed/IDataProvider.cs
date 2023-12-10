@@ -15,6 +15,7 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,7 +26,10 @@ interface IDataProvider
 	int Read(byte[] buffer, int offset, int count);
 	ValueTask<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default);
 
+	void Write(ReadOnlySpan<byte> buffer);
 	void Write(byte[] buffer, int offset, int count);
+
+	ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default);
 	ValueTask WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default);
 
 	void Flush();

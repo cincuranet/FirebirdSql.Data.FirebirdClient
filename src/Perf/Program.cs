@@ -15,7 +15,6 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
-using System.Reflection;
 using BenchmarkDotNet.Running;
 
 namespace Perf;
@@ -24,6 +23,8 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		BenchmarkRunner.Run(Assembly.GetExecutingAssembly());
+		BenchmarkSwitcher
+			.FromAssembly(typeof(Program).Assembly)
+			.Run(args);
 	}
 }

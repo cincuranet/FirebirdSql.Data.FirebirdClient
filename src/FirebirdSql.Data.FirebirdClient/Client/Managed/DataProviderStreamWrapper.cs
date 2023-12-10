@@ -15,6 +15,7 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -43,10 +44,23 @@ sealed class DataProviderStreamWrapper : IDataProvider
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public void Write(ReadOnlySpan<byte> buffer)
+	{
+		_stream.Write(buffer);
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public void Write(byte[] buffer, int offset, int count)
 	{
 		_stream.Write(buffer, offset, count);
 	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+	{
+		await _stream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+	}
+
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public ValueTask WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
 	{
