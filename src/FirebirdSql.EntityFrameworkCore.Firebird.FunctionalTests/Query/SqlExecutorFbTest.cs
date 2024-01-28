@@ -39,7 +39,7 @@ public class SqlExecutorFbTest : SqlExecutorTestBase<NorthwindQueryFbFixture<Noo
 	protected override string CustomerOrderHistorySproc => throw new NotSupportedException();
 	protected override string CustomerOrderHistoryWithGeneratedParameterSproc => throw new NotSupportedException();
 
-	[DoesNotHaveTheDataFact]
+	[DoesNotHaveTheDataTheory]
 	[InlineData(false)]
 	[InlineData(true)]
 	public override Task Executes_stored_procedure(bool async)
@@ -47,7 +47,7 @@ public class SqlExecutorFbTest : SqlExecutorTestBase<NorthwindQueryFbFixture<Noo
 		return base.Executes_stored_procedure(async);
 	}
 
-	[DoesNotHaveTheDataFact]
+	[DoesNotHaveTheDataTheory]
 	[InlineData(false)]
 	[InlineData(true)]
 	public override Task Executes_stored_procedure_with_generated_parameter(bool async)
@@ -55,7 +55,7 @@ public class SqlExecutorFbTest : SqlExecutorTestBase<NorthwindQueryFbFixture<Noo
 		return base.Executes_stored_procedure_with_generated_parameter(async);
 	}
 
-	[DoesNotHaveTheDataFact]
+	[DoesNotHaveTheDataTheory]
 	[InlineData(false)]
 	[InlineData(true)]
 	public override Task Executes_stored_procedure_with_parameter(bool async)

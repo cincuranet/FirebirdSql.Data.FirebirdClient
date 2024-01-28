@@ -326,6 +326,12 @@ public class MigrationsFbTest : MigrationsTestBase<MigrationsFbTest.MigrationsFb
 	[Fact(Skip = SkipReason)]
 	public override Task Drop_primary_key_string() => base.Drop_primary_key_string();
 
+	[Fact(Skip = SkipReason)]
+	public override Task Alter_sequence_restart_with() => base.Alter_sequence_restart_with();
+
+	[Fact(Skip = SkipReason)]
+	public override Task Add_column_with_unbounded_max_length() => base.Add_column_with_unbounded_max_length();
+
 	public class MigrationsFbFixture : MigrationsFixtureBase
 	{
 		protected override string StoreName => nameof(MigrationsFbTest);

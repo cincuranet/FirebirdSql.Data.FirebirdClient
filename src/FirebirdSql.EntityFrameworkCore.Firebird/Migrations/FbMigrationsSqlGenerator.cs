@@ -277,7 +277,7 @@ public class FbMigrationsSqlGenerator : MigrationsSqlGenerator
 		{
 			builder.Append(" WITH ");
 			builder.Append(((long)operation.StartValue).ToString(CultureInfo.InvariantCulture));
-		};
+		}
 		TerminateStatement(builder);
 	}
 
