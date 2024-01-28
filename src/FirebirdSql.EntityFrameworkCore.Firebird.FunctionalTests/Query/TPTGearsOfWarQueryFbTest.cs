@@ -336,6 +336,20 @@ public class TPTGearsOfWarQueryFbTest : TPTGearsOfWarQueryRelationalTestBase<TPT
 		return base.DateTimeOffsetNow_minus_timespan(async);
 	}
 
+	[NotSupportedByProviderTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task DateTimeOffset_to_unix_time_milliseconds(bool async)
+	{
+		return base.DateTimeOffset_to_unix_time_milliseconds(async);
+	}
+
+	[NotSupportedByProviderTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task DateTimeOffset_to_unix_time_seconds(bool async)
+	{
+		return base.DateTimeOffset_to_unix_time_seconds(async);
+	}
+
 	[Theory(Skip = "NETProvider#1008")]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Where_TimeOnly_IsBetween(bool async)

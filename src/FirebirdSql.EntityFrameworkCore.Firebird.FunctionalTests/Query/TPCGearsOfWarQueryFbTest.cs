@@ -433,6 +433,20 @@ public class TPCGearsOfWarQueryFbTest : TPCGearsOfWarQueryRelationalTestBase<TPC
 		return base.Where_TimeOnly_subtract_TimeOnly(async);
 	}
 
+	[NotSupportedByProviderTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task DateTimeOffset_to_unix_time_milliseconds(bool async)
+	{
+		return base.DateTimeOffset_to_unix_time_milliseconds(async);
+	}
+
+	[NotSupportedByProviderTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task DateTimeOffset_to_unix_time_seconds(bool async)
+	{
+		return base.DateTimeOffset_to_unix_time_seconds(async);
+	}
+
 	[Theory(Skip = "Different implicit ordering on Firebird.")]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Take_without_orderby_followed_by_orderBy_is_pushed_down1(bool async)
