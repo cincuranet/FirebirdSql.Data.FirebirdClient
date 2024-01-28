@@ -23,5 +23,5 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
 public class IncompleteMappingInheritanceQueryFbFixture : InheritanceQueryFbFixture
 {
-	protected override bool IsDiscriminatorMappingComplete => false;
+	public override bool IsDiscriminatorMappingComplete => false;
 }

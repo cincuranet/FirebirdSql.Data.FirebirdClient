@@ -19,5 +19,5 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
 public class FiltersInheritanceQueryFbFixture : InheritanceQueryFbFixture
 {
-	protected override bool EnableFilters => true;
+	public override bool EnableFilters => true;
 }

@@ -15,11 +15,13 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
+using Xunit.Abstractions;
+
 namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
 public class TPCInheritanceQueryFbTest : TPCInheritanceQueryFbTestBase<TPCInheritanceQueryFbFixture>
 {
-    public TPCInheritanceQueryFbTest(TPCInheritanceQueryFbFixture fixture)
-        : base(fixture)
+    public TPCInheritanceQueryFbTest(TPCInheritanceQueryFbFixture fixture, ITestOutputHelper testOutputHelper)
+        : base(fixture, testOutputHelper)
     { }
 }

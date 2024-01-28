@@ -23,7 +23,7 @@ using Microsoft.EntityFrameworkCore.TestUtilities;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
-public class InheritanceQueryFbFixture : InheritanceQueryRelationalFixture
+public class InheritanceQueryFbFixture : TPHInheritanceQueryFixture
 {
 	protected override ITestStoreFactory TestStoreFactory => FbTestStoreFactory.Instance;
 

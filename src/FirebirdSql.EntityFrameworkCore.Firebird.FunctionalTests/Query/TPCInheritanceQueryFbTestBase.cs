@@ -15,15 +15,15 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Query;
+using Xunit.Abstractions;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
 public abstract class TPCInheritanceQueryFbTestBase<TFixture> : TPCInheritanceQueryTestBase<TFixture>
     where TFixture : TPCInheritanceQueryFbFixtureBase, new()
 {
-	protected TPCInheritanceQueryFbTestBase(TFixture fixture)
-		: base(fixture)
+	protected TPCInheritanceQueryFbTestBase(TFixture fixture, ITestOutputHelper testOutputHelper)
+		: base(fixture, testOutputHelper)
 	{ }
 }

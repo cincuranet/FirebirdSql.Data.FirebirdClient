@@ -129,8 +129,10 @@ public class MigrationsFbTest : MigrationsTestBase<MigrationsFbTest.MigrationsFb
 	[Fact(Skip = SkipReason)]
 	public override Task Add_column_with_collation() => base.Add_column_with_collation();
 
-	[Fact(Skip = SkipReason)]
-	public override Task Add_column_computed_with_collation() => base.Add_column_computed_with_collation();
+	[Theory(Skip = SkipReason)]
+	[InlineData(true)]
+	[InlineData(false)]
+	public override Task Add_column_computed_with_collation(bool stored) => base.Add_column_computed_with_collation(stored);
 
 	[Fact(Skip = SkipReason)]
 	public override Task Add_column_shared() => base.Add_column_shared();
