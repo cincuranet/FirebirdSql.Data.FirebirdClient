@@ -21,7 +21,7 @@ using Microsoft.EntityFrameworkCore.TestUtilities;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
-public class IncompleteMappingInheritanceQueryFbFixture : InheritanceQueryFbFixture
+public class IncompleteMappingInheritanceQueryFbFixture : TPHInheritanceQueryFbFixture
 {
 	public override bool IsDiscriminatorMappingComplete => false;
 }

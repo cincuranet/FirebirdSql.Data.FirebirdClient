@@ -31,6 +31,24 @@ public class TPTGearsOfWarQueryFbTest : TPTGearsOfWarQueryRelationalTestBase<TPT
 		: base(fixture)
 	{ }
 
+	[ConditionalTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task ToString_boolean_property_non_nullable(bool async)
+	{
+		return AssertQuery(
+			async,
+			ss => ss.Set<Weapon>().Select(w => w.IsAutomatic.ToString()), elementAsserter: (lhs, rhs) => { Assert.True(lhs.Equals(rhs, System.StringComparison.OrdinalIgnoreCase)); });
+	}
+
+	[ConditionalTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task ToString_boolean_property_nullable(bool async)
+	{
+		return AssertQuery(
+			async,
+			ss => ss.Set<LocustHorde>().Select(lh => lh.Eradicated.ToString()), elementAsserter: (lhs, rhs) => { Assert.True(lhs.Equals(rhs, System.StringComparison.OrdinalIgnoreCase)); });
+	}
+
 	[NotSupportedOnFirebirdTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Correlated_collections_inner_subquery_predicate_references_outer_qsre(bool async)

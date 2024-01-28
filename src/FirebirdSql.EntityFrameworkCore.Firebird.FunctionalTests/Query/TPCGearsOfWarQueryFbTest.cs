@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Helpers;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.TestModels.GearsOfWarModel;
-using Microsoft.EntityFrameworkCore.TestUtilities;
 using Xunit;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
@@ -30,6 +29,24 @@ public class TPCGearsOfWarQueryFbTest : TPCGearsOfWarQueryRelationalTestBase<TPC
 	public TPCGearsOfWarQueryFbTest(TPCGearsOfWarQueryFbFixture fixture)
 		: base(fixture)
 	{ }
+
+	[ConditionalTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task ToString_boolean_property_non_nullable(bool async)
+	{
+		return AssertQuery(
+			async,
+			ss => ss.Set<Weapon>().Select(w => w.IsAutomatic.ToString()), elementAsserter: (lhs, rhs) => { Assert.True(lhs.Equals(rhs, System.StringComparison.OrdinalIgnoreCase)); });
+	}
+
+	[ConditionalTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task ToString_boolean_property_nullable(bool async)
+	{
+		return AssertQuery(
+			async,
+			ss => ss.Set<LocustHorde>().Select(lh => lh.Eradicated.ToString()), elementAsserter: (lhs, rhs) => { Assert.True(lhs.Equals(rhs, System.StringComparison.OrdinalIgnoreCase)); });
+	}
 
 	[NotSupportedOnFirebirdTheory]
 	[MemberData(nameof(IsAsyncData))]
