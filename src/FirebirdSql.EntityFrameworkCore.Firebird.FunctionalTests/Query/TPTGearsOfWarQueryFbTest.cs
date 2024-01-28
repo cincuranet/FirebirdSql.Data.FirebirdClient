@@ -297,22 +297,6 @@ public class TPTGearsOfWarQueryFbTest : TPTGearsOfWarQueryRelationalTestBase<TPT
 		return base.First_on_byte_array(async);
 	}
 
-	[Theory]
-	[MemberData(nameof(IsAsyncData))]
-	public override Task ToString_boolean_property_nullable(bool async)
-	{
-		return AssertQuery(async, (ISetSource ss) => from lh in ss.Set<LocustHorde>()
-													 select ((object)lh.Eradicated).ToString(), null, elementAsserter: (lhs, rhs) => { Assert.True(lhs.Equals(rhs, System.StringComparison.InvariantCultureIgnoreCase)); }, assertOrder: false, 0, "ToString_boolean_property_nullable");
-	}
-
-	[Theory]
-	[MemberData(nameof(IsAsyncData))]
-	public override Task ToString_boolean_property_non_nullable(bool async)
-	{
-		return AssertQuery(async, (ISetSource ss) => from w in ss.Set<Weapon>()
-													 select w.IsAutomatic.ToString(), null, elementAsserter: (lhs, rhs) => { Assert.True(lhs.Equals(rhs, System.StringComparison.InvariantCultureIgnoreCase)); }, assertOrder: false, 0, "ToString_boolean_property_non_nullable");
-	}
-
 	[NotSupportedOnFirebirdTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Where_TimeOnly_subtract_TimeOnly(bool async)
