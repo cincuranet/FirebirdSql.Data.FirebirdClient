@@ -22,6 +22,7 @@ using FirebirdSql.Data.FirebirdClient;
 using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Helpers;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.TestUtilities;
+using Xunit;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
@@ -39,38 +40,26 @@ public class SqlExecutorFbTest : SqlExecutorTestBase<NorthwindQueryFbFixture<Noo
 	protected override string CustomerOrderHistoryWithGeneratedParameterSproc => throw new NotSupportedException();
 
 	[DoesNotHaveTheDataFact]
-	public override void Executes_stored_procedure()
+	[InlineData(false)]
+	[InlineData(true)]
+	public override Task Executes_stored_procedure(bool async)
 	{
-		base.Executes_stored_procedure();
+		return base.Executes_stored_procedure(async);
 	}
 
 	[DoesNotHaveTheDataFact]
-	public override Task Executes_stored_procedure_async()
+	[InlineData(false)]
+	[InlineData(true)]
+	public override Task Executes_stored_procedure_with_generated_parameter(bool async)
 	{
-		return base.Executes_stored_procedure_async();
+		return base.Executes_stored_procedure_with_generated_parameter(async);
 	}
 
 	[DoesNotHaveTheDataFact]
-	public override void Executes_stored_procedure_with_generated_parameter()
+	[InlineData(false)]
+	[InlineData(true)]
+	public override Task Executes_stored_procedure_with_parameter(bool async)
 	{
-		base.Executes_stored_procedure_with_generated_parameter();
-	}
-
-	[DoesNotHaveTheDataFact]
-	public override Task Executes_stored_procedure_with_generated_parameter_async()
-	{
-		return base.Executes_stored_procedure_with_generated_parameter_async();
-	}
-
-	[DoesNotHaveTheDataFact]
-	public override void Executes_stored_procedure_with_parameter()
-	{
-		base.Executes_stored_procedure_with_parameter();
-	}
-
-	[DoesNotHaveTheDataFact]
-	public override Task Executes_stored_procedure_with_parameter_async()
-	{
-		return base.Executes_stored_procedure_with_parameter_async();
+		return base.Executes_stored_procedure_with_parameter(async);
 	}
 }
