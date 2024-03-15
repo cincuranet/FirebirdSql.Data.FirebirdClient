@@ -15,6 +15,7 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
+using System;
 using System.Threading.Tasks;
 using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Helpers;
 using Microsoft.EntityFrameworkCore.Query;
@@ -36,6 +37,15 @@ public class NorthwindAggregateOperatorsQueryFbTest : NorthwindAggregateOperator
 	public override Task Multiple_collection_navigation_with_FirstOrDefault_chained(bool async)
 	{
 		return base.Multiple_collection_navigation_with_FirstOrDefault_chained(async);
+	}
+
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override async Task Contains_with_local_enumerable_inline_closure_mix(bool async)
+	{
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () =>
+				await base.Contains_with_local_enumerable_inline_closure_mix(async));
 	}
 
 	[Theory]
