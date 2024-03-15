@@ -41,6 +41,15 @@ public class NorthwindAggregateOperatorsQueryFbTest : NorthwindAggregateOperator
 
 	[NotSupportedOnFirebirdTheory]
 	[MemberData(nameof(IsAsyncData))]
+	public override async Task Contains_with_local_enumerable_inline(bool async)
+	{
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () =>
+				await base.Contains_with_local_enumerable_inline(async));
+	}
+
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
 	public override async Task Contains_with_local_enumerable_inline_closure_mix(bool async)
 	{
 		await Assert.ThrowsAsync<InvalidOperationException>(
