@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Query;
@@ -32,4 +33,10 @@ public class NorthwindCompiledQueryFbTest : NorthwindCompiledQueryTestBase<North
 	public NorthwindCompiledQueryFbTest(NorthwindQueryFbFixture<NoopModelCustomizer> fixture)
 		: base(fixture)
 	{ }
+
+	[NotSupportedOnFirebirdFact]
+	public override Task Query_with_array_parameter_async()
+	{
+		return base.Query_with_array_parameter_async();
+	}
 }
