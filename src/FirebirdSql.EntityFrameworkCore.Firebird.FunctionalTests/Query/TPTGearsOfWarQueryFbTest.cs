@@ -342,6 +342,13 @@ public class TPTGearsOfWarQueryFbTest : TPTGearsOfWarQueryRelationalTestBase<TPT
 		return base.DateTimeOffsetNow_minus_timespan(async);
 	}
 
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Subquery_inside_Take_argument(bool async)
+	{
+		return base.Subquery_inside_Take_argument(async);
+	}
+
 	[NotSupportedByProviderTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task DateTimeOffset_to_unix_time_milliseconds(bool async)
