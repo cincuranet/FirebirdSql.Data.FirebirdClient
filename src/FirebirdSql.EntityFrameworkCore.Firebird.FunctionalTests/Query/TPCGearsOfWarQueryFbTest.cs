@@ -244,6 +244,13 @@ public class TPCGearsOfWarQueryFbTest : TPCGearsOfWarQueryRelationalTestBase<TPC
 		return base.Subquery_projecting_nullable_scalar_contains_nullable_value_needs_null_expansion_negated(async);
 	}
 
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Subquery_inside_Take_argument(bool async)
+	{
+		return base.Subquery_inside_Take_argument(async);
+	}
+
 	[NotSupportedByProviderTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Where_DateOnly_AddDays(bool async)
