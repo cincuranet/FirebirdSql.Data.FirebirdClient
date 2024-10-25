@@ -19,7 +19,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FirebirdSql.Data.FirebirdClient;
-using FirebirdSql.Data.Services;
 using FirebirdSql.EntityFrameworkCore.Firebird.Metadata;
 using FirebirdSql.EntityFrameworkCore.Firebird.Metadata.Internal;
 using FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal;
@@ -32,13 +31,10 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.Scaffolding;
 public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 {
 	private DatabaseModel _databaseModel;
-	private Version _serverVersion;
 
 	public override async Task SetUp()
 	{
 		await base.SetUp();
-
-		_serverVersion = FbServerProperties.ParseServerVersion(Connection.ServerVersion);
 
 		await CreateScaffoldingObjectsAsync();
 
@@ -145,14 +141,11 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 
 		var idDefaultColumn = testTable.Columns.Where(c => c.Name == "ID_DEFAULT").First();
 		Assert.AreEqual(FbIdentityType.GeneratedByDefault, (FbIdentityType)(idDefaultColumn.GetAnnotation(FbAnnotationNames.IdentityType).Value));
-		if (_serverVersion.Major >= 4)
+		if (FbTestsSetup.ServerVersionAtLeast(ServerVersion, new Version(4, 0, 0, 0)))
 		{
 			Assert.IsNull(idDefaultColumn.FindAnnotation(FbAnnotationNames.IdentityStart));
 			Assert.IsNull(idDefaultColumn.FindAnnotation(FbAnnotationNames.IdentityIncrement));
-		}
 
-		if (_serverVersion.Major >= 4)
-		{
 			var testTableFirebird4 = _databaseModel.Tables.Where(t => t.Name == "SCAFFOLD_NEW_FB4_TYPES").First();
 			Assert.NotNull(testTableFirebird4);
 
@@ -206,10 +199,8 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 	[Test]
 	public void CanScaffoldFirebird4DataTypes()
 	{
-		if (_serverVersion.Major < 4)
-		{
-			Assert.Ignore("Requires Firebird 4.0+");
-		}
+		if (!EnsureServerVersionAtLeast(new Version(4, 0, 0, 0)))
+			return;
 
 		var testTable = _databaseModel.Tables.Where(t => t.Name == "SCAFFOLD_NEW_FB4_TYPES").First();
 		Assert.NotNull(testTable);
@@ -236,7 +227,7 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 
 		await ExecuteDdlAsync(Connection, "DROP TABLE SCAFFOLD_TEST", true);
 
-		if (_serverVersion.Major >= 4)
+		if (FbTestsSetup.ServerVersionAtLeast(ServerVersion, new Version(4, 0, 0, 0)))
 		{
 			await ExecuteDdlAsync(Connection, @"
 				CREATE TABLE SCAFFOLD_TEST (
