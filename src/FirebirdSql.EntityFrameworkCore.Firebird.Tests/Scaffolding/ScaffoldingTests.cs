@@ -30,16 +30,11 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.Scaffolding;
 #pragma warning disable EF1001
 public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 {
-	DatabaseModel _databaseModel;
-
 	public override async Task SetUp()
 	{
 		await base.SetUp();
 
 		await CreateScaffoldingObjectsAsync();
-
-		var modelFactory = GetModelFactory();
-		_databaseModel = modelFactory.Create(Connection, new DatabaseModelFactoryOptions());
 	}
 
 	[Test]
@@ -127,7 +122,9 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 	[Test]
 	public void CanScaffoldPrimaryKey()
 	{
-		var testTable = _databaseModel.Tables.Where(t => t.Name.Equals("TEST")).First();
+		var modelFactory = GetModelFactory();
+		var databaseModel = modelFactory.Create(Connection, new DatabaseModelFactoryOptions());
+		var testTable = databaseModel.Tables.Where(t => t.Name.Equals("TEST")).First();
 
 		Assert.NotNull(testTable.PrimaryKey);
 		Assert.AreEqual("INT_FIELD", testTable.PrimaryKey.Columns[0].Name);
@@ -136,7 +133,9 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 	[Test]
 	public void CanScaffoldGeneratedByIdentities()
 	{
-		var testTable = _databaseModel.Tables.Where(t => t.Name == "SCAFFOLD_TEST").First();
+		var modelFactory = GetModelFactory();
+		var databaseModel = modelFactory.Create(Connection, new DatabaseModelFactoryOptions());
+		var testTable = databaseModel.Tables.Where(t => t.Name == "SCAFFOLD_TEST").First();
 		Assert.NotNull(testTable);
 
 		var idDefaultColumn = testTable.Columns.Where(c => c.Name == "ID_DEFAULT").First();
@@ -146,7 +145,7 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 			Assert.IsNull(idDefaultColumn.FindAnnotation(FbAnnotationNames.IdentityStart));
 			Assert.IsNull(idDefaultColumn.FindAnnotation(FbAnnotationNames.IdentityIncrement));
 
-			var testTableFirebird4 = _databaseModel.Tables.Where(t => t.Name == "SCAFFOLD_NEW_FB4_TYPES").First();
+			var testTableFirebird4 = databaseModel.Tables.Where(t => t.Name == "SCAFFOLD_NEW_FB4_TYPES").First();
 			Assert.NotNull(testTableFirebird4);
 
 			var idAlwaysColumn = testTableFirebird4.Columns.Where(c => c.Name == "ID_ALWAYS").First();
@@ -159,7 +158,9 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 	[Test]
 	public void CanScaffoldColumns()
 	{
-		var testTable = _databaseModel.Tables.Where(t => t.Name == "TEST").First();	
+		var modelFactory = GetModelFactory();
+		var databaseModel = modelFactory.Create(Connection, new DatabaseModelFactoryOptions());
+		var testTable = databaseModel.Tables.Where(t => t.Name == "TEST").First();	
 		Assert.NotNull(testTable);
 
 		var intColumn = testTable.Columns.Where(c => c.Name == "INT_FIELD").First();
@@ -202,7 +203,9 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 		if (!EnsureServerVersionAtLeast(new Version(4, 0, 0, 0)))
 			return;
 
-		var testTable = _databaseModel.Tables.Where(t => t.Name == "SCAFFOLD_NEW_FB4_TYPES").First();
+		var modelFactory = GetModelFactory();
+		var databaseModel = modelFactory.Create(Connection, new DatabaseModelFactoryOptions());
+		var testTable = databaseModel.Tables.Where(t => t.Name == "SCAFFOLD_NEW_FB4_TYPES").First();
 		Assert.NotNull(testTable);
 
 		var int128Column = testTable.Columns.Where(c => c.Name == "INT128_FIELD").First();
