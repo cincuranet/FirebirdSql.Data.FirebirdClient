@@ -147,7 +147,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 	{
 		var getColumnsQuery = $@"
 		SELECT
-			rf.rdb$field_name COLUMN_NAME,
+			TRIM(rf.rdb$field_name) COLUMN_NAME,
 			COALESCE(rf.rdb$null_flag, f.rdb$null_flag, 0) COLUMN_REQUIRED,
 
 			CASE COALESCE(f.rdb$field_type, 0)
@@ -255,7 +255,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 						var column = new DatabaseColumn
 						{
 							Table = table,
-							Name = name.Trim(),
+							Name = name,
 							StoreType = storeType,
 							IsNullable = isNullable,
 
