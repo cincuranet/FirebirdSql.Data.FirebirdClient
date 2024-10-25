@@ -258,17 +258,15 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 		}
 	}
 
-	static async Task ExecuteDdlAsync(FbConnection connection, string ddlScript, bool ignoreOnError = false)
+	static async Task ExecuteDdlAsync(FbConnection connection, string ddlScript, bool ignoreErrors = false)
 	{
 		try
 		{
 			await using var command = new FbCommand(ddlScript, connection);
 			await command.ExecuteNonQueryAsync();
 		}
-		catch
+		catch when (ignoreErrors)
 		{
-			if (!ignoreOnError)
-				throw;
 		}
 	}
 
