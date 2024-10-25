@@ -265,7 +265,7 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 			await using var command = new FbCommand(ddlScript, connection);
 			await command.ExecuteNonQueryAsync();
 		}
-		catch (Exception)
+		catch
 		{
 			if (!ignoreOnError)
 				throw;
