@@ -30,7 +30,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.Tests.Scaffolding;
 #pragma warning disable EF1001
 public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 {
-	private DatabaseModel _databaseModel;
+	DatabaseModel _databaseModel;
 
 	public override async Task SetUp()
 	{
@@ -221,7 +221,7 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 		Assert.AreEqual("TIMESTAMP WITH TIME ZONE", timestampWithTimeZoneColumn.StoreType);
 	}
 
-	private async Task CreateScaffoldingObjectsAsync()
+	async Task CreateScaffoldingObjectsAsync()
 	{
 		await ExecuteDdlAsync(Connection, "DROP TABLE SCAFFOLD_NEW_FB4_TYPES", true);
 
@@ -255,7 +255,7 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 		}
 	}
 
-	private static async Task ExecuteDdlAsync(FbConnection connection, string ddlScript, bool ignoreOnError = false)
+	static async Task ExecuteDdlAsync(FbConnection connection, string ddlScript, bool ignoreOnError = false)
 	{
 		try
 		{
@@ -269,7 +269,7 @@ public class ScaffoldingTests : EntityFrameworkCoreTestsBase
 		}
 	}
 
-	private static IDatabaseModelFactory GetModelFactory()
+	static IDatabaseModelFactory GetModelFactory()
 	{
 		return new FbDatabaseModelFactory();
 	}
