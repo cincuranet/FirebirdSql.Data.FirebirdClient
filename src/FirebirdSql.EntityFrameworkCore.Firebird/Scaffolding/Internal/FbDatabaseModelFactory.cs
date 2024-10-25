@@ -39,7 +39,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		using (var connection = new FbConnection(connectionString))
 		{
 			return Create(connection, options);
-		}
+		};
 	}
 
 	public override DatabaseModel Create(DbConnection connection, DatabaseModelFactoryOptions options)
@@ -51,20 +51,18 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		{
 			connection.Open();
 		}
-
-		var serverVersion = FbServerProperties.ParseServerVersion(connection.ServerVersion);
-		MajorVersionNumber = serverVersion.Major;
-
 		try
 		{
+			var serverVersion = FbServerProperties.ParseServerVersion(connection.ServerVersion);
+			MajorVersionNumber = serverVersion.Major;
+
 			databaseModel.DatabaseName = connection.Database;
-			databaseModel.DefaultSchema = GetDefaultSchema(connection);
+			databaseModel.DefaultSchema = GetDefaultSchema();
 
-			var schemaList = new List<string>();
 			var tableList = options.Tables.ToList();
-			var tableFilter = GenerateTableFilter(tableList, schemaList);
+			var tableFilter = GenerateTableFilter(tableList);
 
-			var tables = GetTables(connection, tableFilter);
+			var tables = GetTables(connection);
 			foreach (var table in tables)
 			{
 				table.Database = databaseModel;
@@ -85,15 +83,10 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		}
 	}
 
-	private static string GetDefaultSchema(DbConnection connection)
-	{
-		return null;
-	}
+	private static string GetDefaultSchema() => null;
 
-	private static Func<DatabaseTable, bool> GenerateTableFilter(IReadOnlyList<string> tables, IReadOnlyList<string> schemas)
-	{
-		return tables.Any() ? x => tables.Contains(x.Name) : _ => true;
-	}
+	private static Func<DatabaseTable, bool> GenerateTableFilter(IReadOnlyList<string> tables) =>
+		tables.Any() ? x => tables.Contains(x.Name) : _ => true;
 
 	private const string GetTablesQuery = """
 		SELECT
@@ -108,12 +101,13 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			r.rdb$relation_name
 		""";
 
-	private IEnumerable<DatabaseTable> GetTables(DbConnection connection, Func<DatabaseTable, bool> filter)
+	private List<DatabaseTable> GetTables(DbConnection connection)
 	{
 		using (var command = connection.CreateCommand())
 		{
 			var tables = new List<DatabaseTable>();
 			command.CommandText = GetTablesQuery;
+
 			using (var reader = command.ExecuteReader())
 			{
 				while (reader.Read())
@@ -134,9 +128,9 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 				}
 			}
 
-			GetColumns(connection, tables, filter);
+			GetColumns(connection, tables);
 			GetPrimaryKeys(connection, tables);
-			GetIndexes(connection, tables, filter);
+			GetIndexes(connection, tables);
 			GetConstraints(connection, tables);
 
 			return tables;
@@ -193,12 +187,9 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 						ELSE f.rdb$field_sub_type
 					END
 				ELSE 'RDB$FIELD_TYPE: ' || f.rdb$field_type || '?'
-			END COLUMN_STORE_TYPE,
+			END column_store_type,
 
 			rf.rdb$field_source column_domain,
-			COALESCE(f.rdb$character_length, 0) column_length,
-			COALESCE(f.rdb$field_precision, 0) column_precision,
-			COALESCE(-f.rdb$field_scale, 0) column_scale,
 
 			NULLIF(ch.rdb$character_set_name, d.rdb$character_set_name) character_set_name,
 			co.rdb$collation_name collation_name,
@@ -224,7 +215,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			rf.rdb$field_position
 		""";
 
-	private void GetColumns(DbConnection connection, IReadOnlyList<DatabaseTable> tables, Func<DatabaseTable, bool> tableFilter)
+	private void GetColumns(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
 	{
 		foreach (var table in tables)
 		{
@@ -232,6 +223,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			{
 				command.CommandText = GetColumnsQuery();
 				command.Parameters.Add(new FbParameter("@RelationName", table.Name));
+
 				using (var reader = command.ExecuteReader())
 				{
 					while (reader.Read())
@@ -241,9 +233,6 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 						var storeType = reader["COLUMN_STORE_TYPE"].ToString();
 
 						var columnDomain = reader["COLUMN_DOMAIN"].ToString();
-						var columnLength = Convert.ToInt32(reader["COLUMN_LENGTH"]);
-						var columnPrecision = Convert.ToInt32(reader["COLUMN_PRECISION"]);
-						var columnScale = Convert.ToInt32(reader["COLUMN_SCALE"]);
 
 						var charset = reader["CHARACTER_SET_NAME"].ToString();
 						var collation = reader["COLLATION_NAME"].ToString();
@@ -322,30 +311,27 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			sg.rdb$field_position
 		""";
 
-	private void GetPrimaryKeys(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
+	private static void GetPrimaryKeys(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
 	{
-		foreach (var x in tables)
+		foreach (var table in tables)
 		{
 			using (var command = connection.CreateCommand())
 			{
 				command.CommandText = GetPrimaryKeysQuery;
-				command.Parameters.Add(new FbParameter("@RelationName", x.Name));
+				command.Parameters.Add(new FbParameter("@RelationName", table.Name));
 
 				using (var reader = command.ExecuteReader())
 				{
 					DatabasePrimaryKey index = null;
 					while (reader.Read())
 					{
-						if (index == null)
+						index ??= new DatabasePrimaryKey
 						{
-							index = new DatabasePrimaryKey
-							{
-								Table = x,
-								Name = reader.GetString(0).Trim()
-							};
-						}
-						index.Columns.Add(x.Columns.Single(y => y.Name == reader.GetString(1).Trim()));
-						x.PrimaryKey = index;
+							Table = table,
+							Name = reader.GetString(0).Trim()
+						};
+						index.Columns.Add(table.Columns.Single(y => y.Name == reader.GetString(1).Trim()));
+						table.PrimaryKey = index;
 					}
 				}
 			}
@@ -371,7 +357,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 	/// <remarks>
 	/// Primary keys are handled as in <see cref="GetConstraints"/>, not here
 	/// </remarks>
-	private void GetIndexes(DbConnection connection, IReadOnlyList<DatabaseTable> tables, Func<DatabaseTable, bool> tableFilter)
+	private static void GetIndexes(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
 	{
 		foreach (var table in tables)
 		{
@@ -433,7 +419,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			drs.rdb$constraint_type = 'FOREIGN KEY' AND TRIM(drs.rdb$relation_name) = @RelationName
 		""";
 
-	private void GetConstraints(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
+	private static void GetConstraints(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
 	{
 		foreach (var table in tables)
 		{
@@ -441,6 +427,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			{
 				command.CommandText = GetConstraintsQuery;
 				command.Parameters.Add(new FbParameter("@RelationName", table.Name));
+
 				using (var reader = command.ExecuteReader())
 				{
 					while (reader.Read())
@@ -463,9 +450,8 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		}
 	}
 
-	private static ReferentialAction? ConvertToReferentialAction(string onDeleteAction)
-	{
-		return onDeleteAction.ToUpperInvariant() switch
+	private static ReferentialAction? ConvertToReferentialAction(string onDeleteAction) =>
+		onDeleteAction.ToUpperInvariant() switch
 		{
 			"RESTRICT" => ReferentialAction.Restrict,
 			"CASCADE" => ReferentialAction.Cascade,
@@ -473,5 +459,4 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			"NO ACTION" => ReferentialAction.NoAction,
 			_ => null,
 		};
-	}
 }
