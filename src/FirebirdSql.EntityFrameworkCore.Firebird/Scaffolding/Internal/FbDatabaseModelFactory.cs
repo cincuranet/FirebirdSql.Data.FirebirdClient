@@ -217,7 +217,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			{(MajorVersionNumber < 3 ? "" : "LEFT JOIN rdb$generators g ON g.rdb$generator_name = rf.rdb$generator_name")}
 			CROSS JOIN rdb$database d
 		WHERE
-			TRIM(rf.rdb$relation_name) = @pRelationName AND COALESCE(rf.rdb$system_flag, 0) = 0
+			TRIM(rf.rdb$relation_name) = @RelationName AND COALESCE(rf.rdb$system_flag, 0) = 0
 		ORDER BY
 			rf.rdb$field_position";
 
@@ -226,7 +226,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			using (var command = connection.CreateCommand())
 			{
 				command.CommandText = getColumnsQuery;
-				command.Parameters.Add(new FbParameter("@pRelationName", table.Name));
+				command.Parameters.Add(new FbParameter("@RelationName", table.Name));
 				using (var reader = command.ExecuteReader())
 				{
 					while (reader.Read())
