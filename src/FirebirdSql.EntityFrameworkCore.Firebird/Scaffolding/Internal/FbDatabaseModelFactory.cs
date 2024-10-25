@@ -27,7 +27,6 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Scaffolding;
 using Microsoft.EntityFrameworkCore.Scaffolding.Metadata;
-using Microsoft.Extensions.Logging;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.Scaffolding.Internal;
 
@@ -96,17 +95,18 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		return tables.Any() ? x => tables.Contains(x.Name) : _ => true;
 	}
 
-	private const string GetTablesQuery =
-		@"SELECT
-                trim(r.RDB$RELATION_NAME),
-                r.RDB$DESCRIPTION,
-                r.RDB$RELATION_TYPE
-              FROM
-               RDB$RELATIONS r
-             WHERE
-              r.RDB$SYSTEM_FLAG is distinct from 1
-             ORDER BY
-              r.RDB$RELATION_NAME";
+	private const string GetTablesQuery = """
+		SELECT
+			trim(r.RDB$RELATION_NAME),
+			r.RDB$DESCRIPTION,
+			r.RDB$RELATION_TYPE
+		FROM
+			RDB$RELATIONS r
+		WHERE
+			r.RDB$SYSTEM_FLAG is distinct from 1
+		ORDER BY
+			r.RDB$RELATION_NAME
+		""";
 
 	private IEnumerable<DatabaseTable> GetTables(DbConnection connection, Func<DatabaseTable, bool> filter)
 	{
@@ -143,37 +143,38 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		}
 	}
 
-	private void GetColumns(DbConnection connection, IReadOnlyList<DatabaseTable> tables, Func<DatabaseTable, bool> tableFilter)
-	{
-		var getColumnsQuery = $@"
+	private string GetColumnsQuery() => $"""
 		SELECT
 			TRIM(rf.rdb$field_name) COLUMN_NAME,
 			COALESCE(rf.rdb$null_flag, f.rdb$null_flag, 0) COLUMN_REQUIRED,
 
 			CASE COALESCE(f.rdb$field_type, 0)
-				WHEN 7 THEN CASE f.rdb$field_sub_type
-								WHEN 0 THEN 'SMALLINT'
-								WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
-								WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
-								ELSE '?'
-							END
-				WHEN 8 THEN CASE f.rdb$field_sub_type
-								WHEN 0 THEN 'INTEGER'
-								WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
-								WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
-								ELSE '?'
-							END
+				WHEN 7 THEN
+					CASE f.rdb$field_sub_type
+						WHEN 0 THEN 'SMALLINT'
+						WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+						WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+						ELSE '?'
+					END
+				WHEN 8 THEN
+					CASE f.rdb$field_sub_type
+						WHEN 0 THEN 'INTEGER'
+						WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+						WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+						ELSE '?'
+					END
 				WHEN 9 THEN 'QUAD'
 				WHEN 10 THEN 'FLOAT'
 				WHEN 12 THEN 'DATE'
 				WHEN 13 THEN 'TIME'
 				WHEN 14 THEN 'CHAR(' || (TRUNC(f.rdb$field_length / ch.rdb$bytes_per_character)) || ')'
-				WHEN 16 THEN CASE f.rdb$field_sub_type
-								 WHEN 0 THEN 'BIGINT'
-								 WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
-								 WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
-								 ELSE '?'
-							 END
+				WHEN 16 THEN
+					CASE f.rdb$field_sub_type
+						WHEN 0 THEN 'BIGINT'
+						WHEN 1 THEN 'NUMERIC(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+						WHEN 2 THEN 'DECIMAL(' || (f.rdb$field_precision) || ',' || ABS(f.rdb$field_scale) || ')'
+						ELSE '?'
+					END
 				WHEN 23 THEN 'BOOLEAN'
 				WHEN 24 THEN 'DECFLOAT(' || (f.rdb$field_precision) || ')'
 				WHEN 25 THEN 'DECFLOAT(' || (f.rdb$field_precision) || ')'
@@ -185,11 +186,12 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 				WHEN 37 THEN 'VARCHAR(' || (TRUNC(f.rdb$field_length / ch.rdb$bytes_per_character)) || ')'
 				WHEN 40 THEN 'CSTRING(' || (TRUNC(f.rdb$field_length / ch.rdb$bytes_per_character)) || ')'
 				WHEN 45 THEN 'BLOB_ID'
-				WHEN 261 THEN 'BLOB SUB_TYPE ' || CASE f.rdb$field_sub_type
-													  WHEN 0 THEN 'BINARY'
-													  WHEN 1 THEN 'TEXT'
-													  ELSE f.rdb$field_sub_type
-												  END
+				WHEN 261 THEN 'BLOB SUB_TYPE ' ||
+					CASE f.rdb$field_sub_type
+						WHEN 0 THEN 'BINARY'
+						WHEN 1 THEN 'TEXT'
+						ELSE f.rdb$field_sub_type
+					END
 				ELSE 'RDB$FIELD_TYPE: ' || f.RDB$FIELD_TYPE || '?'
 			END COLUMN_STORE_TYPE,
 
@@ -219,13 +221,16 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		WHERE
 			TRIM(rf.rdb$relation_name) = @RelationName AND COALESCE(rf.rdb$system_flag, 0) = 0
 		ORDER BY
-			rf.rdb$field_position";
+			rf.rdb$field_position
+		""";
 
+	private void GetColumns(DbConnection connection, IReadOnlyList<DatabaseTable> tables, Func<DatabaseTable, bool> tableFilter)
+	{
 		foreach (var table in tables)
 		{
 			using (var command = connection.CreateCommand())
 			{
-				command.CommandText = getColumnsQuery;
+				command.CommandText = GetColumnsQuery();
 				command.Parameters.Add(new FbParameter("@RelationName", table.Name));
 				using (var reader = command.ExecuteReader())
 				{
@@ -303,18 +308,20 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		}
 	}
 
-	private const string GetPrimaryQuery =
-	@"SELECT
-           trim(i.rdb$index_name) as INDEX_NAME,
-           trim(sg.rdb$field_name) as FIELD_NAME
-          FROM
-           RDB$INDICES i
-           LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
-           LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name
-          WHERE
-           rc.rdb$constraint_type = 'PRIMARY KEY'
-           AND trim(i.rdb$relation_name) = '{0}'
-          ORDER BY sg.RDB$FIELD_POSITION;";
+	private const string GetPrimaryKeysQuery = """
+		SELECT
+			trim(i.rdb$index_name) as INDEX_NAME,
+			trim(sg.rdb$field_name) as FIELD_NAME
+		FROM
+			RDB$INDICES i
+			LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
+			LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name
+		WHERE
+			rc.rdb$constraint_type = 'PRIMARY KEY'
+			AND trim(i.rdb$relation_name) = '{0}'
+		ORDER BY
+			sg.RDB$FIELD_POSITION
+		""";
 
 	private void GetPrimaryKeys(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
 	{
@@ -322,7 +329,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		{
 			using (var command = connection.CreateCommand())
 			{
-				command.CommandText = string.Format(GetPrimaryQuery, x.Name);
+				command.CommandText = string.Format(GetPrimaryKeysQuery, x.Name);
 
 				using (var reader = command.ExecuteReader())
 				{
@@ -345,20 +352,21 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		}
 	}
 
-	private const string GetIndexesQuery =
-		@"SELECT
-               trim(I.rdb$index_name) as INDEX_NAME,
-               COALESCE(I.rdb$unique_flag, 0) as IS_UNIQUE,
-               Coalesce(I.rdb$index_type, 0) as IS_DESC,
-               list(trim(sg.RDB$FIELD_NAME)) as COLUMNS
-              FROM
-               RDB$INDICES i
-               LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
-               LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name and rc.rdb$constraint_type = null
-              WHERE
-               trim(i.rdb$relation_name) = '{0}'
-              GROUP BY
-               INDEX_NAME, IS_UNIQUE, IS_DESC ;";
+	private const string GetIndexesQuery = """
+		SELECT
+			trim(I.rdb$index_name) as INDEX_NAME,
+			COALESCE(I.rdb$unique_flag, 0) as IS_UNIQUE,
+			Coalesce(I.rdb$index_type, 0) as IS_DESC,
+			list(trim(sg.RDB$FIELD_NAME)) as COLUMNS
+		FROM
+			RDB$INDICES i
+			LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
+			LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name and rc.rdb$constraint_type = null
+		WHERE
+			trim(i.rdb$relation_name) = '{0}'
+		GROUP BY
+			INDEX_NAME, IS_UNIQUE, IS_DESC
+		""";
 
 	/// <remarks>
 	/// Primary keys are handled as in <see cref="GetConstraints"/>, not here
@@ -401,25 +409,29 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		}
 	}
 
-	private const string GetConstraintsQuery =
-		@"SELECT
-               trim(drs.rdb$constraint_name) as CONSTRAINT_NAME,
-               trim(drs.RDB$RELATION_NAME) as TABLE_NAME,
-               trim(mrc.rdb$relation_name) AS REFERENCED_TABLE_NAME,
-               (select list(trim(di.rdb$field_name)||'|'||trim(mi.rdb$field_name))
-                from
-                 rdb$index_segments di
-                 join rdb$index_segments mi on mi.RDB$FIELD_POSITION=di.RDB$FIELD_POSITION and mi.rdb$index_name = mrc.rdb$index_name
-                where
-                 di.rdb$index_name = drs.rdb$index_name) as PAIRED_COLUMNS,
-               trim(rc.RDB$DELETE_RULE) as DELETE_RULE
-              FROM
-               rdb$relation_constraints drs
-               left JOIN rdb$ref_constraints rc ON drs.rdb$constraint_name = rc.rdb$constraint_name
-               left JOIN rdb$relation_constraints mrc ON rc.rdb$const_name_uq = mrc.rdb$constraint_name
-              WHERE
-               drs.rdb$constraint_type = 'FOREIGN KEY'
-               AND trim(drs.RDB$RELATION_NAME) = '{0}' ";
+	private const string GetConstraintsQuery = """
+		SELECT
+			trim(drs.rdb$constraint_name) as CONSTRAINT_NAME,
+			trim(drs.RDB$RELATION_NAME) as TABLE_NAME,
+			trim(mrc.rdb$relation_name) AS REFERENCED_TABLE_NAME,
+			(
+				select
+					list(trim(di.rdb$field_name)||'|'||trim(mi.rdb$field_name))
+				from
+					rdb$index_segments di
+					join rdb$index_segments mi on mi.RDB$FIELD_POSITION=di.RDB$FIELD_POSITION and mi.rdb$index_name = mrc.rdb$index_name
+				where
+					di.rdb$index_name = drs.rdb$index_name
+			) as PAIRED_COLUMNS,
+			trim(rc.RDB$DELETE_RULE) as DELETE_RULE
+		FROM
+			rdb$relation_constraints drs
+			left JOIN rdb$ref_constraints rc ON drs.rdb$constraint_name = rc.rdb$constraint_name
+			left JOIN rdb$relation_constraints mrc ON rc.rdb$const_name_uq = mrc.rdb$constraint_name
+		WHERE
+			drs.rdb$constraint_type = 'FOREIGN KEY'
+			AND trim(drs.RDB$RELATION_NAME) = '{0}'
+		""";
 
 	private void GetConstraints(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
 	{
