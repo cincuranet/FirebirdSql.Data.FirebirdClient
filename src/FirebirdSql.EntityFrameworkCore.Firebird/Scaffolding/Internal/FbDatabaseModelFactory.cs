@@ -318,7 +318,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name
 		WHERE
 			rc.rdb$constraint_type = 'PRIMARY KEY'
-			AND trim(i.rdb$relation_name) = '{0}'
+			AND trim(i.rdb$relation_name) = @RelationName
 		ORDER BY
 			sg.RDB$FIELD_POSITION
 		""";
@@ -329,7 +329,8 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		{
 			using (var command = connection.CreateCommand())
 			{
-				command.CommandText = string.Format(GetPrimaryKeysQuery, x.Name);
+				command.CommandText = GetPrimaryKeysQuery;
+				command.Parameters.Add(new FbParameter("@RelationName", x.Name));
 
 				using (var reader = command.ExecuteReader())
 				{
@@ -363,7 +364,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
 			LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name and rc.rdb$constraint_type = null
 		WHERE
-			trim(i.rdb$relation_name) = '{0}'
+			trim(i.rdb$relation_name) = @RelationName
 		GROUP BY
 			INDEX_NAME, IS_UNIQUE, IS_DESC
 		""";
@@ -377,7 +378,8 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		{
 			using (var command = connection.CreateCommand())
 			{
-				command.CommandText = string.Format(GetIndexesQuery, table.Name);
+				command.CommandText = GetIndexesQuery;
+				command.Parameters.Add(new FbParameter("@RelationName", table.Name));
 
 				using (var reader = command.ExecuteReader())
 				{
@@ -430,7 +432,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			left JOIN rdb$relation_constraints mrc ON rc.rdb$const_name_uq = mrc.rdb$constraint_name
 		WHERE
 			drs.rdb$constraint_type = 'FOREIGN KEY'
-			AND trim(drs.RDB$RELATION_NAME) = '{0}'
+			AND trim(drs.RDB$RELATION_NAME) = @RelationName
 		""";
 
 	private void GetConstraints(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
@@ -439,7 +441,8 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 		{
 			using (var command = connection.CreateCommand())
 			{
-				command.CommandText = string.Format(GetConstraintsQuery, table.Name);
+				command.CommandText = GetConstraintsQuery;
+				command.Parameters.Add(new FbParameter("@RelationName", table.Name));
 				using (var reader = command.ExecuteReader())
 				{
 					while (reader.Read())
