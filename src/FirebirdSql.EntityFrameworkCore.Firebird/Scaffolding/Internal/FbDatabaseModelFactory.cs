@@ -97,15 +97,15 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 
 	private const string GetTablesQuery = """
 		SELECT
-			trim(r.RDB$RELATION_NAME),
-			r.RDB$DESCRIPTION,
-			r.RDB$RELATION_TYPE
+			TRIM(r.rdb$relation_name) relation_name,
+			r.rdb$description description,
+			r.rdb$relation_type relation_type
 		FROM
-			RDB$RELATIONS r
+			rdb$relations r
 		WHERE
-			r.RDB$SYSTEM_FLAG is distinct from 1
+			r.rdb$system_flag IS DISTINCT FROM 1
 		ORDER BY
-			r.RDB$RELATION_NAME
+			r.rdb$relation_name
 		""";
 
 	private IEnumerable<DatabaseTable> GetTables(DbConnection connection, Func<DatabaseTable, bool> filter)
@@ -145,8 +145,8 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 
 	private string GetColumnsQuery() => $"""
 		SELECT
-			TRIM(rf.rdb$field_name) COLUMN_NAME,
-			COALESCE(rf.rdb$null_flag, f.rdb$null_flag, 0) COLUMN_REQUIRED,
+			TRIM(rf.rdb$field_name) column_name,
+			COALESCE(rf.rdb$null_flag, f.rdb$null_flag, 0) column_required,
 
 			CASE COALESCE(f.rdb$field_type, 0)
 				WHEN 7 THEN
@@ -192,25 +192,25 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 						WHEN 1 THEN 'TEXT'
 						ELSE f.rdb$field_sub_type
 					END
-				ELSE 'RDB$FIELD_TYPE: ' || f.RDB$FIELD_TYPE || '?'
+				ELSE 'RDB$FIELD_TYPE: ' || f.rdb$field_type || '?'
 			END COLUMN_STORE_TYPE,
 
-			rf.rdb$field_source COLUMN_DOMAIN,
-			COALESCE(f.rdb$character_length, 0) COLUMN_LENGTH,
-			COALESCE(f.rdb$field_precision, 0) COLUMN_PRECISION,
-			COALESCE(-f.rdb$field_scale, 0) COLUMN_SCALE,
+			rf.rdb$field_source column_domain,
+			COALESCE(f.rdb$character_length, 0) column_length,
+			COALESCE(f.rdb$field_precision, 0) column_precision,
+			COALESCE(-f.rdb$field_scale, 0) column_scale,
 
-			NULLIF(ch.rdb$character_set_name, d.rdb$character_set_name) as CHARACTER_SET_NAME,
-			co.rdb$collation_name COLLATION_NAME,
-			COALESCE(f.rdb$segment_length, 0) SEGMENT_LENGTH,
+			NULLIF(ch.rdb$character_set_name, d.rdb$character_set_name) character_set_name,
+			co.rdb$collation_name collation_name,
+			COALESCE(f.rdb$segment_length, 0) segment_length,
 
-			COALESCE(rf.rdb$default_source, f.rdb$default_source) COLUMN_DEFAULT,
-			f.rdb$computed_source COLUMN_COMPUTED_SOURCE,
-			f.rdb$description COLUMN_COMMENT,
+			COALESCE(rf.rdb$default_source, f.rdb$default_source) column_default,
+			f.rdb$computed_source column_computed_source,
+			f.rdb$description column_comment,
 
-			COALESCE({(MajorVersionNumber < 3 ? "NULL" : "rf.rdb$identity_type")}, -1) IDENTITY_TYPE,
-			COALESCE({(MajorVersionNumber < 3 ? "NULL" : "g.rdb$initial_value")}, 1) IDENTITY_START,
-			COALESCE({(MajorVersionNumber < 3 ? "NULL" : "g.rdb$generator_increment")}, 1) IDENTITY_INCREMENT
+			COALESCE({(MajorVersionNumber < 3 ? "NULL" : "rf.rdb$identity_type")}, -1) identity_type,
+			COALESCE({(MajorVersionNumber < 3 ? "NULL" : "g.rdb$initial_value")}, 1) identity_start,
+			COALESCE({(MajorVersionNumber < 3 ? "NULL" : "g.rdb$generator_increment")}, 1) identity_increment
 		FROM
 			rdb$relation_fields rf
 			JOIN rdb$fields f ON f.rdb$field_name = rf.rdb$field_source 
@@ -310,17 +310,16 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 
 	private const string GetPrimaryKeysQuery = """
 		SELECT
-			trim(i.rdb$index_name) as INDEX_NAME,
-			trim(sg.rdb$field_name) as FIELD_NAME
+			TRIM(i.rdb$index_name) index_name,
+			TRIM(sg.rdb$field_name) field_name
 		FROM
-			RDB$INDICES i
-			LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
-			LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name
+			rdb$indices i
+			LEFT JOIN rdb$index_segments sg ON i.rdb$index_name = sg.rdb$index_name
+			LEFT JOIN rdb$relation_constraints rc ON rc.rdb$index_name = i.rdb$index_name
 		WHERE
-			rc.rdb$constraint_type = 'PRIMARY KEY'
-			AND trim(i.rdb$relation_name) = @RelationName
+			rc.rdb$constraint_type = 'PRIMARY KEY' AND TRIM(i.rdb$relation_name) = @RelationName
 		ORDER BY
-			sg.RDB$FIELD_POSITION
+			sg.rdb$field_position
 		""";
 
 	private void GetPrimaryKeys(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
@@ -355,18 +354,18 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 
 	private const string GetIndexesQuery = """
 		SELECT
-			trim(I.rdb$index_name) as INDEX_NAME,
-			COALESCE(I.rdb$unique_flag, 0) as IS_UNIQUE,
-			Coalesce(I.rdb$index_type, 0) as IS_DESC,
-			list(trim(sg.RDB$FIELD_NAME)) as COLUMNS
+			TRIM(i.rdb$index_name) index_name,
+			COALESCE(i.rdb$unique_flag, 0) is_unique,
+			Coalesce(i.rdb$index_type, 0) is_desc,
+			LIST(TRIM(sg.rdb$field_name)) columns
 		FROM
 			RDB$INDICES i
-			LEFT JOIN rdb$index_segments sg on i.rdb$index_name = sg.rdb$index_name
-			LEFT JOIN rdb$relation_constraints rc on rc.rdb$index_name = I.rdb$index_name and rc.rdb$constraint_type = null
+			LEFT JOIN rdb$index_segments sg ON i.rdb$index_name = sg.rdb$index_name
+			LEFT JOIN rdb$relation_constraints rc ON rc.rdb$index_name = i.rdb$index_name
 		WHERE
-			trim(i.rdb$relation_name) = @RelationName
+			TRIM(i.rdb$relation_name) = @RelationName
 		GROUP BY
-			INDEX_NAME, IS_UNIQUE, IS_DESC
+			index_name, is_unique, is_desc
 		""";
 
 	/// <remarks>
@@ -413,26 +412,25 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 
 	private const string GetConstraintsQuery = """
 		SELECT
-			trim(drs.rdb$constraint_name) as CONSTRAINT_NAME,
-			trim(drs.RDB$RELATION_NAME) as TABLE_NAME,
-			trim(mrc.rdb$relation_name) AS REFERENCED_TABLE_NAME,
+			TRIM(drs.rdb$constraint_name) constraint_name,
+			TRIM(drs.rdb$relation_name) table_name,
+			TRIM(mrc.rdb$relation_name) referenced_table_name,
 			(
-				select
-					list(trim(di.rdb$field_name)||'|'||trim(mi.rdb$field_name))
-				from
+				SELECT
+					LIST(TRIM(di.rdb$field_name) || '|' || TRIM(mi.rdb$field_name))
+				FROM
 					rdb$index_segments di
-					join rdb$index_segments mi on mi.RDB$FIELD_POSITION=di.RDB$FIELD_POSITION and mi.rdb$index_name = mrc.rdb$index_name
-				where
+					join rdb$index_segments mi ON mi.rdb$field_position = di.rdb$field_position AND mi.rdb$index_name = mrc.rdb$index_name
+				WHERE
 					di.rdb$index_name = drs.rdb$index_name
-			) as PAIRED_COLUMNS,
-			trim(rc.RDB$DELETE_RULE) as DELETE_RULE
+			) paired_columns,
+			TRIM(rc.rdb$delete_rule) delete_rule
 		FROM
 			rdb$relation_constraints drs
-			left JOIN rdb$ref_constraints rc ON drs.rdb$constraint_name = rc.rdb$constraint_name
-			left JOIN rdb$relation_constraints mrc ON rc.rdb$const_name_uq = mrc.rdb$constraint_name
+			LEFT JOIN rdb$ref_constraints rc ON drs.rdb$constraint_name = rc.rdb$constraint_name
+			LEFT JOIN rdb$relation_constraints mrc ON rc.rdb$const_name_uq = mrc.rdb$constraint_name
 		WHERE
-			drs.rdb$constraint_type = 'FOREIGN KEY'
-			AND trim(drs.RDB$RELATION_NAME) = @RelationName
+			drs.rdb$constraint_type = 'FOREIGN KEY' AND TRIM(drs.rdb$relation_name) = @RelationName
 		""";
 
 	private void GetConstraints(DbConnection connection, IReadOnlyList<DatabaseTable> tables)
