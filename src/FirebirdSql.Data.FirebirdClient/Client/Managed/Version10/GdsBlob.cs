@@ -21,10 +21,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using FirebirdSql.Data.Common;
 
-#if !(NET48 || NETSTANDARD2_0)
-using System.Buffers;
-#endif
-
 namespace FirebirdSql.Data.Client.Managed.Version10;
 
 internal sealed class GdsBlob : BlobBase
@@ -134,7 +130,7 @@ internal sealed class GdsBlob : BlobBase
 			_database.Xdr.Write(IscCodes.op_info_blob);
 			_database.Xdr.Write(_blobHandle);
 			_database.Xdr.Write(0);
-			_database.Xdr.WriteBuffer(new byte[]{ IscCodes.isc_info_blob_total_length }, 1);
+			_database.Xdr.WriteBuffer(new byte[] { IscCodes.isc_info_blob_total_length }, 1);
 			_database.Xdr.Write(bufferLength);
 
 			_database.Xdr.Flush();
@@ -174,7 +170,7 @@ internal sealed class GdsBlob : BlobBase
 			await _database.Xdr.WriteAsync(IscCodes.op_info_blob, cancellationToken).ConfigureAwait(false);
 			await _database.Xdr.WriteAsync(_blobHandle, cancellationToken).ConfigureAwait(false);
 			await _database.Xdr.WriteAsync(0, cancellationToken).ConfigureAwait(false);
-			await _database.Xdr.WriteBufferAsync(new byte[]{ IscCodes.isc_info_blob_total_length }, 1, cancellationToken).ConfigureAwait(false);
+			await _database.Xdr.WriteBufferAsync(new byte[] { IscCodes.isc_info_blob_total_length }, 1, cancellationToken).ConfigureAwait(false);
 			await _database.Xdr.WriteAsync(bufferLength, cancellationToken).ConfigureAwait(false);
 
 			await _database.Xdr.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -278,7 +274,7 @@ internal sealed class GdsBlob : BlobBase
 
 			if (buffer.Length == 0)
 			{
-				// previous	segment	was	last, this has no data
+				//previous segment was last, this has no data
 				return;
 			}
 
@@ -328,7 +324,7 @@ internal sealed class GdsBlob : BlobBase
 
 			if (buffer.Length == 0)
 			{
-				// previous	segment	was	last, this has no data
+				//previous segment was last, this has no data
 				return Array.Empty<byte>();
 			}
 
@@ -446,13 +442,13 @@ internal sealed class GdsBlob : BlobBase
 		}
 	}
 
-	public override void Seek(int offset, int fbSeekMode)
+	public override void Seek(int offset, int seekMode)
 	{
 		try
 		{
 			_database.Xdr.Write(IscCodes.op_seek_blob);
 			_database.Xdr.Write(_blobHandle);
-			_database.Xdr.Write(fbSeekMode);
+			_database.Xdr.Write(seekMode);
 			_database.Xdr.Write(offset);
 			_database.Xdr.Flush();
 
@@ -465,13 +461,13 @@ internal sealed class GdsBlob : BlobBase
 			throw IscException.ForIOException(ex);
 		}
 	}
-	public override async ValueTask SeekAsync(int offset, int fbSeekMode, CancellationToken cancellationToken = default)
+	public override async ValueTask SeekAsync(int offset, int seekMode, CancellationToken cancellationToken = default)
 	{
 		try
 		{
 			await _database.Xdr.WriteAsync(IscCodes.op_seek_blob, cancellationToken).ConfigureAwait(false);
 			await _database.Xdr.WriteAsync(_blobHandle, cancellationToken).ConfigureAwait(false);
-			await _database.Xdr.WriteAsync(fbSeekMode, cancellationToken).ConfigureAwait(false);
+			await _database.Xdr.WriteAsync(seekMode, cancellationToken).ConfigureAwait(false);
 			await _database.Xdr.WriteAsync(offset, cancellationToken).ConfigureAwait(false);
 			await _database.Xdr.FlushAsync(cancellationToken).ConfigureAwait(false);
 

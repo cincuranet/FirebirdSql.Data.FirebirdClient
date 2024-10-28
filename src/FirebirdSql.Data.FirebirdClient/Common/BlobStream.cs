@@ -69,7 +69,6 @@ public sealed class BlobStream : Stream
 
 		return copied;
 	}
-
 	public override async Task<int> ReadAsync(byte[] buffer, int offset, int count,
 		CancellationToken cancellationToken)
 	{
@@ -113,7 +112,7 @@ public sealed class BlobStream : Stream
 		if (!_blobHandle.IsOpen)
 			_blobHandle.Open();
 
-		var fbSeekMode = origin switch
+		var seekMode = origin switch
 		{
 			SeekOrigin.Begin => IscCodes.isc_blb_seek_from_head,
 			SeekOrigin.Current => IscCodes.isc_blb_seek_relative,
@@ -121,7 +120,7 @@ public sealed class BlobStream : Stream
 			_ => throw new ArgumentOutOfRangeException(nameof(origin))
 		};
 
-		_blobHandle.Seek((int)offset, fbSeekMode);
+		_blobHandle.Seek((int)offset, seekMode);
 		return _position = _blobHandle.Position;
 	}
 
@@ -158,15 +157,11 @@ public sealed class BlobStream : Stream
 		}
 		catch
 		{
-			// Cancel the blob and rethrow the exception
 			_blobHandle.Cancel();
-
 			throw;
 		}
 	}
-
-	public override async Task WriteAsync(byte[] buffer, int offset, int count,
-		CancellationToken cancellationToken)
+	public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
 	{
 		try
 		{
@@ -194,9 +189,7 @@ public sealed class BlobStream : Stream
 		}
 		catch
 		{
-			// Cancel the blob and rethrow the exception
 			await _blobHandle.CancelAsync(cancellationToken).ConfigureAwait(false);
-
 			throw;
 		}
 	}

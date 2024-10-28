@@ -170,7 +170,7 @@ internal sealed class FesBlob : BlobBase
 			_statusVector,
 			ref _blobHandle,
 			1,
-			new byte[]{IscCodes.isc_info_blob_total_length},
+			new byte[] { IscCodes.isc_info_blob_total_length },
 			(short)buffer.Length,
 			buffer);
 
@@ -192,7 +192,7 @@ internal sealed class FesBlob : BlobBase
 			_statusVector,
 			ref _blobHandle,
 			1,
-			new byte[]{IscCodes.isc_info_blob_total_length},
+			new byte[] { IscCodes.isc_info_blob_total_length },
 			(short)buffer.Length,
 			buffer);
 

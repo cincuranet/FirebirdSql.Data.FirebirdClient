@@ -54,7 +54,6 @@ internal abstract class BlobBase
 		var buffer = Read();
 		return _charset.GetString(buffer, 0, buffer.Length);
 	}
-
 	public async ValueTask<string> ReadStringAsync(CancellationToken cancellationToken = default)
 	{
 		var buffer = await ReadAsync(cancellationToken).ConfigureAwait(false);
@@ -87,7 +86,6 @@ internal abstract class BlobBase
 			return ms.ToArray();
 		}
 	}
-
 	public async ValueTask<byte[]> ReadAsync(CancellationToken cancellationToken = default)
 	{
 		using (var ms = new MemoryStream())
@@ -119,7 +117,6 @@ internal abstract class BlobBase
 	{
 		Write(_charset.GetBytes(data));
 	}
-
 	public ValueTask WriteAsync(string data, CancellationToken cancellationToken = default)
 	{
 		return WriteAsync(_charset.GetBytes(data), cancellationToken);
@@ -129,7 +126,6 @@ internal abstract class BlobBase
 	{
 		Write(buffer, 0, buffer.Length);
 	}
-
 	public ValueTask WriteAsync(byte[] buffer, CancellationToken cancellationToken = default)
 	{
 		return WriteAsync(buffer, 0, buffer.Length, cancellationToken);
@@ -172,9 +168,7 @@ internal abstract class BlobBase
 			throw;
 		}
 	}
-
-	public async ValueTask WriteAsync(byte[] buffer, int index, int count,
-		CancellationToken cancellationToken = default)
+	public async ValueTask WriteAsync(byte[] buffer, int index, int count, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -230,8 +224,8 @@ internal abstract class BlobBase
 	public abstract void PutSegment(byte[] buffer);
 	public abstract ValueTask PutSegmentAsync(byte[] buffer, CancellationToken cancellationToken = default);
 
-	public abstract void Seek(int offset, int fbSeekMode);
-	public abstract ValueTask SeekAsync(int offset, int fbSeekMode, CancellationToken cancellationToken = default);
+	public abstract void Seek(int offset, int seekMode);
+	public abstract ValueTask SeekAsync(int offset, int seekMode, CancellationToken cancellationToken = default);
 
 	public abstract void Close();
 	public abstract ValueTask CloseAsync(CancellationToken cancellationToken = default);
