@@ -220,7 +220,6 @@ internal sealed class FesBlob : BlobBase
 			requested,
 			tmp);
 
-
 		RblRemoveValue(IscCodes.RBL_segment);
 
 		if (_statusVector[1] == new IntPtr(IscCodes.isc_segstr_eof))
@@ -317,7 +316,15 @@ internal sealed class FesBlob : BlobBase
 			_database.ProcessStatusVector(_statusVector);
 		}
 
-		return tmp;
+		var actualSegment = tmp;
+		if (actualSegment.Length != segmentLength)
+		{
+			tmp = new byte[segmentLength];
+			Array.Copy(actualSegment, tmp, segmentLength);
+			actualSegment = tmp;
+		}
+
+		return actualSegment;
 	}
 	public override ValueTask<byte[]> GetSegmentAsync(CancellationToken cancellationToken = default)
 	{
@@ -355,7 +362,15 @@ internal sealed class FesBlob : BlobBase
 			}
 		}
 
-		return ValueTask2.FromResult(tmp);
+		var actualSegment = tmp;
+		if (actualSegment.Length != segmentLength)
+		{
+			tmp = new byte[segmentLength];
+			Array.Copy(actualSegment, tmp, segmentLength);
+			actualSegment = tmp;
+		}
+
+		return ValueTask2.FromResult(actualSegment);
 	}
 
 	public override void PutSegment(byte[] buffer)

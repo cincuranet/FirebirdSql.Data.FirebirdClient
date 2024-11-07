@@ -27,7 +27,16 @@ public sealed class BlobStream : Stream
 		set => Seek(value, SeekOrigin.Begin);
 	}
 
-	public override long Length => _blobHandle.GetLength();
+	public override long Length
+	{
+		get
+		{
+			if (!_blobHandle.IsOpen)
+				_blobHandle.Open();
+
+			return _blobHandle.GetLength();
+		}
+	}
 
 	public override void Flush()
 	{
