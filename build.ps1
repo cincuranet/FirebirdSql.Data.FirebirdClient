@@ -10,7 +10,6 @@ $baseDir = Split-Path -Parent $PSCommandPath
 $outDir = "$baseDir\out"
 $versionProvider = ''
 $versionEFCore = ''
-$versionEF6 = ''
 
 function Clean() {
 	if (Test-Path $outDir) {
@@ -39,17 +38,14 @@ function Versions() {
 	}
 	$script:versionProvider = v $baseDir\src\FirebirdSql.Data.FirebirdClient\bin\$Configuration\net8.0\FirebirdSql.Data.FirebirdClient.dll
 	$script:versionEFCore = v $baseDir\src\FirebirdSql.EntityFrameworkCore.Firebird\bin\$Configuration\net8.0\FirebirdSql.EntityFrameworkCore.Firebird.dll
-	$script:versionEF6 = v $baseDir\src\EntityFramework.Firebird\bin\$Configuration\net48\EntityFramework.Firebird.dll
 }
 
 function NuGets() {
 	cp $baseDir\src\FirebirdSql.Data.FirebirdClient\bin\$Configuration\FirebirdSql.Data.FirebirdClient.$versionProvider.nupkg $outDir
 	cp $baseDir\src\FirebirdSql.EntityFrameworkCore.Firebird\bin\$Configuration\FirebirdSql.EntityFrameworkCore.Firebird.$versionEFCore.nupkg $outDir
-	cp $baseDir\src\EntityFramework.Firebird\bin\$Configuration\EntityFramework.Firebird.$versionEF6.nupkg $outDir
 
 	cp $baseDir\src\FirebirdSql.Data.FirebirdClient\bin\$Configuration\FirebirdSql.Data.FirebirdClient.$versionProvider.snupkg $outDir
 	cp $baseDir\src\FirebirdSql.EntityFrameworkCore.Firebird\bin\$Configuration\FirebirdSql.EntityFrameworkCore.Firebird.$versionEFCore.snupkg $outDir
-	cp $baseDir\src\EntityFramework.Firebird\bin\$Configuration\EntityFramework.Firebird.$versionEF6.snupkg $outDir
 }
 
 Clean
