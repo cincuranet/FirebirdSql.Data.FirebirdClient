@@ -56,8 +56,14 @@ public class FbTestStore : RelationalTestStore
 			{
 				return;
 			}
-			await clean?.Invoke(context);
-			await seed?.Invoke(context);
+			if (clean != null)
+			{
+				await clean(context);
+			}
+			if (seed != null)
+			{
+				await seed(context);
+			}
 		}
 	}
 
