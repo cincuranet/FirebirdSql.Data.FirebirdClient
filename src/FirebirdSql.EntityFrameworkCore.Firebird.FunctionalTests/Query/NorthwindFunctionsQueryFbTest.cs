@@ -29,8 +29,6 @@ public class NorthwindFunctionsQueryFbTest : NorthwindFunctionsQueryRelationalTe
 		: base(fixture)
 	{ }
 
-	protected override bool CanExecuteQueryString => false;
-
 	[NotSupportedOnFirebirdTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Convert_ToBoolean(bool async)

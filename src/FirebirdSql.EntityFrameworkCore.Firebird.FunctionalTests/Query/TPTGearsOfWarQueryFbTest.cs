@@ -36,7 +36,7 @@ public class TPTGearsOfWarQueryFbTest : TPTGearsOfWarQueryRelationalTestBase<TPT
 	{
 		return AssertQuery(
 			async,
-			ss => ss.Set<Weapon>().Select(w => w.IsAutomatic.ToString()), elementAsserter: (lhs, rhs) => { Assert.True(lhs.Equals(rhs, System.StringComparison.OrdinalIgnoreCase)); });
+			ss => ss.Set<Weapon>().Select(w => w.IsAutomatic.ToString()));
 	}
 
 	[Theory]
@@ -45,7 +45,7 @@ public class TPTGearsOfWarQueryFbTest : TPTGearsOfWarQueryRelationalTestBase<TPT
 	{
 		return AssertQuery(
 			async,
-			ss => ss.Set<LocustHorde>().Select(lh => lh.Eradicated.ToString()), elementAsserter: (lhs, rhs) => { Assert.True(lhs.Equals(rhs, System.StringComparison.OrdinalIgnoreCase)); });
+			ss => ss.Set<LocustHorde>().Select(lh => lh.Eradicated.ToString()));
 	}
 
 	[Theory(Skip = "Different implicit ordering on Firebird.")]

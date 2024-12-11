@@ -356,6 +356,9 @@ public class MigrationsFbTest : MigrationsTestBase<MigrationsFbTest.MigrationsFb
 	[Fact(Skip = SkipReason)]
 	public override Task Add_required_primitve_collection_with_custom_default_value_sql_to_existing_table() => Task.CompletedTask;
 
+	[Fact(Skip = SkipReason)]
+	public override Task Add_required_primitive_collection_with_custom_default_value_sql_to_existing_table() => Task.CompletedTask;
+
 	public class MigrationsFbFixture : MigrationsFixtureBase
 	{
 		protected override string StoreName => nameof(MigrationsFbTest);

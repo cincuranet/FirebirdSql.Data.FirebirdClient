@@ -30,8 +30,6 @@ public class NorthwindAggregateOperatorsQueryFbTest : NorthwindAggregateOperator
 		: base(fixture)
 	{ }
 
-	protected override bool CanExecuteQueryString => false;
-
 	[NotSupportedOnFirebirdTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Multiple_collection_navigation_with_FirstOrDefault_chained(bool async)
@@ -69,20 +67,6 @@ public class NorthwindAggregateOperatorsQueryFbTest : NorthwindAggregateOperator
 	public override Task Contains_with_local_tuple_array_closure(bool async)
 	{
 		return AssertTranslationFailed(() => base.Contains_with_local_tuple_array_closure(async));
-	}
-
-	[Theory(Skip = "Different math on Firebird.")]
-	[MemberData(nameof(IsAsyncData))]
-	public override Task Average_over_max_subquery_is_client_eval(bool async)
-	{
-		return base.Average_over_max_subquery_is_client_eval(async);
-	}
-
-	[Theory(Skip = "Different math on Firebird.")]
-	[MemberData(nameof(IsAsyncData))]
-	public override Task Average_over_nested_subquery_is_client_eval(bool async)
-	{
-		return base.Average_over_nested_subquery_is_client_eval(async);
 	}
 
 	[Theory(Skip = "Different math on Firebird.")]

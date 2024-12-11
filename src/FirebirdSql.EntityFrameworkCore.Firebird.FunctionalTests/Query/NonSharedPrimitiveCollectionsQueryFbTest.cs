@@ -18,6 +18,8 @@
 using System.Threading.Tasks;
 using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Helpers;
 using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.TestUtilities;
+using FirebirdSql.EntityFrameworkCore.Firebird.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 
@@ -25,6 +27,18 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
 public class NonSharedPrimitiveCollectionsQueryFbTest : NonSharedPrimitiveCollectionsQueryRelationalTestBase
 {
+	protected override DbContextOptionsBuilder SetTranslateParameterizedCollectionsToConstants(DbContextOptionsBuilder optionsBuilder)
+	{
+		new FbDbContextOptionsBuilder(optionsBuilder).TranslateParameterizedCollectionsToConstants();
+		return optionsBuilder;
+	}
+
+	protected override DbContextOptionsBuilder SetTranslateParameterizedCollectionsToParameters(DbContextOptionsBuilder optionsBuilder)
+	{
+		new FbDbContextOptionsBuilder(optionsBuilder).TranslateParameterizedCollectionsToParameters();
+		return optionsBuilder;
+	}
+
 	[NotSupportedOnFirebirdFact]
 	public override Task Array_of_string()
 	{
@@ -143,12 +157,6 @@ public class NonSharedPrimitiveCollectionsQueryFbTest : NonSharedPrimitiveCollec
 	public override Task Array_of_enum()
 	{
 		return base.Array_of_enum();
-	}
-
-	[NotSupportedOnFirebirdFact]
-	public override Task Array_of_array_is_not_supported()
-	{
-		return base.Array_of_array_is_not_supported();
 	}
 
 	[NotSupportedOnFirebirdFact]

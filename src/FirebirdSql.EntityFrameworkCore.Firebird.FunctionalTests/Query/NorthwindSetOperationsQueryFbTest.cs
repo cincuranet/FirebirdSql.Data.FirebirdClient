@@ -30,8 +30,6 @@ public class NorthwindSetOperationsQueryFbTest : NorthwindSetOperationsQueryRela
 		: base(fixture)
 	{ }
 
-	protected override bool CanExecuteQueryString => false;
-
 	[NotSupportedOnFirebirdTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Union_Select_scalar(bool async)
