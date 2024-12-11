@@ -772,6 +772,27 @@ public class ComplexNavigationsQueryFbTest : ComplexNavigationsQueryTestBase<Com
 		return base.Nested_SelectMany_correlated_with_join_table_correctly_translated_to_apply(async);
 	}
 
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Correlated_projection_with_first(bool async)
+	{
+		return base.Correlated_projection_with_first(async);
+	}
+
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Multiple_select_many_in_projection(bool async)
+	{
+		return base.Multiple_select_many_in_projection(async);
+	}
+
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Single_select_many_in_projection_with_take(bool async)
+	{
+		return base.Single_select_many_in_projection_with_take(async);
+	}
+
 	[Theory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task GroupJoin_client_method_in_OrderBy(bool async)

@@ -312,7 +312,7 @@ public class FbQuerySqlGenerator : QuerySqlGenerator
 
 	protected override Expression VisitTableValuedFunction(TableValuedFunctionExpression tableValuedFunctionExpression)
 	{
-		Sql.Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(tableValuedFunctionExpression.StoreFunction.Name));
+		Sql.Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(tableValuedFunctionExpression.Name));
 		if (tableValuedFunctionExpression.Arguments.Any())
 		{
 			Sql.Append("(");

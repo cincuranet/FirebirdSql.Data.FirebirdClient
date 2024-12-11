@@ -72,6 +72,12 @@ public class AdHocMiscellaneousQueryFbTest : AdHocMiscellaneousQueryRelationalTe
 		return base.Null_check_removal_in_ternary_maintain_appropriate_cast(async);
 	}
 
+	[NotSupportedOnFirebirdFact]
+	public override Task Operators_combine_nullability_of_entity_shapers()
+	{
+		return base.Operators_combine_nullability_of_entity_shapers();
+	}
+
 	protected override async Task Seed2951(Context2951 context)
 	{
 		await context.Database.ExecuteSqlRawAsync("""CREATE TABLE "ZeroKey" ("Id" INT)""");
