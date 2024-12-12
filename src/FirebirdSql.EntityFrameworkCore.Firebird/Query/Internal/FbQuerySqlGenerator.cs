@@ -333,7 +333,7 @@ public class FbQuerySqlGenerator : QuerySqlGenerator
 		};
 	}
 
-	public virtual Expression VisitSpacedFunction(FbSpacedFunctionExpression spacedFunctionExpression)
+	protected virtual Expression VisitSpacedFunction(FbSpacedFunctionExpression spacedFunctionExpression)
 	{
 		Sql.Append(spacedFunctionExpression.Name);
 		Sql.Append("(");
