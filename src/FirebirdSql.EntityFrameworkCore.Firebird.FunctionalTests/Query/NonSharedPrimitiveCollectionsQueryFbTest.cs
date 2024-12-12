@@ -195,5 +195,29 @@ public class NonSharedPrimitiveCollectionsQueryFbTest : NonSharedPrimitiveCollec
         return base.Column_collection_inside_json_owned_entity();
     }
 
+	[NotSupportedOnFirebirdFact]
+	public override Task Parameter_collection_Count_with_column_predicate_with_default_constants()
+	{
+		return base.Parameter_collection_Count_with_column_predicate_with_default_constants();
+	}
+
+	[NotSupportedOnFirebirdFact]
+	public override Task Parameter_collection_Count_with_column_predicate_with_default_constants_EF_Parameter()
+	{
+		return base.Parameter_collection_Count_with_column_predicate_with_default_constants_EF_Parameter();
+	}
+
+	[NotSupportedOnFirebirdFact]
+	public override Task Parameter_collection_Count_with_column_predicate_with_default_parameters()
+	{
+		return base.Parameter_collection_Count_with_column_predicate_with_default_parameters();
+	}
+
+	[NotSupportedOnFirebirdFact]
+	public override Task Parameter_collection_Count_with_column_predicate_with_default_parameters_EF_Constant()
+	{
+		return base.Parameter_collection_Count_with_column_predicate_with_default_parameters_EF_Constant();
+	}
+
 	protected override ITestStoreFactory TestStoreFactory => FbTestStoreFactory.Instance;
 }
