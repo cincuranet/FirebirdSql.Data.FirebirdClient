@@ -100,6 +100,20 @@ public class NorthwindSetOperationsQueryFbTest : NorthwindSetOperationsQueryRela
 		return base.Union_Intersect(async);
 	}
 
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Except_on_distinct(bool async)
+	{
+		return base.Except_on_distinct(async);
+	}
+
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Intersect_on_distinct(bool async)
+	{
+		return base.Intersect_on_distinct(async);
+	}
+
 	[Theory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Client_eval_Union_FirstOrDefault(bool async)
