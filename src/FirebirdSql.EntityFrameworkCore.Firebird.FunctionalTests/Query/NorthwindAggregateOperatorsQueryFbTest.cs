@@ -82,4 +82,18 @@ public class NorthwindAggregateOperatorsQueryFbTest : NorthwindAggregateOperator
 	{
 		return base.Contains_inside_Average_without_GroupBy(async);
 	}
+
+	[Theory(Skip = "Different math on Firebird.")]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Average_over_max_subquery(bool async)
+	{
+		return base.Average_over_max_subquery(async);
+	}
+
+	[Theory(Skip = "Different math on Firebird.")]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Average_over_nested_subquery(bool async)
+	{
+		return base.Average_over_nested_subquery(async);
+	}
 }
