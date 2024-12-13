@@ -197,6 +197,13 @@ public class PrimitiveCollectionsQueryFbTest : PrimitiveCollectionsQueryRelation
     }
 
 	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Column_collection_Count_with_predicate(bool async)
+	{
+		return base.Column_collection_Count_with_predicate(async);
+	}
+
+	[NotSupportedOnFirebirdTheory]
     [MemberData(nameof(IsAsyncData))]
     public override Task Column_collection_Length(bool async)
     {
