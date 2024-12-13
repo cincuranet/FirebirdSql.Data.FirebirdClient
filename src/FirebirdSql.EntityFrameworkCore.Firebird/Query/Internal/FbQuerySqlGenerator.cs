@@ -202,10 +202,6 @@ public class FbQuerySqlGenerator : QuerySqlGenerator
 	protected override void GenerateEmptyProjection(SelectExpression selectExpression)
 	{
 		Sql.Append("1 AS dummy");
-		if (selectExpression.Alias != null)
-		{
-			Sql.Append(" AS empty");
-		}
 	}
 
 	protected override void GenerateTop(SelectExpression selectExpression)
