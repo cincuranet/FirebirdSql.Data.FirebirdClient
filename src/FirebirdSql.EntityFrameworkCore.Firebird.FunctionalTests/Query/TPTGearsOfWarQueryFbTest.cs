@@ -349,6 +349,13 @@ public class TPTGearsOfWarQueryFbTest : TPTGearsOfWarQueryRelationalTestBase<TPT
 		return base.Subquery_inside_Take_argument(async);
 	}
 
+	[NotSupportedOnFirebirdTheory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Non_string_concat_uses_appropriate_type_mapping(bool async)
+	{
+		return base.Non_string_concat_uses_appropriate_type_mapping(async);
+	}
+
 	[NotSupportedByProviderTheory]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task DateTimeOffset_to_unix_time_milliseconds(bool async)

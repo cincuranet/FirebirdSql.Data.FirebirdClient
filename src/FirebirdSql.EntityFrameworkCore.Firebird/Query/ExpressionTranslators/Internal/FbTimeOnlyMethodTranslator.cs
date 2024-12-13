@@ -37,20 +37,14 @@ public class FbTimeOnlyMethodTranslator : IMethodCallTranslator
 		_sqlExpressionFactory = sqlExpressionFactory;
 	}
 
-	public virtual SqlExpression Translate(
-		SqlExpression instance,
-		MethodInfo method,
-		IReadOnlyList<SqlExpression> arguments,
-		IDiagnosticsLogger<DbLoggerCategory.Query> logger)
+	public virtual SqlExpression Translate(SqlExpression instance, MethodInfo method, IReadOnlyList<SqlExpression> arguments, IDiagnosticsLogger<DbLoggerCategory.Query> logger)
 	{
 		if (method.DeclaringType != typeof(TimeOnly))
 		{
 			return null;
 		}
 
-		if ((method == FromDateTime || method == FromTimeSpan)
-			&& instance is null
-			&& arguments.Count == 1)
+		if ((method == FromDateTime || method == FromTimeSpan) && instance is null && arguments.Count == 1)
 		{
 			return _sqlExpressionFactory.Convert(arguments[0], typeof(TimeOnly));
 		}
