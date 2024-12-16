@@ -705,8 +705,10 @@ public class PrimitiveCollectionsQueryFbTest : PrimitiveCollectionsQueryRelation
 		return Fixture.CreateContext();
 	}
 
-	public class PrimitiveCollectionsQueryFbFixture : PrimitiveCollectionsQueryFixtureBase
+	public class PrimitiveCollectionsQueryFbFixture : PrimitiveCollectionsQueryFixtureBase, ITestSqlLoggerFactory
 	{
 		protected override ITestStoreFactory TestStoreFactory => FbTestStoreFactory.Instance;
+
+		public TestSqlLoggerFactory TestSqlLoggerFactory => (TestSqlLoggerFactory)ListLoggerFactory;
 	}
 }
