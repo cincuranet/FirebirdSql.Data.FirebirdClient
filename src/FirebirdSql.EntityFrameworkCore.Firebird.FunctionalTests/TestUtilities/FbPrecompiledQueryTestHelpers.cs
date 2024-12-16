@@ -25,7 +25,7 @@ namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.TestUtilities
 
 public class FbPrecompiledQueryTestHelpers : PrecompiledQueryTestHelpers
 {
-	public static FbPrecompiledQueryTestHelpers Instance = new();
+	public static readonly FbPrecompiledQueryTestHelpers Instance = new();
 
 	protected override IEnumerable<MetadataReference> BuildProviderMetadataReferences()
 	{

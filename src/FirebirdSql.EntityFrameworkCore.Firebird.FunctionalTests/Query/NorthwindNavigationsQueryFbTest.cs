@@ -15,7 +15,6 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 
@@ -26,9 +25,4 @@ public class NorthwindNavigationsQueryFbTest : NorthwindNavigationsQueryRelation
 	public NorthwindNavigationsQueryFbTest(NorthwindQueryFbFixture<NoopModelCustomizer> fixture)
 		: base(fixture)
 	{ }
-
-	public override Task Where_subquery_on_navigation_client_eval(bool async)
-	{
-		return AssertTranslationFailed(() => base.Where_subquery_on_navigation_client_eval(async));
-	}
 }

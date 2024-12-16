@@ -58,13 +58,6 @@ public class NorthwindIncludeQueryFbTest : NorthwindIncludeQueryRelationalTestBa
 		return base.Include_collection_with_cross_apply_with_filter(async);
 	}
 
-	[Theory]
-	[MemberData(nameof(IsAsyncData))]
-	public override Task Include_collection_with_last_no_orderby(bool async)
-	{
-		return Assert.ThrowsAsync<InvalidOperationException>(() => base.Include_collection_with_last_no_orderby(async));
-	}
-
 	[Theory(Skip = "Different ordering on Firebird.")]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Include_collection_OrderBy_list_contains(bool async)
