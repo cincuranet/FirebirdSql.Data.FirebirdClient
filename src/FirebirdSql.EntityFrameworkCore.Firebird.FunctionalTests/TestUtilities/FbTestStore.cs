@@ -44,10 +44,10 @@ public class FbTestStore : RelationalTestStore
 
 	protected override async Task InitializeAsync(Func<DbContext> createContext, Func<DbContext, Task> seed, Func<DbContext, Task> clean)
 	{
+		// create database explicitly to specify Page Size and Forced Writes
+		await FbConnection.CreateDatabaseAsync(ConnectionString, pageSize: 16384, forcedWrites: false, overwrite: true);
 		await using (var context = createContext())
 		{
-			// create database explicitly to specify Page Size and Forced Writes
-			await FbConnection.CreateDatabaseAsync(ConnectionString, pageSize: 16384, forcedWrites: false, overwrite: true);
 			try
 			{
 				await context.Database.EnsureCreatedAsync();

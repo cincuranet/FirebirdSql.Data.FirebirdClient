@@ -15,20 +15,23 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore.Query;
+using System.Collections.Generic;
+using System.Reflection;
+using FirebirdSql.EntityFrameworkCore.Firebird.Infrastructure.Internal;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 
-namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
+namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.TestUtilities;
 
-public class NorthwindNavigationsQueryFbTest : NorthwindNavigationsQueryRelationalTestBase<NorthwindQueryFbFixture<NoopModelCustomizer>>
+public class FbPrecompiledQueryTestHelpers : PrecompiledQueryTestHelpers
 {
-	public NorthwindNavigationsQueryFbTest(NorthwindQueryFbFixture<NoopModelCustomizer> fixture)
-		: base(fixture)
-	{ }
+	public static FbPrecompiledQueryTestHelpers Instance = new();
 
-	public override Task Where_subquery_on_navigation_client_eval(bool async)
+	protected override IEnumerable<MetadataReference> BuildProviderMetadataReferences()
 	{
-		return AssertTranslationFailed(() => base.Where_subquery_on_navigation_client_eval(async));
+#pragma warning disable EF1001
+		yield return MetadataReference.CreateFromFile(typeof(FbOptionsExtension).Assembly.Location);
+#pragma warning restore EF1001
+		yield return MetadataReference.CreateFromFile(Assembly.GetExecutingAssembly().Location);
 	}
 }

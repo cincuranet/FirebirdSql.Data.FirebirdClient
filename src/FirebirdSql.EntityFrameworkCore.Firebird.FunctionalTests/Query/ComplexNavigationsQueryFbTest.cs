@@ -18,13 +18,12 @@
 using System;
 using System.Threading.Tasks;
 using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Helpers;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Query;
 using Xunit;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
-public class ComplexNavigationsQueryFbTest : ComplexNavigationsQueryTestBase<ComplexNavigationsQueryFbFixture>
+public class ComplexNavigationsQueryFbTest : ComplexNavigationsQueryRelationalTestBase<ComplexNavigationsQueryFbFixture>
 {
 	public ComplexNavigationsQueryFbTest(ComplexNavigationsQueryFbFixture fixture)
 		: base(fixture)

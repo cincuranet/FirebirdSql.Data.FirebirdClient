@@ -138,6 +138,20 @@ public class FbComplianceTest : Microsoft.EntityFrameworkCore.RelationalComplian
 
 		typeof(Microsoft.EntityFrameworkCore.Migrations.MigrationsInfrastructureTestBase<>),
 		typeof(Microsoft.EntityFrameworkCore.Migrations.MigrationsSqlGeneratorTestBase),
+
+		// JSON not supported on FB
+		typeof(Microsoft.EntityFrameworkCore.Query.JsonQueryTestBase<>),
+		typeof(Microsoft.EntityFrameworkCore.Query.JsonQueryRelationalTestBase<>),
+		typeof(Microsoft.EntityFrameworkCore.Query.AdHocJsonQueryTestBase),
+
+		// Spatial not supported on FB
+		typeof(Microsoft.EntityFrameworkCore.Query.SpatialQueryTestBase<>),
+		typeof(Microsoft.EntityFrameworkCore.Query.SpatialQueryRelationalTestBase<>),
+
+		// Future work :)
+		typeof(Microsoft.EntityFrameworkCore.Query.AdHocPrecompiledQueryRelationalTestBase),
+		typeof(Microsoft.EntityFrameworkCore.Query.PrecompiledQueryRelationalTestBase),
+		typeof(Microsoft.EntityFrameworkCore.Query.PrecompiledSqlPregenerationQueryRelationalTestBase),
 	];
 
 	protected override Assembly TargetAssembly { get; } = typeof(FbComplianceTest).Assembly;
