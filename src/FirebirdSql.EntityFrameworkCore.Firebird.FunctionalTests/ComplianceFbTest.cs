@@ -21,7 +21,7 @@ using System.Reflection;
 
 namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests;
 
-public class FbComplianceTest : Microsoft.EntityFrameworkCore.RelationalComplianceTestBase
+public class ComplianceFbTest : Microsoft.EntityFrameworkCore.RelationalComplianceTestBase
 {
 	protected override ICollection<Type> IgnoredTestBases { get; } =
 	[
@@ -148,11 +148,11 @@ public class FbComplianceTest : Microsoft.EntityFrameworkCore.RelationalComplian
 		typeof(Microsoft.EntityFrameworkCore.Query.SpatialQueryTestBase<>),
 		typeof(Microsoft.EntityFrameworkCore.Query.SpatialQueryRelationalTestBase<>),
 
-		// Future work :)
+		// Uses some JSON
 		typeof(Microsoft.EntityFrameworkCore.Query.AdHocPrecompiledQueryRelationalTestBase),
 		typeof(Microsoft.EntityFrameworkCore.Query.PrecompiledQueryRelationalTestBase),
 		typeof(Microsoft.EntityFrameworkCore.Query.PrecompiledSqlPregenerationQueryRelationalTestBase),
 	];
 
-	protected override Assembly TargetAssembly { get; } = typeof(FbComplianceTest).Assembly;
+	protected override Assembly TargetAssembly { get; } = typeof(ComplianceFbTest).Assembly;
 }
