@@ -367,6 +367,7 @@ internal sealed class DbValue
 #if NET6_0_OR_GREATER
 			TimeOnly to => TypeEncoder.EncodeTime(to),
 #endif
+			Int64 ns => TypeEncoder.EncodeTime(TimeSpan.FromTicks(ns)),
 			_ => TypeEncoder.EncodeTime(TypeHelper.DateTimeTimeToTimeSpan(GetDateTime())),
 		};
 	}
