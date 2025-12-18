@@ -15,16 +15,12 @@
 
 //$Authors = Carlos Guzman Alvarez, Jiri Cincura (jiri@cincura.net)
 
-using System.Runtime.InteropServices;
-
 namespace FirebirdSql.Data.Client.Native.Marshalers;
 
-[StructLayout(LayoutKind.Sequential)]
-internal struct XSQLDA
+internal unsafe struct XSQLDA_STRUCT
 {
 	public short version;
-	[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)]
-	public string sqldaid;
+	public fixed byte sqldaid[8];
 	public int sqldabc;
 	public short sqln;
 	public short sqld;
