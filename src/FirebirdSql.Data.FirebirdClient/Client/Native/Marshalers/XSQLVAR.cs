@@ -16,12 +16,10 @@
 //$Authors = Carlos Guzman Alvarez, Jiri Cincura (jiri@cincura.net)
 
 using System;
-using System.Runtime.InteropServices;
 
 namespace FirebirdSql.Data.Client.Native.Marshalers;
 
-[StructLayout(LayoutKind.Sequential)]
-internal class XSQLVAR
+internal unsafe struct XSQLVAR_STRUCT
 {
 	public short sqltype;
 	public short sqlscale;
@@ -30,15 +28,11 @@ internal class XSQLVAR
 	public IntPtr sqldata;
 	public IntPtr sqlind;
 	public short sqlname_length;
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-	public byte[] sqlname;
+	public fixed byte sqlname[32];
 	public short relname_length;
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-	public byte[] relname;
+	public fixed byte relname[32];
 	public short ownername_length;
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-	public byte[] ownername;
+	public fixed byte ownername[32];
 	public short aliasname_length;
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-	public byte[] aliasname;
+	public fixed byte aliasname[32];
 }
