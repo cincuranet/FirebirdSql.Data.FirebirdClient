@@ -116,9 +116,9 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 					var comment = reader.GetString(1);
 					var type = reader.GetInt32(2);
 
-					var table = type == 0
-						? new DatabaseTable()
-						: new DatabaseView();
+					var table = type == 1
+						? new DatabaseView()
+						: new DatabaseTable();
 
 					table.Schema = null;
 					table.Name = name;
@@ -350,6 +350,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			LEFT JOIN rdb$relation_constraints rc ON rc.rdb$index_name = i.rdb$index_name
 		WHERE
 			TRIM(i.rdb$relation_name) = @RelationName
+      AND i.RDB$EXPRESSION_SOURCE IS NULL
 		GROUP BY
 			index_name, is_unique, is_desc
 		""";
@@ -370,6 +371,12 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 				{
 					while (reader.Read())
 					{
+						var columns = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
+						if (string.IsNullOrEmpty(columns))
+						{
+							continue;
+						}
+
 						var index = new DatabaseIndex
 						{
 							Table = table,
@@ -377,7 +384,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 							IsUnique = reader.GetBoolean(1),
 						};
 
-						foreach (var column in reader.GetString(3).Split(','))
+						foreach (var column in columns.Split(','))
 						{
 							index.Columns.Add(table.Columns.Single(y => y.Name == column.Trim()));
 						}

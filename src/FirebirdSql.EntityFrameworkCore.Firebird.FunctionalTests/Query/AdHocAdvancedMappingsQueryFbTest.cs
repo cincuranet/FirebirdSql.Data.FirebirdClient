@@ -15,16 +15,14 @@
 
 //$Authors = Jiri Cincura (jiri@cincura.net)
 
-using System;
+using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.TestUtilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.TestUtilities;
 
-namespace FirebirdSql.Data.Common;
+namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query;
 
-internal static class DateTime2
+public class AdHocAdvancedMappingsQueryFbTest(NonSharedFixture fixture) : AdHocAdvancedMappingsQueryRelationalTestBase(fixture)
 {
-	public static DateTime UnixEpoch =>
-#if NET48 || NETSTANDARD2_0
-			new DateTime(621355968000000000);
-#else
-			DateTime.UnixEpoch;
-#endif
+	protected override ITestStoreFactory TestStoreFactory => FbTestStoreFactory.Instance;
 }

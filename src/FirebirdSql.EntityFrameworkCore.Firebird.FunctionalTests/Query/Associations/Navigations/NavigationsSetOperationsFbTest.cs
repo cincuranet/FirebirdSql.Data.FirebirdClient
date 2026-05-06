@@ -13,11 +13,18 @@
  *    All Rights Reserved.
  */
 
-//$Authors = Jiri Cincura (jiri@cincura.net)
+//$Authors = Niek Schoemaker (@niekschoemaker)
 
-namespace FirebirdSql.Data.Logging;
+using Microsoft.EntityFrameworkCore.Query.Associations.Navigations;
+using Xunit.Abstractions;
 
-public interface IFbLoggingProvider
+namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query.Associations.Navigations;
+
+public class NavigationsSetOperationsFbTest : NavigationsSetOperationsRelationalTestBase<NavigationsFbFixture>
 {
-	IFbLogger CreateLogger(string name);
+	public NavigationsSetOperationsFbTest(NavigationsFbFixture fixture, ITestOutputHelper testOutputHelper) : base(fixture, testOutputHelper)
+	{
+		Fixture.TestSqlLoggerFactory.Clear();
+		Fixture.TestSqlLoggerFactory.SetTestOutputHelper(testOutputHelper);
+	}
 }

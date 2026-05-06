@@ -13,24 +13,19 @@
  *    All Rights Reserved.
  */
 
-//$Authors = Jiri Cincura (jiri@cincura.net)
+//$Authors = Niek Schoemaker (@niekschoemaker)
 
-using System;
+using Microsoft.EntityFrameworkCore.Query.Translations;
+using Xunit.Abstractions;
 
-namespace FirebirdSql.Data.Logging;
+namespace FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Query.Translations;
 
-sealed class NullLoggingProvider : IFbLoggingProvider
+public class GuidTranslationsFbTest : GuidTranslationsTestBase<BasicTypesQueryFbFixture>
 {
-	public IFbLogger CreateLogger(string name) => NullLogger.Instance;
-
-	sealed class NullLogger : IFbLogger
+	public GuidTranslationsFbTest(BasicTypesQueryFbFixture fixture, ITestOutputHelper testOutputHelper)
+		: base(fixture)
 	{
-		internal static NullLogger Instance = new NullLogger();
-
-		NullLogger() { }
-
-		public bool IsEnabled(FbLogLevel level) => false;
-
-		public void Log(FbLogLevel level, string msg, Exception exception = null) { }
+		Fixture.TestSqlLoggerFactory.Clear();
+		Fixture.TestSqlLoggerFactory.SetTestOutputHelper(testOutputHelper);
 	}
 }
