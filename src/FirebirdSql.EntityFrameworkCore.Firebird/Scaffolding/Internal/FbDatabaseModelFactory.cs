@@ -350,7 +350,7 @@ public class FbDatabaseModelFactory : DatabaseModelFactory
 			LEFT JOIN rdb$relation_constraints rc ON rc.rdb$index_name = i.rdb$index_name
 		WHERE
 			TRIM(i.rdb$relation_name) = @RelationName
-      AND i.RDB$EXPRESSION_SOURCE IS NULL
+			AND i.RDB$EXPRESSION_SOURCE IS NULL
 		GROUP BY
 			index_name, is_unique, is_desc
 		""";
