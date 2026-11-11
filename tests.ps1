@@ -28,7 +28,7 @@ $FirebirdConfiguration = @{
 	}
 }
 
-$frameworkVersion = 'net10.0'
+$frameworkVersion = 'net11.0'
 $testsBaseDir = "$baseDir\src\FirebirdSql.Data.FirebirdClient.Tests"
 $testsProviderDir = "$testsBaseDir\bin\$Configuration\$frameworkVersion"
 
