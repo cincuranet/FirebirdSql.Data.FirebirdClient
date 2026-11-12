@@ -30,14 +30,14 @@ public class NorthwindAggregateOperatorsQueryFbTest : NorthwindAggregateOperator
 		: base(fixture)
 	{ }
 
-	[NotSupportedOnFirebirdTheory]
+	[Theory(Skip = SkipReasons.NotSupportedOnFirebird)]
 	[MemberData(nameof(IsAsyncData))]
 	public override Task Multiple_collection_navigation_with_FirstOrDefault_chained(bool async)
 	{
 		return base.Multiple_collection_navigation_with_FirstOrDefault_chained(async);
 	}
 
-	[NotSupportedOnFirebirdTheory]
+	[Theory(Skip = SkipReasons.NotSupportedOnFirebird)]
 	[MemberData(nameof(IsAsyncData))]
 	public override async Task Contains_with_local_enumerable_inline(bool async)
 	{
@@ -46,7 +46,7 @@ public class NorthwindAggregateOperatorsQueryFbTest : NorthwindAggregateOperator
 				await base.Contains_with_local_enumerable_inline(async));
 	}
 
-	[NotSupportedOnFirebirdTheory]
+	[Theory(Skip = SkipReasons.NotSupportedOnFirebird)]
 	[MemberData(nameof(IsAsyncData))]
 	public override async Task Contains_with_local_enumerable_inline_closure_mix(bool async)
 	{
