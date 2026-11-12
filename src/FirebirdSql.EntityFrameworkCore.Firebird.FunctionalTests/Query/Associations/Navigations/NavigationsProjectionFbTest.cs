@@ -51,4 +51,14 @@ public class NavigationsProjectionFbTest : NavigationsProjectionRelationalTestBa
 			return Task.CompletedTask;
 		return base.Select_subquery_required_related_FirstOrDefault(queryTrackingBehavior);
 	}
+
+	[Theory]
+	[MemberData(nameof(TrackingData))]
+	public override Task Select_subquery_FirstOrDefault_complex_collection(QueryTrackingBehavior queryTrackingBehavior)
+	{
+		var fbTestStore = (FbTestStore)Fixture.TestStore;
+		if (fbTestStore.ServerLessThan4())
+			return Task.CompletedTask;
+		return base.Select_subquery_FirstOrDefault_complex_collection(queryTrackingBehavior);
+	}
 }

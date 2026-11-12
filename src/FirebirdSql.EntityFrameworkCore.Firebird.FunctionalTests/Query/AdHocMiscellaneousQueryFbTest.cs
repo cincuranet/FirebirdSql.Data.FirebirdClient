@@ -104,6 +104,10 @@ public class AdHocMiscellaneousQueryFbTest(NonSharedFixture fixture) : AdHocMisc
 	public override async Task Correlated_SelectMany_DefaultIfEmpty_whole_object()
 	{
 		var contextFactory = await InitializeNonSharedTest<Context30915>(seed: Seed30915);
+		// LATERAL is Firebird 4+
+		var fbTestStore = (FbTestStore)NonSharedTestStore;
+		if (fbTestStore.ServerLessThan4())
+			return;
 		using var context = contextFactory.CreateDbContext();
 
 		var query = from s in context.Statuses

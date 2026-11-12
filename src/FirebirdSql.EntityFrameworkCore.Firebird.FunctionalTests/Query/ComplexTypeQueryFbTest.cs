@@ -171,6 +171,16 @@ public class ComplexTypeQueryFbTest : ComplexTypeQueryRelationalTestBase<Complex
 		return base.Same_entity_with_complex_type_projected_twice_with_pushdown_as_part_of_another_projection(async);
 	}
 
+	[Theory]
+	[MemberData(nameof(IsAsyncData))]
+	public override Task Same_complex_type_projected_twice_with_pushdown_as_part_of_another_projection(bool async)
+	{
+		var fbTestStore = (FbTestStore)Fixture.TestStore;
+		if (fbTestStore.ServerLessThan4())
+			return Task.CompletedTask;
+		return base.Same_complex_type_projected_twice_with_pushdown_as_part_of_another_projection(async);
+	}
+
 	public class ComplexTypeQueryFbFixture : ComplexTypeQueryRelationalFixtureBase
 	{
 		protected override ITestStoreFactory TestStoreFactory => FbTestStoreFactory.Instance;

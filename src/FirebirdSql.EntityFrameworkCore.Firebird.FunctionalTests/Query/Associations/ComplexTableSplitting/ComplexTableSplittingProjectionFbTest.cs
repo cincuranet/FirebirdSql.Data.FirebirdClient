@@ -17,6 +17,7 @@
 
 using System.Threading.Tasks;
 using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.Helpers;
+using FirebirdSql.EntityFrameworkCore.Firebird.FunctionalTests.TestUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.Associations.ComplexTableSplitting;
 using Xunit;
@@ -45,5 +46,15 @@ public class ComplexTableSplittingProjectionFbTest : ComplexTableSplittingProjec
 	public override Task Select_subquery_required_related_FirstOrDefault(QueryTrackingBehavior queryTrackingBehavior)
 	{
 		return base.Select_subquery_required_related_FirstOrDefault(queryTrackingBehavior);
+	}
+
+	[Theory]
+	[MemberData(nameof(TrackingData))]
+	public override Task Select_subquery_FirstOrDefault_complex_collection(QueryTrackingBehavior queryTrackingBehavior)
+	{
+		var fbTestStore = (FbTestStore)Fixture.TestStore;
+		if (fbTestStore.ServerLessThan4())
+			return Task.CompletedTask;
+		return base.Select_subquery_FirstOrDefault_complex_collection(queryTrackingBehavior);
 	}
 }
